@@ -1,0 +1,59 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pos-backend
+    restart: unless-stopped
+    working_dir: /app
+    command: cargo run --bin server
+    environment:
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8080
+      DATABASE_URL: postgres://pos:pos@postgres:5432/pos
+      JWT_SECRET: dev-only-change-this-secret-before-running-in-production
+      JWT_TTL_SECONDS: 900
+      REFRESH_TOKEN_TTL_SECONDS: 2592000
+      REFRESH_TOKEN_COOKIE_NAME: refresh_token
+      REFRESH_TOKEN_COOKIE_SECURE: true
+      REFRESH_TOKEN_COOKIE_SAME_SITE: Lax
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend:/app
+      - backend_target:/app/target
+      - cargo_registry:/usr/local/cargo/registry
+      - cargo_git:/usr/local/cargo/git
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 180s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: pos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pos
+      POSTGRES_USER: pos
+      POSTGRES_PASSWORD: pos
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./storages/postgres:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pos -d pos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  backend_target:
+  cargo_registry:
+  cargo_git:

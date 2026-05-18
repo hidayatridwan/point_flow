@@ -1,0 +1,10 @@
+pub mod auth;
+pub mod employees;
+pub mod inventory;
+pub mod payroll;
+pub mod procurement;
+pub mod products;
+pub mod reports;
+pub mod sales;
+pub mod suppliers;
+pub mod users;

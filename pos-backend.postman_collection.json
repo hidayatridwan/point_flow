@@ -1,0 +1,1093 @@
+{
+  "info": {
+    "_postman_id": "3f9ef2a2-53c5-4b6a-aed1-7e2d9f5c8b10",
+    "name": "POS Backend API",
+    "description": "Postman collection for the POS backend REST API. Import this file, set `base_url`, run Bootstrap Admin or Login, then reuse `access_token` for protected endpoints. Refresh tokens are stored as backend-generated HttpOnly cookies.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": []
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": []
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "user_id",
+      "value": "1"
+    },
+    {
+      "key": "category_id",
+      "value": "1"
+    },
+    {
+      "key": "product_id",
+      "value": "1"
+    },
+    {
+      "key": "supplier_id",
+      "value": "1"
+    },
+    {
+      "key": "purchase_order_id",
+      "value": "1"
+    },
+    {
+      "key": "purchase_order_item_id",
+      "value": "1"
+    },
+    {
+      "key": "goods_receipt_id",
+      "value": "1"
+    },
+    {
+      "key": "stock_adjustment_id",
+      "value": "1"
+    },
+    {
+      "key": "sale_id",
+      "value": "1"
+    },
+    {
+      "key": "employee_id",
+      "value": "1"
+    },
+    {
+      "key": "payroll_slip_id",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/health"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Bootstrap Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.access_token) pm.collectionVariables.set('access_token', json.access_token);",
+                  "  if (json.user && json.user.id) pm.collectionVariables.set('user_id', json.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"admin\"\n}"
+            },
+            "url": "{{base_url}}/auth/bootstrap-admin"
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.access_token) pm.collectionVariables.set('access_token', json.access_token);",
+                  "  if (json.user && json.user.id) pm.collectionVariables.set('user_id', json.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": "{{base_url}}/auth/login"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.access_token) pm.collectionVariables.set('access_token', json.access_token);",
+                  "  if (json.user && json.user.id) pm.collectionVariables.set('user_id', json.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/auth/refresh"
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  pm.collectionVariables.unset('access_token');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/auth/logout"
+          },
+          "response": []
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/me"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/users?search=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cashier\",\n  \"email\": \"cashier@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"cashier\",\n  \"is_active\": true\n}"
+            },
+            "url": "{{base_url}}/users"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/users/{{user_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cashier Updated\",\n  \"email\": \"cashier@example.com\",\n  \"role\": \"cashier\",\n  \"is_active\": true\n}"
+            },
+            "url": "{{base_url}}/users/{{user_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/users/{{user_id}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Product Categories",
+      "item": [
+        {
+          "name": "List Product Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/product-categories?search=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.id) pm.collectionVariables.set('category_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Beverages\",\n  \"description\": \"Drink products\",\n  \"is_active\": true\n}"
+            },
+            "url": "{{base_url}}/product-categories"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/product-categories/{{category_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Beverages Updated\",\n  \"description\": \"Updated drink products\",\n  \"is_active\": true\n}"
+            },
+            "url": "{{base_url}}/product-categories/{{category_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product Category",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/product-categories/{{category_id}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "List Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/products?search=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.id) pm.collectionVariables.set('product_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_id\": {{category_id}},\n  \"name\": \"Mineral Water\",\n  \"sku\": \"WTR-001\",\n  \"purchase_price\": 2500,\n  \"selling_price\": 4000,\n  \"stock\": 100,\n  \"minimum_stock\": 10,\n  \"unit\": \"pcs\",\n  \"is_active\": true\n}"
+            },
+            "url": "{{base_url}}/products"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/products/{{product_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_id\": {{category_id}},\n  \"name\": \"Mineral Water Updated\",\n  \"sku\": \"WTR-001\",\n  \"purchase_price\": 2600,\n  \"selling_price\": 4500,\n  \"minimum_stock\": 15,\n  \"unit\": \"pcs\",\n  \"is_active\": true\n}"
+            },
+            "url": "{{base_url}}/products/{{product_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/products/{{product_id}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Suppliers",
+      "item": [
+        {
+          "name": "List Suppliers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/suppliers?search=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Supplier",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.id) pm.collectionVariables.set('supplier_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"PT Sumber Barang\",\n  \"contact_name\": \"Budi\",\n  \"phone\": \"08123456789\",\n  \"email\": \"supplier@example.com\",\n  \"address\": \"Jakarta\",\n  \"is_active\": true\n}"
+            },
+            "url": "{{base_url}}/suppliers"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Supplier",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/suppliers/{{supplier_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Supplier",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"PT Sumber Barang Updated\",\n  \"contact_name\": \"Budi\",\n  \"phone\": \"08123456789\",\n  \"email\": \"supplier@example.com\",\n  \"address\": \"Bandung\",\n  \"is_active\": true\n}"
+            },
+            "url": "{{base_url}}/suppliers/{{supplier_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Supplier",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/suppliers/{{supplier_id}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Purchase Orders",
+      "item": [
+        {
+          "name": "List Purchase Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/purchase-orders?search=&from=&to=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Purchase Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.id) pm.collectionVariables.set('purchase_order_id', json.id);",
+                  "  if (json.items && json.items[0] && json.items[0].id) pm.collectionVariables.set('purchase_order_item_id', json.items[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"supplier_id\": {{supplier_id}},\n  \"order_date\": \"2026-05-18\",\n  \"expected_date\": \"2026-05-20\",\n  \"notes\": \"Initial stock order\",\n  \"items\": [\n    {\n      \"product_id\": {{product_id}},\n      \"quantity_ordered\": 20,\n      \"unit_cost\": 2500\n    }\n  ]\n}"
+            },
+            "url": "{{base_url}}/purchase-orders"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Purchase Order",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/purchase-orders/{{purchase_order_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Order Purchase Order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/purchase-orders/{{purchase_order_id}}/order"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Purchase Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Wrong input\"\n}"
+            },
+            "url": "{{base_url}}/purchase-orders/{{purchase_order_id}}/cancel"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Goods Receipts",
+      "item": [
+        {
+          "name": "List Goods Receipts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/goods-receipts?search=&from=&to=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Goods Receipt",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.id) pm.collectionVariables.set('goods_receipt_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"purchase_order_id\": {{purchase_order_id}},\n  \"received_at\": \"2026-05-18T10:00:00Z\",\n  \"notes\": \"Goods received\",\n  \"items\": [\n    {\n      \"purchase_order_item_id\": {{purchase_order_item_id}},\n      \"quantity_received\": 10,\n      \"unit_cost\": 2500\n    }\n  ]\n}"
+            },
+            "url": "{{base_url}}/goods-receipts"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Goods Receipt",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/goods-receipts/{{goods_receipt_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Post Goods Receipt",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/goods-receipts/{{goods_receipt_id}}/post"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Goods Receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Wrong input\"\n}"
+            },
+            "url": "{{base_url}}/goods-receipts/{{goods_receipt_id}}/cancel"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Stock Adjustments",
+      "item": [
+        {
+          "name": "List Stock Adjustments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/stock-adjustments?search=&from=&to=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Stock Adjustment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.id) pm.collectionVariables.set('stock_adjustment_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"adjusted_at\": \"2026-05-18T10:30:00Z\",\n  \"reason\": \"Stock opname\",\n  \"notes\": \"Physical stock correction\",\n  \"items\": [\n    {\n      \"product_id\": {{product_id}},\n      \"stock_after\": 95,\n      \"notes\": \"Counted manually\"\n    }\n  ]\n}"
+            },
+            "url": "{{base_url}}/stock-adjustments"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Stock Adjustment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/stock-adjustments/{{stock_adjustment_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Post Stock Adjustment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/stock-adjustments/{{stock_adjustment_id}}/post"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Stock Adjustment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Wrong input\"\n}"
+            },
+            "url": "{{base_url}}/stock-adjustments/{{stock_adjustment_id}}/cancel"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sales",
+      "item": [
+        {
+          "name": "List Sales",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/sales?search=&from=&to=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Sale",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.id) pm.collectionVariables.set('sale_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sold_at\": \"2026-05-18T11:00:00Z\",\n  \"paid_amount\": 10000,\n  \"notes\": \"Cash sale\",\n  \"items\": [\n    {\n      \"product_id\": {{product_id}},\n      \"quantity\": 2\n    }\n  ]\n}"
+            },
+            "url": "{{base_url}}/sales"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Sale",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/sales/{{sale_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Sale",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Wrong input\"\n}"
+            },
+            "url": "{{base_url}}/sales/{{sale_id}}/cancel"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Employees",
+      "item": [
+        {
+          "name": "List Employees",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/employees?search=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Employee",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.id) pm.collectionVariables.set('employee_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Siti Aminah\",\n  \"position\": \"Cashier\",\n  \"phone\": \"08123456780\",\n  \"address\": \"Jakarta\",\n  \"base_salary\": 3000000,\n  \"is_active\": true\n}"
+            },
+            "url": "{{base_url}}/employees"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Employee",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/employees/{{employee_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Employee",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Siti Aminah Updated\",\n  \"position\": \"Senior Cashier\",\n  \"phone\": \"08123456780\",\n  \"address\": \"Bandung\",\n  \"base_salary\": 3500000,\n  \"is_active\": true\n}"
+            },
+            "url": "{{base_url}}/employees/{{employee_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Employee",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/employees/{{employee_id}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payroll Slips",
+      "item": [
+        {
+          "name": "List Payroll Slips",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/payroll-slips?search=&from=&to=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Payroll Slip",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.id) pm.collectionVariables.set('payroll_slip_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_id\": {{employee_id}},\n  \"period_start\": \"2026-05-01\",\n  \"period_end\": \"2026-05-31\",\n  \"bonus\": 250000,\n  \"deduction\": 50000\n}"
+            },
+            "url": "{{base_url}}/payroll-slips"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payroll Slip",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/payroll-slips/{{payroll_slip_id}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/dashboard"
+          },
+          "response": []
+        },
+        {
+          "name": "Daily Sales Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/reports/daily-sales?from=&to=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Monthly Sales Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/reports/monthly-sales?from=&to=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Stock Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/reports/stock?search=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Purchase Order Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/reports/purchase-orders?search=&from=&to=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Goods Receipt Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/reports/goods-receipts?search=&from=&to=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Stock Adjustment Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/reports/stock-adjustments?search=&from=&to=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Payroll Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/reports/payroll?from=&to=&limit=50&offset=0"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+use sqlx::PgPool;
+
+use crate::{
+    auth::AuthUser,
+    error::AppResult,
+    models::{
+        CancelRequest, CreateStockAdjustmentRequest, ListQuery, StockAdjustmentDetailResponse,
+        StockAdjustmentResponse,
+    },
+    services::documents,
+};
+
+pub async fn list_stock_adjustments(
+    pool: &PgPool,
+    query: ListQuery,
+) -> AppResult<Vec<StockAdjustmentResponse>> {
+    documents::list_stock_adjustments(pool, query).await
+}
+
+pub async fn find_stock_adjustment(
+    pool: &PgPool,
+    id: i64,
+) -> AppResult<StockAdjustmentDetailResponse> {
+    documents::find_stock_adjustment(pool, id).await
+}
+
+pub async fn create_stock_adjustment(
+    pool: &PgPool,
+    user: &AuthUser,
+    request: CreateStockAdjustmentRequest,
+) -> AppResult<StockAdjustmentDetailResponse> {
+    documents::create_stock_adjustment(pool, user, request).await
+}
+
+pub async fn post_stock_adjustment(
+    pool: &PgPool,
+    user: &AuthUser,
+    id: i64,
+) -> AppResult<StockAdjustmentDetailResponse> {
+    documents::post_stock_adjustment(pool, user, id).await
+}
+
+pub async fn cancel_stock_adjustment(
+    pool: &PgPool,
+    user: &AuthUser,
+    id: i64,
+    request: CancelRequest,
+) -> AppResult<StockAdjustmentDetailResponse> {
+    documents::cancel_stock_adjustment(pool, user, id, request).await
+}
