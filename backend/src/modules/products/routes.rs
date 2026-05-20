@@ -26,4 +26,24 @@ pub fn routes() -> Router<AppState> {
                 .put(handler::update_product)
                 .delete(handler::delete_product),
         )
+        .route(
+            "/units",
+            get(handler::list_units).post(handler::create_unit),
+        )
+        .route(
+            "/units/{id}",
+            get(handler::get_unit)
+                .put(handler::update_unit)
+                .delete(handler::delete_unit),
+        )
+        .route(
+            "/product-skus",
+            get(handler::list_product_skus).post(handler::create_product_sku),
+        )
+        .route(
+            "/product-skus/{id}",
+            get(handler::get_product_sku)
+                .put(handler::update_product_sku)
+                .delete(handler::delete_product_sku),
+        )
 }

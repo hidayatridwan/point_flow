@@ -19,7 +19,7 @@ Authorization: Bearer {{access_token}}
 Catatan:
 
 - Kolom Postman request memakai format `Folder > Request` di dalam file `pos-backend.postman_collection.json`.
-- Placeholder seperti `{{product_id}}` adalah variable Postman collection.
+- Placeholder seperti `{{product_id}}`, `{{product_sku_id}}`, dan `{{unit_id}}` adalah variable Postman collection.
 - Response contoh dibuat ringkas agar mudah dibaca, tetapi tetap mengikuti field response backend.
 - Response error umum berbentuk:
 
@@ -315,7 +315,7 @@ Contoh delete response:
 
 ## 4. Product Category dan Product Setup
 
-Sebelum pembelian dan penjualan, siapkan kategori dan produk. Produk menjadi pusat relasi untuk purchase order, goods receipt, stock adjustment, sales, dan stock report.
+Sebelum pembelian dan penjualan, siapkan kategori, satuan, produk induk, dan SKU/kemasan produk. Stok, harga, barcode, purchase order, goods receipt, stock adjustment, sales, dan stock report memakai `product_skus`.
 
 ### 4.1 Product Categories
 
@@ -353,7 +353,28 @@ Contoh response:
 }
 ```
 
-### 4.2 Products
+### 4.2 Units
+
+| Request | Endpoint |
+| --- | --- |
+| `Units > List Units` | `GET {{base_url}}/units?search=&limit=50&offset=0` |
+| `Units > Create Unit` | `POST {{base_url}}/units` |
+| `Units > Get Unit` | `GET {{base_url}}/units/{{unit_id}}` |
+| `Units > Update Unit` | `PUT {{base_url}}/units/{{unit_id}}` |
+| `Units > Delete Unit` | `DELETE {{base_url}}/units/{{unit_id}}` |
+
+Contoh create request:
+
+```json
+{
+  "code": "pcs",
+  "name": "Pieces",
+  "allow_decimal": false,
+  "is_active": true
+}
+```
+
+### 4.3 Products
 
 | Postman request | Endpoint |
 | --- | --- |
@@ -363,7 +384,7 @@ Contoh response:
 | `Products > Update Product` | `PUT {{base_url}}/products/{{product_id}}` |
 | `Products > Delete Product` | `DELETE {{base_url}}/products/{{product_id}}` |
 
-Relasi: `products.stock` berubah saat `goods_receipts` diposting, `stock_adjustments` diposting, atau `sales` dibuat.
+Relasi: `products` adalah produk induk. Produk seperti Indomie dibuat satu kali di sini, lalu kemasan eceran/dus dibuat di `product_skus`.
 
 Contoh create request:
 
@@ -371,12 +392,6 @@ Contoh create request:
 {
   "category_id": {{category_id}},
   "name": "Mineral Water",
-  "sku": "WTR-001",
-  "purchase_price": 2500,
-  "selling_price": 4000,
-  "stock": 100,
-  "minimum_stock": 10,
-  "unit": "pcs",
   "is_active": true
 }
 ```
@@ -389,12 +404,6 @@ Contoh response:
   "category_id": 1,
   "category_name": "Beverages",
   "name": "Mineral Water",
-  "sku": "WTR-001",
-  "purchase_price": 2500,
-  "selling_price": 4000,
-  "stock": 100,
-  "minimum_stock": 10,
-  "unit": "pcs",
   "is_active": true,
   "created_at": "2026-05-18T10:20:00Z",
   "updated_at": "2026-05-18T10:20:00Z",
@@ -408,12 +417,62 @@ Contoh update request:
 {
   "category_id": {{category_id}},
   "name": "Mineral Water Updated",
-  "sku": "WTR-001",
-  "purchase_price": 2600,
-  "selling_price": 4500,
-  "minimum_stock": 15,
-  "unit": "pcs",
   "is_active": true
+}
+```
+
+### 4.4 Product SKUs
+
+| Request | Endpoint |
+| --- | --- |
+| `Product SKUs > List Product SKUs` | `GET {{base_url}}/product-skus?search=&limit=50&offset=0` |
+| `Product SKUs > Create Product SKU` | `POST {{base_url}}/product-skus` |
+| `Product SKUs > Get Product SKU` | `GET {{base_url}}/product-skus/{{product_sku_id}}` |
+| `Product SKUs > Update Product SKU` | `PUT {{base_url}}/product-skus/{{product_sku_id}}` |
+| `Product SKUs > Delete Product SKU` | `DELETE {{base_url}}/product-skus/{{product_sku_id}}` |
+
+Relasi: `product_skus.stock` berubah saat goods receipt diposting, stock adjustment diposting, stock conversion diposting, atau sale dibuat. SKU dan barcode unik di level kemasan.
+
+Contoh create request:
+
+```json
+{
+  "product_id": {{product_id}},
+  "sku": "WTR-001-PCS",
+  "barcode": "8990000000011",
+  "unit_id": {{unit_id}},
+  "contents_qty": 1,
+  "purchase_price": 2500,
+  "selling_price": 4000,
+  "stock": 100,
+  "minimum_stock": 10,
+  "is_active": true
+}
+```
+
+Contoh response:
+
+```json
+{
+  "id": 1,
+  "product_id": 1,
+  "product_name": "Mineral Water",
+  "category_id": 1,
+  "category_name": "Beverages",
+  "sku": "WTR-001-PCS",
+  "barcode": "8990000000011",
+  "unit_id": 1,
+  "unit_code": "pcs",
+  "unit_name": "Pieces",
+  "contents_qty": 1,
+  "purchase_price": 2500,
+  "selling_price": 4000,
+  "stock": 100,
+  "minimum_stock": 10,
+  "is_active": true,
+  "created_at": "2026-05-18T10:20:00Z",
+  "updated_at": "2026-05-18T10:20:00Z",
+  "deleted_at": null
 }
 ```
 
@@ -473,7 +532,7 @@ Purchase order mencatat rencana pembelian barang dari supplier. Dokumen dibuat s
 | `Purchase Orders > Order Purchase Order` | `POST {{base_url}}/purchase-orders/{{purchase_order_id}}/order` |
 | `Purchase Orders > Cancel Purchase Order` | `POST {{base_url}}/purchase-orders/{{purchase_order_id}}/cancel` |
 
-Relasi: `purchase_orders` memakai `supplier_id`. Setiap item memakai `product_id` dan menyimpan snapshot `product_name`, `product_sku`, dan `unit`. Stock belum berubah saat purchase order dibuat atau di-order.
+Relasi: `purchase_orders` memakai `supplier_id`. Setiap item memakai `product_sku_id` dan menyimpan snapshot `product_name`, `product_sku`, dan `unit`. Stock belum berubah saat purchase order dibuat atau di-order.
 
 Contoh create request:
 
@@ -485,7 +544,7 @@ Contoh create request:
   "notes": "Initial stock order",
   "items": [
     {
-      "product_id": {{product_id}},
+      "product_sku_id": {{product_sku_id}},
       "quantity_ordered": 20,
       "unit_cost": 2500
     }
@@ -600,7 +659,7 @@ Goods receipt dipakai untuk menerima barang dari purchase order. Stock baru bert
 | `Goods Receipts > Post Goods Receipt` | `POST {{base_url}}/goods-receipts/{{goods_receipt_id}}/post` |
 | `Goods Receipts > Cancel Goods Receipt` | `POST {{base_url}}/goods-receipts/{{goods_receipt_id}}/cancel` |
 
-Relasi: `goods_receipts.purchase_order_id` mengarah ke purchase order yang statusnya `ordered` atau `partially_received`. `goods_receipt_items.purchase_order_item_id` harus berasal dari purchase order tersebut. Saat diposting, sistem menaikkan `products.stock`, mengubah `purchase_order_items.quantity_received`, mengubah status purchase order, dan menulis `stock_movements`.
+Relasi: `goods_receipts.purchase_order_id` mengarah ke purchase order yang statusnya `ordered` atau `partially_received`. `goods_receipt_items.purchase_order_item_id` harus berasal dari purchase order tersebut. Saat diposting, sistem menaikkan `product_skus.stock`, mengubah `purchase_order_items.quantity_received`, mengubah status purchase order, dan menulis `stock_movements`.
 
 Contoh create request:
 
@@ -644,6 +703,7 @@ Contoh create response:
       "goods_receipt_id": 1,
       "purchase_order_item_id": 1,
       "product_id": 1,
+      "product_sku_id": 1,
       "product_name": "Mineral Water",
       "product_sku": "WTR-001",
       "unit": "pcs",
@@ -689,6 +749,7 @@ Contoh post response:
       "goods_receipt_id": 1,
       "purchase_order_item_id": 1,
       "product_id": 1,
+      "product_sku_id": 1,
       "product_name": "Mineral Water",
       "product_sku": "WTR-001",
       "unit": "pcs",
@@ -724,7 +785,7 @@ Stock adjustment dipakai untuk koreksi stok fisik, barang rusak, barang hilang, 
 | `Stock Adjustments > Post Stock Adjustment` | `POST {{base_url}}/stock-adjustments/{{stock_adjustment_id}}/post` |
 | `Stock Adjustments > Cancel Stock Adjustment` | `POST {{base_url}}/stock-adjustments/{{stock_adjustment_id}}/cancel` |
 
-Relasi: item adjustment memakai `product_id`. Saat adjustment dibuat, backend menyimpan `stock_before` dari produk saat itu. Saat diposting, stock produk harus masih sama dengan `stock_before`, lalu sistem mengubah `products.stock` menjadi `stock_after` dan menulis `stock_movements`.
+Relasi: item adjustment memakai `product_sku_id`. Saat adjustment dibuat, backend menyimpan `stock_before` dari SKU/kemasan saat itu. Saat diposting, stock SKU harus masih sama dengan `stock_before`, lalu sistem mengubah `product_skus.stock` menjadi `stock_after` dan menulis `stock_movements`.
 
 Contoh create request:
 
@@ -735,7 +796,7 @@ Contoh create request:
   "notes": "Physical stock correction",
   "items": [
     {
-      "product_id": {{product_id}},
+      "product_sku_id": {{product_sku_id}},
       "stock_after": 95,
       "notes": "Counted manually"
     }
@@ -766,6 +827,7 @@ Contoh create response:
       "id": 1,
       "stock_adjustment_id": 1,
       "product_id": 1,
+      "product_sku_id": 1,
       "product_name": "Mineral Water",
       "product_sku": "WTR-001",
       "unit": "pcs",
@@ -810,6 +872,7 @@ Contoh post response:
       "id": 1,
       "stock_adjustment_id": 1,
       "product_id": 1,
+      "product_sku_id": 1,
       "product_name": "Mineral Water",
       "product_sku": "WTR-001",
       "unit": "pcs",
@@ -832,9 +895,41 @@ Contoh cancel request:
 }
 ```
 
-## 9. Sales / Point of Sale
+## 9. Stock Conversion
 
-Sales adalah transaksi kasir. Saat sale berhasil dibuat, backend langsung mengurangi stok produk dan menulis `stock_movements` dengan `movement_type = sale`.
+Stock conversion dipakai untuk memecah atau menggabungkan stok antar SKU/kemasan secara manual. Contoh: 1 SKU dus Indomie dikonversi menjadi 40 SKU eceran Indomie.
+
+| Request | Endpoint |
+| --- | --- |
+| `Stock Conversions > List Stock Conversions` | `GET {{base_url}}/stock-conversions?search=&from=&to=&limit=50&offset=0` |
+| `Stock Conversions > Create Stock Conversion` | `POST {{base_url}}/stock-conversions` |
+| `Stock Conversions > Get Stock Conversion` | `GET {{base_url}}/stock-conversions/{{stock_conversion_id}}` |
+| `Stock Conversions > Post Stock Conversion` | `POST {{base_url}}/stock-conversions/{{stock_conversion_id}}/post` |
+| `Stock Conversions > Cancel Stock Conversion` | `POST {{base_url}}/stock-conversions/{{stock_conversion_id}}/cancel` |
+
+Contoh create request:
+
+```json
+{
+  "converted_at": "2026-05-18T10:58:00Z",
+  "notes": "Pecah dus ke eceran",
+  "items": [
+    {
+      "from_product_sku_id": {{product_sku_dus_id}},
+      "from_quantity": 1,
+      "to_product_sku_id": {{product_sku_pcs_id}},
+      "to_quantity": 40,
+      "notes": "1 dus isi 40 pcs"
+    }
+  ]
+}
+```
+
+Saat diposting, backend mengurangi stok SKU sumber, menambah stok SKU tujuan, dan menulis `stock_movements` dengan `movement_type = conversion_out` dan `conversion_in`.
+
+## 10. Sales / Point of Sale
+
+Sales adalah transaksi kasir. Saat sale berhasil dibuat, backend langsung mengurangi stok SKU/kemasan dan menulis `stock_movements` dengan `movement_type = sale`.
 
 | Postman request | Endpoint |
 | --- | --- |
@@ -843,7 +938,7 @@ Sales adalah transaksi kasir. Saat sale berhasil dibuat, backend langsung mengur
 | `Sales > Get Sale` | `GET {{base_url}}/sales/{{sale_id}}` |
 | `Sales > Cancel Sale` | `POST {{base_url}}/sales/{{sale_id}}/cancel` |
 
-Relasi: item sale memakai `product_id`. Backend mengambil snapshot `product_name`, `product_sku`, `unit`, dan `selling_price`. `cashier_id` diambil dari token user yang login. Cashier hanya bisa melihat sales miliknya, admin bisa melihat semua sales.
+Relasi: item sale memakai `product_sku_id`. Backend mengambil snapshot `product_name`, `product_sku`, `unit`, dan `selling_price`. `cashier_id` diambil dari token user yang login. Cashier hanya bisa melihat sales miliknya, admin bisa melihat semua sales.
 
 Contoh create request:
 
@@ -854,7 +949,7 @@ Contoh create request:
   "notes": "Cash sale",
   "items": [
     {
-      "product_id": {{product_id}},
+      "product_sku_id": {{product_sku_id}},
       "quantity": 2
     }
   ]
@@ -886,6 +981,7 @@ Contoh create response:
       "id": 1,
       "sale_id": 1,
       "product_id": 1,
+      "product_sku_id": 1,
       "product_name": "Mineral Water",
       "product_sku": "WTR-001",
       "unit": "pcs",
@@ -931,6 +1027,7 @@ Contoh cancel response:
       "id": 1,
       "sale_id": 1,
       "product_id": 1,
+      "product_sku_id": 1,
       "product_name": "Mineral Water",
       "product_sku": "WTR-001",
       "unit": "pcs",
@@ -945,7 +1042,7 @@ Contoh cancel response:
 
 Catatan penting: cancel sale mengubah status sale menjadi `cancelled`. Dari implementasi saat ini, cancel sale tidak membuat stock movement balik dan tidak otomatis mengembalikan stock.
 
-## 10. Employee Management
+## 11. Employee Management
 
 Employee dipakai untuk payroll slip. Data employee terpisah dari `users`, karena employee adalah data karyawan operasional, sedangkan user adalah akun login sistem.
 
@@ -989,7 +1086,7 @@ Contoh response:
 }
 ```
 
-## 11. Payroll Slips
+## 12. Payroll Slips
 
 Payroll slip dibuat berdasarkan employee. Backend mengambil snapshot nama, posisi, dan base salary employee saat slip dibuat.
 
@@ -1034,7 +1131,7 @@ Contoh response:
 }
 ```
 
-## 12. Dashboard dan Reports
+## 13. Dashboard dan Reports
 
 Dashboard dan reports membaca agregasi data dari flow sebelumnya. Endpoint ini tidak mengubah data.
 
@@ -1053,7 +1150,7 @@ Relasi:
 
 - Dashboard membaca sales hari ini, low stock product, pending purchase order, draft stock adjustment, dan active employee.
 - Sales reports membaca transaksi `sales` yang statusnya `completed`.
-- Stock report membaca kondisi `products.stock` dan quantity yang masih on order.
+- Stock report membaca kondisi `product_skus.stock` dan quantity yang masih on order.
 - Purchase order report membaca progress ordered vs received.
 - Goods receipt report membaca penerimaan barang.
 - Stock adjustment report membaca koreksi stok.
@@ -1199,7 +1296,7 @@ Contoh payroll report response:
 ]
 ```
 
-## 13. Urutan Uji End-to-End di Postman
+## 14. Urutan Uji End-to-End di Postman
 
 Urutan yang disarankan saat menjalankan collection:
 
@@ -1238,10 +1335,10 @@ product_categories
   -> products.category_id
 
 products
-  -> purchase_order_items.product_id
-  -> goods_receipt_items.product_id
-  -> stock_adjustment_items.product_id
-  -> sale_items.product_id
+  -> purchase_order_items.product_sku_id
+  -> goods_receipt_items.product_sku_id
+  -> stock_adjustment_items.product_sku_id
+  -> sale_items.product_sku_id
 
 suppliers
   -> purchase_orders.supplier_id
@@ -1251,15 +1348,15 @@ purchase_orders
   -> purchase_order_items.quantity_received
 
 goods_receipts posted
-  -> products.stock increases
+  -> product_skus.stock increases
   -> stock_movements movement_type = purchase_receipt
 
 stock_adjustments posted
-  -> products.stock becomes stock_after
+  -> product_skus.stock becomes stock_after
   -> stock_movements movement_type = adjustment
 
 sales completed
-  -> products.stock decreases
+  -> product_skus.stock decreases
   -> stock_movements movement_type = sale
 
 employees

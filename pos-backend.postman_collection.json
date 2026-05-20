@@ -53,6 +53,30 @@
       "value": "1"
     },
     {
+      "key": "unit_id",
+      "value": "1"
+    },
+    {
+      "key": "unit_pcs_id",
+      "value": "1"
+    },
+    {
+      "key": "unit_dus_id",
+      "value": "2"
+    },
+    {
+      "key": "product_sku_id",
+      "value": "1"
+    },
+    {
+      "key": "product_sku_from_id",
+      "value": "1"
+    },
+    {
+      "key": "product_sku_to_id",
+      "value": "2"
+    },
+    {
       "key": "supplier_id",
       "value": "1"
     },
@@ -70,6 +94,10 @@
     },
     {
       "key": "stock_adjustment_id",
+      "value": "1"
+    },
+    {
+      "key": "stock_conversion_id",
       "value": "1"
     },
     {
@@ -429,7 +457,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"category_id\": {{category_id}},\n  \"name\": \"Mineral Water\",\n  \"sku\": \"WTR-001\",\n  \"purchase_price\": 2500,\n  \"selling_price\": 4000,\n  \"stock\": 100,\n  \"minimum_stock\": 10,\n  \"unit\": \"pcs\",\n  \"is_active\": true\n}"
+              "raw": "{\n  \"category_id\": {{category_id}},\n  \"name\": \"Mineral Water\",\n  \"is_active\": true\n}"
             },
             "url": "{{base_url}}/products"
           },
@@ -456,7 +484,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"category_id\": {{category_id}},\n  \"name\": \"Mineral Water Updated\",\n  \"sku\": \"WTR-001\",\n  \"purchase_price\": 2600,\n  \"selling_price\": 4500,\n  \"minimum_stock\": 15,\n  \"unit\": \"pcs\",\n  \"is_active\": true\n}"
+              "raw": "{\n  \"category_id\": {{category_id}},\n  \"name\": \"Mineral Water Updated\",\n  \"is_active\": true\n}"
             },
             "url": "{{base_url}}/products/{{product_id}}"
           },
@@ -468,6 +496,203 @@
             "method": "DELETE",
             "header": [],
             "url": "{{base_url}}/products/{{product_id}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Units",
+      "item": [
+        {
+          "name": "List Units",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/units?search=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Unit",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.id) pm.collectionVariables.set('unit_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"botol\",\n  \"name\": \"Botol\",\n  \"allow_decimal\": false,\n  \"is_active\": true\n}"
+            },
+            "url": "{{base_url}}/units"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Unit",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/units/{{unit_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Unit",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"botol\",\n  \"name\": \"Botol\",\n  \"allow_decimal\": false,\n  \"is_active\": true\n}"
+            },
+            "url": "{{base_url}}/units/{{unit_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Unit",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/units/{{unit_id}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Product SKUs",
+      "item": [
+        {
+          "name": "List Product SKUs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/product-skus?search=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Retail Product SKU",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.id) pm.collectionVariables.set('product_sku_id', json.id);",
+                  "  if (json.id) pm.collectionVariables.set('product_sku_to_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": {{product_id}},\n  \"sku\": \"WTR-001-PCS\",\n  \"barcode\": \"8990000000011\",\n  \"unit_id\": {{unit_pcs_id}},\n  \"contents_qty\": 1,\n  \"purchase_price\": 2500,\n  \"selling_price\": 4000,\n  \"stock\": 100,\n  \"minimum_stock\": 10,\n  \"is_active\": true\n}"
+            },
+            "url": "{{base_url}}/product-skus"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Package Product SKU",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.id) pm.collectionVariables.set('product_sku_from_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": {{product_id}},\n  \"sku\": \"WTR-001-DUS\",\n  \"barcode\": \"8990000000012\",\n  \"unit_id\": {{unit_dus_id}},\n  \"contents_qty\": 40,\n  \"purchase_price\": 95000,\n  \"selling_price\": 120000,\n  \"stock\": 5,\n  \"minimum_stock\": 1,\n  \"is_active\": true\n}"
+            },
+            "url": "{{base_url}}/product-skus"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product SKU",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/product-skus/{{product_sku_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product SKU",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"WTR-001-PCS\",\n  \"barcode\": \"8990000000011\",\n  \"unit_id\": {{unit_pcs_id}},\n  \"contents_qty\": 1,\n  \"purchase_price\": 2600,\n  \"selling_price\": 4500,\n  \"minimum_stock\": 15,\n  \"is_active\": true\n}"
+            },
+            "url": "{{base_url}}/product-skus/{{product_sku_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product SKU",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/product-skus/{{product_sku_id}}"
           },
           "response": []
         }
@@ -594,7 +819,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"supplier_id\": {{supplier_id}},\n  \"order_date\": \"2026-05-18\",\n  \"expected_date\": \"2026-05-20\",\n  \"notes\": \"Initial stock order\",\n  \"items\": [\n    {\n      \"product_id\": {{product_id}},\n      \"quantity_ordered\": 20,\n      \"unit_cost\": 2500\n    }\n  ]\n}"
+              "raw": "{\n  \"supplier_id\": {{supplier_id}},\n  \"order_date\": \"2026-05-18\",\n  \"expected_date\": \"2026-05-20\",\n  \"notes\": \"Initial stock order\",\n  \"items\": [\n    {\n      \"product_sku_id\": {{product_sku_id}},\n      \"quantity_ordered\": 20,\n      \"unit_cost\": 2500\n    }\n  ]\n}"
             },
             "url": "{{base_url}}/purchase-orders"
           },
@@ -758,7 +983,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"adjusted_at\": \"2026-05-18T10:30:00Z\",\n  \"reason\": \"Stock opname\",\n  \"notes\": \"Physical stock correction\",\n  \"items\": [\n    {\n      \"product_id\": {{product_id}},\n      \"stock_after\": 95,\n      \"notes\": \"Counted manually\"\n    }\n  ]\n}"
+              "raw": "{\n  \"adjusted_at\": \"2026-05-18T10:30:00Z\",\n  \"reason\": \"Stock opname\",\n  \"notes\": \"Physical stock correction\",\n  \"items\": [\n    {\n      \"product_sku_id\": {{product_sku_id}},\n      \"stock_after\": 95,\n      \"notes\": \"Counted manually\"\n    }\n  ]\n}"
             },
             "url": "{{base_url}}/stock-adjustments"
           },
@@ -803,6 +1028,88 @@
       ]
     },
     {
+      "name": "Stock Conversions",
+      "item": [
+        {
+          "name": "List Stock Conversions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/stock-conversions?search=&from=&to=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Stock Conversion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.id) pm.collectionVariables.set('stock_conversion_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"converted_at\": \"2026-05-18T10:45:00Z\",\n  \"notes\": \"Manual package conversion\",\n  \"items\": [\n    {\n      \"from_product_sku_id\": {{product_sku_from_id}},\n      \"from_quantity\": 1,\n      \"to_product_sku_id\": {{product_sku_to_id}},\n      \"to_quantity\": 40,\n      \"notes\": \"1 dus isi 40 pcs\"\n    }\n  ]\n}"
+            },
+            "url": "{{base_url}}/stock-conversions"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Stock Conversion",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/stock-conversions/{{stock_conversion_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Post Stock Conversion",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/stock-conversions/{{stock_conversion_id}}/post"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Stock Conversion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Wrong input\"\n}"
+            },
+            "url": "{{base_url}}/stock-conversions/{{stock_conversion_id}}/cancel"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Sales",
       "item": [
         {
@@ -840,7 +1147,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"sold_at\": \"2026-05-18T11:00:00Z\",\n  \"paid_amount\": 10000,\n  \"notes\": \"Cash sale\",\n  \"items\": [\n    {\n      \"product_id\": {{product_id}},\n      \"quantity\": 2\n    }\n  ]\n}"
+              "raw": "{\n  \"sold_at\": \"2026-05-18T11:00:00Z\",\n  \"paid_amount\": 10000,\n  \"notes\": \"Cash sale\",\n  \"items\": [\n    {\n      \"product_sku_id\": {{product_sku_id}},\n      \"quantity\": 2\n    }\n  ]\n}"
             },
             "url": "{{base_url}}/sales"
           },

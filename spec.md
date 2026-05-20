@@ -57,30 +57,47 @@ Fitur utama MVP:
   - `description`
   - `is_active`
   - `created_at`, `updated_at`, `deleted_at`
-- CRUD produk menggunakan tabel `products`.
+- CRUD produk menggunakan tabel `products` sebagai produk induk.
 - Field `products`:
   - `category_id`
   - `name`
+  - `is_active`
+  - `created_at`, `updated_at`, `deleted_at`
+- CRUD satuan menggunakan tabel `units`.
+- Field `units`:
+  - `code`, contoh: pcs, dus, kg, liter
+  - `name`
+  - `allow_decimal`
+  - `is_active`
+  - `created_at`, `updated_at`, `deleted_at`
+- CRUD SKU/kemasan produk menggunakan tabel `product_skus`.
+- Field `product_skus`:
+  - `product_id`
   - `sku`
+  - `barcode`
+  - `unit_id`
+  - `contents_qty`
   - `purchase_price`
   - `selling_price`
   - `stock`
   - `minimum_stock`
-  - `unit`, contoh: pcs, kg, liter
   - `is_active`
   - `created_at`, `updated_at`, `deleted_at`
-- `sku` harus unik untuk produk yang belum soft deleted.
-- Tampilkan peringatan jika `stock <= minimum_stock`.
+- `sku` dan `barcode` harus unik untuk SKU/kemasan yang belum soft deleted.
+- Satu produk induk bisa punya beberapa SKU/kemasan, misalnya Indomie eceran dan Indomie dus.
+- Tampilkan peringatan jika `product_skus.stock <= product_skus.minimum_stock`.
 
 4. Inventory Flow and Stock Movements
-- `products.stock` adalah stok tersedia saat ini.
+- `product_skus.stock` adalah stok tersedia saat ini per SKU/kemasan.
 - Setiap perubahan stok final wajib dicatat di `stock_movements`.
 - Field `stock_movements`:
   - `product_id`
+  - `product_sku_id`
   - `sale_id`, `sale_item_id` untuk stok keluar dari penjualan
   - `goods_receipt_id`, `goods_receipt_item_id` untuk stok masuk dari penerimaan barang
   - `stock_adjustment_id`, `stock_adjustment_item_id` untuk adjustment stok
-  - `movement_type`: `stock_in`, `stock_out`, `sale`, `purchase_receipt`, `adjustment`, `correction`
+  - `stock_conversion_id`, `stock_conversion_item_id` untuk konversi manual antar SKU/kemasan
+  - `movement_type`: `stock_in`, `stock_out`, `sale`, `purchase_receipt`, `adjustment`, `conversion_in`, `conversion_out`, `correction`
   - `quantity`
   - `stock_before`
   - `stock_after`
@@ -90,6 +107,7 @@ Fitur utama MVP:
 - Stok berkurang saat `sales.status = completed`.
 - Stok bertambah saat `goods_receipts.status = posted`.
 - Stok berubah sesuai `stock_adjustment_items.stock_after` saat `stock_adjustments.status = posted`.
+- Stok antar SKU/kemasan berubah hanya lewat dokumen `stock_conversions`, misalnya 1 dus menjadi 40 pcs.
 - Dokumen dengan status `draft` atau `cancelled` tidak boleh mengubah stok.
 - Dokumen yang sudah `posted` tidak boleh diedit; koreksi dilakukan dengan dokumen baru.
 
@@ -122,7 +140,8 @@ Fitur utama MVP:
 - Field `purchase_order_items`:
   - `purchase_order_id`
   - `product_id`
-  - `product_name`, `product_sku`, `unit` sebagai snapshot data produk
+  - `product_sku_id`
+  - `product_name`, `product_sku`, `unit` sebagai snapshot data SKU/kemasan
   - `quantity_ordered`
   - `quantity_received`
   - `unit_cost`
@@ -142,7 +161,8 @@ Fitur utama MVP:
   - `goods_receipt_id`
   - `purchase_order_item_id`
   - `product_id`
-  - `product_name`, `product_sku`, `unit` sebagai snapshot data produk
+  - `product_sku_id`
+  - `product_name`, `product_sku`, `unit` sebagai snapshot data SKU/kemasan
   - `quantity_received`
   - `unit_cost`
   - `line_total`
@@ -150,7 +170,7 @@ Fitur utama MVP:
 - Validasi:
   - Produk yang diterima harus berasal dari item `purchase_orders`.
   - `goods_receipt_items.quantity_received` tidak boleh melebihi sisa `purchase_order_items.quantity_ordered - purchase_order_items.quantity_received`.
-  - Saat `goods_receipts` diposting, aplikasi menambah `products.stock`, memperbarui `purchase_order_items.quantity_received`, memperbarui status `purchase_orders`, dan menulis `stock_movements`.
+  - Saat `goods_receipts` diposting, aplikasi menambah `product_skus.stock`, memperbarui `purchase_order_items.quantity_received`, memperbarui status `purchase_orders`, dan menulis `stock_movements`.
 
 7. Stock Adjustments
 - Admin bisa membuat adjustment stok untuk koreksi stok fisik, barang rusak, barang hilang, atau koreksi input.
@@ -168,7 +188,8 @@ Fitur utama MVP:
 - Field `stock_adjustment_items`:
   - `stock_adjustment_id`
   - `product_id`
-  - `product_name`, `product_sku`, `unit` sebagai snapshot data produk
+  - `product_sku_id`
+  - `product_name`, `product_sku`, `unit` sebagai snapshot data SKU/kemasan
   - `stock_before`
   - `stock_after`
   - `quantity_delta`
@@ -177,10 +198,34 @@ Fitur utama MVP:
 - Validasi:
   - `stock_after` tidak boleh negatif.
   - `stock_after` harus berbeda dari `stock_before`.
-  - Satu produk hanya boleh muncul satu kali dalam satu dokumen adjustment.
-  - Saat adjustment diposting, aplikasi mengubah `products.stock` menjadi `stock_after` dan menulis `stock_movements` dengan `movement_type = adjustment`.
+  - Satu SKU/kemasan hanya boleh muncul satu kali dalam satu dokumen adjustment.
+  - Saat adjustment diposting, aplikasi mengubah `product_skus.stock` menjadi `stock_after` dan menulis `stock_movements` dengan `movement_type = adjustment`.
 
-8. Point of Sale
+8. Stock Conversions
+- Admin bisa membuat konversi stok manual antar SKU/kemasan produk.
+- Contoh: Indomie dus dikonversi menjadi Indomie eceran.
+- Field `stock_conversions`:
+  - `conversion_no`
+  - `converted_at`
+  - `status`: `draft`, `posted`, `cancelled`
+  - `notes`
+  - `created_by`
+  - `posted_at`, `posted_by`
+  - `cancelled_at`, `cancelled_by`, `cancel_reason`
+  - `created_at`, `updated_at`
+- Field `stock_conversion_items`:
+  - `stock_conversion_id`
+  - `from_product_id`, `from_product_sku_id`
+  - `from_product_name`, `from_product_sku`, `from_unit`
+  - `from_stock_before`, `from_quantity`, `from_stock_after`
+  - `to_product_id`, `to_product_sku_id`
+  - `to_product_name`, `to_product_sku`, `to_unit`
+  - `to_stock_before`, `to_quantity`, `to_stock_after`
+  - `notes`
+  - `created_at`, `updated_at`
+- Saat diposting, SKU sumber berkurang dan SKU tujuan bertambah, lalu sistem menulis dua `stock_movements`: `conversion_out` dan `conversion_in`.
+
+9. Point of Sale
 - Cari produk berdasarkan `name` atau `sku`.
 - Tambahkan produk ke cart.
 - Ubah jumlah item.
@@ -206,21 +251,22 @@ Fitur utama MVP:
 - Field `sale_items`:
   - `sale_id`
   - `product_id`
-  - `product_name`, `product_sku`, `unit` sebagai snapshot data produk
+  - `product_sku_id`
+  - `product_name`, `product_sku`, `unit` sebagai snapshot data SKU/kemasan
   - `quantity`
   - `unit_price`
   - `line_total`
   - `created_at`
-- Saat transaksi berhasil, aplikasi mengurangi `products.stock` dan menulis `stock_movements` dengan `movement_type = sale`.
+- Saat transaksi berhasil, aplikasi mengurangi `product_skus.stock` dan menulis `stock_movements` dengan `movement_type = sale`.
 
-9. Transaction History
+10. Transaction History
 - Lihat daftar transaksi.
 - Detail transaksi.
 - Filter berdasarkan tanggal.
 - Admin bisa melihat semua transaksi.
 - Cashier hanya bisa melihat transaksi miliknya.
 
-10. Employee Management
+11. Employee Management
 - CRUD karyawan menggunakan tabel `employees`.
 - Field `employees`:
   - `name`
@@ -231,7 +277,7 @@ Fitur utama MVP:
   - `is_active`
   - `created_at`, `updated_at`, `deleted_at`
 
-11. Payroll Slips
+12. Payroll Slips
 - Buat slip gaji per karyawan menggunakan tabel `payroll_slips`.
 - Field `payroll_slips`:
   - `slip_no`
@@ -250,7 +296,7 @@ Fitur utama MVP:
   `net_salary = base_salary + bonus - deduction`
 - Slip gaji bisa dilihat dan dicetak sederhana.
 
-12. Reports
+13. Reports
 - Laporan penjualan harian dari `v_daily_sales_report`.
 - Laporan penjualan bulanan dari `v_monthly_sales_report`.
 - Laporan stok barang dari `v_stock_report`.

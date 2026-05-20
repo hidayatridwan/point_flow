@@ -14,7 +14,7 @@ pub async fn dashboard(pool: &PgPool) -> AppResult<DashboardResponse> {
         SELECT
             (SELECT COUNT(*) FROM sales WHERE status = 'completed' AND sold_at::date = CURRENT_DATE) AS transaction_count_today,
             (SELECT COALESCE(SUM(total_amount), 0)::float8 FROM sales WHERE status = 'completed' AND sold_at::date = CURRENT_DATE) AS revenue_today,
-            (SELECT COUNT(*) FROM products WHERE deleted_at IS NULL AND is_active = TRUE AND stock <= minimum_stock) AS low_stock_product_count,
+            (SELECT COUNT(*) FROM product_skus ps JOIN products p ON p.id = ps.product_id WHERE ps.deleted_at IS NULL AND ps.is_active = TRUE AND ps.stock <= ps.minimum_stock AND p.deleted_at IS NULL AND p.is_active = TRUE) AS low_stock_product_count,
             (SELECT COUNT(*) FROM purchase_orders WHERE status IN ('ordered', 'partially_received')) AS pending_purchase_order_count,
             (SELECT COUNT(*) FROM stock_adjustments WHERE status = 'draft') AS draft_stock_adjustment_count,
             (SELECT COUNT(*) FROM employees WHERE deleted_at IS NULL AND is_active = TRUE) AS active_employee_count
@@ -78,9 +78,11 @@ pub async fn stock(pool: &PgPool, query: ListQuery) -> AppResult<Vec<StockReport
     sqlx::query_as::<_, StockReport>(
         r#"
         SELECT
-            id,
-            name,
+            product_sku_id,
+            product_id,
+            product_name,
             sku,
+            barcode,
             category_name,
             purchase_price::float8 AS purchase_price,
             selling_price::float8 AS selling_price,
@@ -91,8 +93,8 @@ pub async fn stock(pool: &PgPool, query: ListQuery) -> AppResult<Vec<StockReport
             is_low_stock,
             is_active
         FROM v_stock_report
-        WHERE $1 = '%%' OR lower(name) LIKE $1 OR lower(sku) LIKE $1
-        ORDER BY is_low_stock DESC, name
+        WHERE $1 = '%%' OR lower(product_name) LIKE $1 OR lower(sku) LIKE $1 OR lower(coalesce(barcode, '')) LIKE $1
+        ORDER BY is_low_stock DESC, product_name, sku
         LIMIT $2 OFFSET $3
         "#,
     )

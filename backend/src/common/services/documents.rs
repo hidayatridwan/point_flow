@@ -7,10 +7,12 @@ use crate::{
     models::{
         CancelRequest, CreateGoodsReceiptRequest, CreatePayrollSlipRequest,
         CreatePurchaseOrderRequest, CreateSaleRequest, CreateStockAdjustmentRequest,
-        GoodsReceiptDetailResponse, GoodsReceiptItemResponse, GoodsReceiptResponse, ListQuery,
-        PayrollSlipResponse, PurchaseOrderDetailResponse, PurchaseOrderItemResponse,
-        PurchaseOrderResponse, SaleDetailResponse, SaleItemResponse, SaleResponse,
-        StockAdjustmentDetailResponse, StockAdjustmentItemResponse, StockAdjustmentResponse,
+        CreateStockConversionRequest, GoodsReceiptDetailResponse, GoodsReceiptItemResponse,
+        GoodsReceiptResponse, ListQuery, PayrollSlipResponse, PurchaseOrderDetailResponse,
+        PurchaseOrderItemResponse, PurchaseOrderResponse, SaleDetailResponse, SaleItemResponse,
+        SaleResponse, StockAdjustmentDetailResponse, StockAdjustmentItemResponse,
+        StockAdjustmentResponse, StockConversionDetailResponse, StockConversionItemResponse,
+        StockConversionResponse,
     },
 };
 
@@ -44,6 +46,7 @@ const PURCHASE_ORDER_ITEM_SELECT: &str = r#"
         id,
         purchase_order_id,
         product_id,
+        product_sku_id,
         product_name,
         product_sku,
         unit,
@@ -83,6 +86,7 @@ const GOODS_RECEIPT_ITEM_SELECT: &str = r#"
         goods_receipt_id,
         purchase_order_item_id,
         product_id,
+        product_sku_id,
         product_name,
         product_sku,
         unit,
@@ -118,6 +122,7 @@ const STOCK_ADJUSTMENT_ITEM_SELECT: &str = r#"
         id,
         stock_adjustment_id,
         product_id,
+        product_sku_id,
         product_name,
         product_sku,
         unit,
@@ -128,6 +133,50 @@ const STOCK_ADJUSTMENT_ITEM_SELECT: &str = r#"
         created_at,
         updated_at
     FROM stock_adjustment_items
+"#;
+
+const STOCK_CONVERSION_SELECT: &str = r#"
+    SELECT
+        id,
+        conversion_no,
+        converted_at,
+        status::text AS status,
+        notes,
+        created_by,
+        posted_at,
+        posted_by,
+        cancelled_at,
+        cancelled_by,
+        cancel_reason,
+        created_at,
+        updated_at
+    FROM stock_conversions
+"#;
+
+const STOCK_CONVERSION_ITEM_SELECT: &str = r#"
+    SELECT
+        id,
+        stock_conversion_id,
+        from_product_id,
+        from_product_sku_id,
+        from_product_name,
+        from_product_sku,
+        from_unit,
+        from_stock_before::float8 AS from_stock_before,
+        from_quantity::float8 AS from_quantity,
+        from_stock_after::float8 AS from_stock_after,
+        to_product_id,
+        to_product_sku_id,
+        to_product_name,
+        to_product_sku,
+        to_unit,
+        to_stock_before::float8 AS to_stock_before,
+        to_quantity::float8 AS to_quantity,
+        to_stock_after::float8 AS to_stock_after,
+        notes,
+        created_at,
+        updated_at
+    FROM stock_conversion_items
 "#;
 
 const SALE_SELECT: &str = r#"
@@ -157,6 +206,7 @@ const SALE_ITEM_SELECT: &str = r#"
         id,
         sale_id,
         product_id,
+        product_sku_id,
         product_name,
         product_sku,
         unit,
@@ -281,19 +331,20 @@ pub async fn create_purchase_order(
     .await?;
 
     for item in request.items {
-        let product = load_product_snapshot(&mut tx, item.product_id, false).await?;
+        let product = load_product_sku_snapshot(&mut tx, item.product_sku_id, false).await?;
         sqlx::query(
             r#"
             INSERT INTO purchase_order_items (
-                purchase_order_id, product_id, product_name, product_sku, unit,
+                purchase_order_id, product_id, product_sku_id, product_name, product_sku, unit,
                 quantity_ordered, unit_cost
             )
-            VALUES ($1, $2, $3, $4, $5, $6::numeric, $7::numeric)
+            VALUES ($1, $2, $3, $4, $5, $6, $7::numeric, $8::numeric)
             "#,
         )
         .bind(po_id)
+        .bind(product.product_id)
         .bind(product.id)
-        .bind(product.name)
+        .bind(product.product_name)
         .bind(product.sku)
         .bind(product.unit)
         .bind(item.quantity_ordered)
@@ -465,15 +516,16 @@ pub async fn create_goods_receipt(
         sqlx::query(
             r#"
             INSERT INTO goods_receipt_items (
-                goods_receipt_id, purchase_order_item_id, product_id, product_name,
+                goods_receipt_id, purchase_order_item_id, product_id, product_sku_id, product_name,
                 product_sku, unit, quantity_received, unit_cost
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7::numeric, $8::numeric)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8::numeric, $9::numeric)
             "#,
         )
         .bind(gr_id)
         .bind(po_item.id)
         .bind(po_item.product_id)
+        .bind(po_item.product_sku_id)
         .bind(po_item.product_name)
         .bind(po_item.product_sku)
         .bind(po_item.unit)
@@ -525,12 +577,12 @@ pub async fn post_goods_receipt(
             ));
         }
 
-        let product = load_product_snapshot(&mut tx, item.product_id, true).await?;
+        let product = load_product_sku_snapshot(&mut tx, item.product_sku_id, true).await?;
         let stock_before = product.stock;
         let stock_after = stock_before + item.quantity_received;
 
-        sqlx::query("UPDATE products SET stock = $2::numeric WHERE id = $1")
-            .bind(item.product_id)
+        sqlx::query("UPDATE product_skus SET stock = $2::numeric WHERE id = $1")
+            .bind(item.product_sku_id)
             .bind(stock_after)
             .execute(&mut *tx)
             .await?;
@@ -544,6 +596,7 @@ pub async fn post_goods_receipt(
         insert_stock_movement(
             &mut tx,
             item.product_id,
+            item.product_sku_id,
             "purchase_receipt",
             item.quantity_received,
             stock_before,
@@ -554,6 +607,8 @@ pub async fn post_goods_receipt(
             None,
             Some(id),
             Some(item.id),
+            None,
+            None,
             None,
             None,
         )
@@ -679,7 +734,7 @@ pub async fn create_stock_adjustment(
     .await?;
 
     for item in request.items {
-        let product = load_product_snapshot(&mut tx, item.product_id, false).await?;
+        let product = load_product_sku_snapshot(&mut tx, item.product_sku_id, false).await?;
         if (product.stock - item.stock_after).abs() < f64::EPSILON {
             return Err(AppError::Validation(
                 "stock_after must be different from stock_before".to_string(),
@@ -688,15 +743,16 @@ pub async fn create_stock_adjustment(
         sqlx::query(
             r#"
             INSERT INTO stock_adjustment_items (
-                stock_adjustment_id, product_id, product_name, product_sku,
+                stock_adjustment_id, product_id, product_sku_id, product_name, product_sku,
                 unit, stock_before, stock_after, notes
             )
-            VALUES ($1, $2, $3, $4, $5, $6::numeric, $7::numeric, $8)
+            VALUES ($1, $2, $3, $4, $5, $6, $7::numeric, $8::numeric, $9)
             "#,
         )
         .bind(adjustment_id)
+        .bind(product.product_id)
         .bind(product.id)
-        .bind(product.name)
+        .bind(product.product_name)
         .bind(product.sku)
         .bind(product.unit)
         .bind(product.stock)
@@ -734,22 +790,23 @@ pub async fn post_stock_adjustment(
     }
 
     for item in items {
-        let product = load_product_snapshot(&mut tx, item.product_id, true).await?;
+        let product = load_product_sku_snapshot(&mut tx, item.product_sku_id, true).await?;
         if (product.stock - item.stock_before).abs() > f64::EPSILON {
             return Err(AppError::Conflict(format!(
-                "product {} stock changed after adjustment was drafted",
+                "product SKU {} stock changed after adjustment was drafted",
                 item.product_sku
             )));
         }
         let quantity = item.quantity_delta.abs();
-        sqlx::query("UPDATE products SET stock = $2::numeric WHERE id = $1")
-            .bind(item.product_id)
+        sqlx::query("UPDATE product_skus SET stock = $2::numeric WHERE id = $1")
+            .bind(item.product_sku_id)
             .bind(item.stock_after)
             .execute(&mut *tx)
             .await?;
         insert_stock_movement(
             &mut tx,
             item.product_id,
+            item.product_sku_id,
             "adjustment",
             quantity,
             item.stock_before,
@@ -762,6 +819,8 @@ pub async fn post_stock_adjustment(
             None,
             Some(id),
             Some(item.id),
+            None,
+            None,
         )
         .await?;
     }
@@ -804,6 +863,286 @@ pub async fn cancel_stock_adjustment(
     }
 
     find_stock_adjustment(pool, id).await
+}
+
+pub async fn list_stock_conversions(
+    pool: &PgPool,
+    query: ListQuery,
+) -> AppResult<Vec<StockConversionResponse>> {
+    let search = query.search_pattern();
+    let sql = format!(
+        "{STOCK_CONVERSION_SELECT}
+        WHERE ($1 = '%%' OR lower(conversion_no) LIKE $1)
+            AND ($2::date IS NULL OR converted_at::date >= $2)
+            AND ($3::date IS NULL OR converted_at::date <= $3)
+        ORDER BY id DESC
+        LIMIT $4 OFFSET $5"
+    );
+
+    sqlx::query_as::<_, StockConversionResponse>(&sql)
+        .bind(search)
+        .bind(query.from)
+        .bind(query.to)
+        .bind(query.limit())
+        .bind(query.offset())
+        .fetch_all(pool)
+        .await
+        .map_err(Into::into)
+}
+
+pub async fn find_stock_conversion(
+    pool: &PgPool,
+    id: i64,
+) -> AppResult<StockConversionDetailResponse> {
+    let header_sql = format!("{STOCK_CONVERSION_SELECT} WHERE id = $1");
+    let items_sql =
+        format!("{STOCK_CONVERSION_ITEM_SELECT} WHERE stock_conversion_id = $1 ORDER BY id");
+
+    let stock_conversion = sqlx::query_as::<_, StockConversionResponse>(&header_sql)
+        .bind(id)
+        .fetch_optional(pool)
+        .await?
+        .ok_or(AppError::NotFound)?;
+    let items = sqlx::query_as::<_, StockConversionItemResponse>(&items_sql)
+        .bind(id)
+        .fetch_all(pool)
+        .await?;
+
+    Ok(StockConversionDetailResponse {
+        stock_conversion,
+        items,
+    })
+}
+
+pub async fn create_stock_conversion(
+    pool: &PgPool,
+    user: &AuthUser,
+    request: CreateStockConversionRequest,
+) -> AppResult<StockConversionDetailResponse> {
+    if request.items.is_empty() {
+        return Err(AppError::Validation("items must not be empty".to_string()));
+    }
+    for item in &request.items {
+        if item.from_product_sku_id == item.to_product_sku_id {
+            return Err(AppError::Validation(
+                "from_product_sku_id must be different from to_product_sku_id".to_string(),
+            ));
+        }
+        validate_positive(item.from_quantity, "from_quantity")?;
+        validate_positive(item.to_quantity, "to_quantity")?;
+    }
+
+    let mut tx = pool.begin().await?;
+    let conversion_id: i64 = sqlx::query_scalar(
+        r#"
+        INSERT INTO stock_conversions (converted_at, notes, created_by)
+        VALUES (COALESCE($1, now()), $2, $3)
+        RETURNING id
+        "#,
+    )
+    .bind(request.converted_at)
+    .bind(request.notes)
+    .bind(user.id)
+    .fetch_one(&mut *tx)
+    .await?;
+
+    for item in request.items {
+        let from_product =
+            load_product_sku_snapshot(&mut tx, item.from_product_sku_id, false).await?;
+        let to_product = load_product_sku_snapshot(&mut tx, item.to_product_sku_id, false).await?;
+
+        if from_product.product_id != to_product.product_id {
+            return Err(AppError::Validation(
+                "stock conversion SKUs must belong to the same product".to_string(),
+            ));
+        }
+        if from_product.stock < item.from_quantity {
+            return Err(AppError::Conflict(format!(
+                "insufficient stock for product SKU {}",
+                from_product.sku
+            )));
+        }
+
+        sqlx::query(
+            r#"
+            INSERT INTO stock_conversion_items (
+                stock_conversion_id,
+                from_product_id, from_product_sku_id, from_product_name, from_product_sku,
+                from_unit, from_stock_before, from_quantity, from_stock_after,
+                to_product_id, to_product_sku_id, to_product_name, to_product_sku,
+                to_unit, to_stock_before, to_quantity, to_stock_after, notes
+            )
+            VALUES (
+                $1,
+                $2, $3, $4, $5, $6, $7::numeric, $8::numeric, $9::numeric,
+                $10, $11, $12, $13, $14, $15::numeric, $16::numeric, $17::numeric, $18
+            )
+            "#,
+        )
+        .bind(conversion_id)
+        .bind(from_product.product_id)
+        .bind(from_product.id)
+        .bind(from_product.product_name)
+        .bind(from_product.sku)
+        .bind(from_product.unit)
+        .bind(from_product.stock)
+        .bind(item.from_quantity)
+        .bind(from_product.stock - item.from_quantity)
+        .bind(to_product.product_id)
+        .bind(to_product.id)
+        .bind(to_product.product_name)
+        .bind(to_product.sku)
+        .bind(to_product.unit)
+        .bind(to_product.stock)
+        .bind(item.to_quantity)
+        .bind(to_product.stock + item.to_quantity)
+        .bind(item.notes)
+        .execute(&mut *tx)
+        .await?;
+    }
+
+    tx.commit().await?;
+    find_stock_conversion(pool, conversion_id).await
+}
+
+pub async fn post_stock_conversion(
+    pool: &PgPool,
+    user: &AuthUser,
+    id: i64,
+) -> AppResult<StockConversionDetailResponse> {
+    let mut tx = pool.begin().await?;
+    let status: String =
+        sqlx::query_scalar("SELECT status::text FROM stock_conversions WHERE id = $1 FOR UPDATE")
+            .bind(id)
+            .fetch_optional(&mut *tx)
+            .await?
+            .ok_or(AppError::NotFound)?;
+    if status != "draft" {
+        return Err(AppError::Conflict(
+            "stock conversion must be in draft status".to_string(),
+        ));
+    }
+
+    let items = load_stock_conversion_items(&mut tx, id).await?;
+    if items.is_empty() {
+        return Err(AppError::Validation("items must not be empty".to_string()));
+    }
+
+    for item in items {
+        let from_product =
+            load_product_sku_snapshot(&mut tx, item.from_product_sku_id, true).await?;
+        let to_product = load_product_sku_snapshot(&mut tx, item.to_product_sku_id, true).await?;
+
+        if (from_product.stock - item.from_stock_before).abs() > f64::EPSILON {
+            return Err(AppError::Conflict(format!(
+                "product SKU {} stock changed after conversion was drafted",
+                item.from_product_sku
+            )));
+        }
+        if (to_product.stock - item.to_stock_before).abs() > f64::EPSILON {
+            return Err(AppError::Conflict(format!(
+                "product SKU {} stock changed after conversion was drafted",
+                item.to_product_sku
+            )));
+        }
+        if from_product.stock < item.from_quantity {
+            return Err(AppError::Conflict(format!(
+                "insufficient stock for product SKU {}",
+                item.from_product_sku
+            )));
+        }
+
+        sqlx::query("UPDATE product_skus SET stock = $2::numeric WHERE id = $1")
+            .bind(item.from_product_sku_id)
+            .bind(item.from_stock_after)
+            .execute(&mut *tx)
+            .await?;
+        sqlx::query("UPDATE product_skus SET stock = $2::numeric WHERE id = $1")
+            .bind(item.to_product_sku_id)
+            .bind(item.to_stock_after)
+            .execute(&mut *tx)
+            .await?;
+
+        insert_stock_movement(
+            &mut tx,
+            item.from_product_id,
+            item.from_product_sku_id,
+            "conversion_out",
+            item.from_quantity,
+            item.from_stock_before,
+            item.from_stock_after,
+            item.notes.as_deref(),
+            Some(user.id),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(id),
+            Some(item.id),
+        )
+        .await?;
+        insert_stock_movement(
+            &mut tx,
+            item.to_product_id,
+            item.to_product_sku_id,
+            "conversion_in",
+            item.to_quantity,
+            item.to_stock_before,
+            item.to_stock_after,
+            item.notes.as_deref(),
+            Some(user.id),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(id),
+            Some(item.id),
+        )
+        .await?;
+    }
+
+    sqlx::query(
+        "UPDATE stock_conversions SET status = 'posted', posted_at = now(), posted_by = $2 WHERE id = $1",
+    )
+    .bind(id)
+    .bind(user.id)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+    find_stock_conversion(pool, id).await
+}
+
+pub async fn cancel_stock_conversion(
+    pool: &PgPool,
+    user: &AuthUser,
+    id: i64,
+    request: CancelRequest,
+) -> AppResult<StockConversionDetailResponse> {
+    let result = sqlx::query(
+        r#"
+        UPDATE stock_conversions
+        SET status = 'cancelled', cancelled_at = now(), cancelled_by = $2, cancel_reason = $3
+        WHERE id = $1 AND status = 'draft'
+        "#,
+    )
+    .bind(id)
+    .bind(user.id)
+    .bind(request.reason)
+    .execute(pool)
+    .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::Conflict(
+            "only draft stock conversions can be cancelled".to_string(),
+        ));
+    }
+
+    find_stock_conversion(pool, id).await
 }
 
 pub async fn list_sales(
@@ -881,10 +1220,10 @@ pub async fn create_sale(
 
     for item in request.items {
         validate_positive(item.quantity, "quantity")?;
-        let product = load_product_snapshot(&mut tx, item.product_id, true).await?;
+        let product = load_product_sku_snapshot(&mut tx, item.product_sku_id, true).await?;
         if product.stock < item.quantity {
             return Err(AppError::Conflict(format!(
-                "insufficient stock for product {}",
+                "insufficient stock for product SKU {}",
                 product.sku
             )));
         }
@@ -921,15 +1260,16 @@ pub async fn create_sale(
         let sale_item_id: i64 = sqlx::query_scalar(
             r#"
             INSERT INTO sale_items (
-                sale_id, product_id, product_name, product_sku, unit, quantity, unit_price
+                sale_id, product_id, product_sku_id, product_name, product_sku, unit, quantity, unit_price
             )
-            VALUES ($1, $2, $3, $4, $5, $6::numeric, $7::numeric)
+            VALUES ($1, $2, $3, $4, $5, $6, $7::numeric, $8::numeric)
             RETURNING id
             "#,
         )
         .bind(sale_id)
+        .bind(product.product_id)
         .bind(product.id)
-        .bind(product.name)
+        .bind(product.product_name)
         .bind(product.sku)
         .bind(product.unit)
         .bind(quantity)
@@ -939,13 +1279,14 @@ pub async fn create_sale(
 
         let stock_before = product.stock;
         let stock_after = stock_before - quantity;
-        sqlx::query("UPDATE products SET stock = $2::numeric WHERE id = $1")
+        sqlx::query("UPDATE product_skus SET stock = $2::numeric WHERE id = $1")
             .bind(product.id)
             .bind(stock_after)
             .execute(&mut *tx)
             .await?;
         insert_stock_movement(
             &mut tx,
+            product.product_id,
             product.id,
             "sale",
             quantity,
@@ -955,6 +1296,8 @@ pub async fn create_sale(
             Some(user.id),
             Some(sale_id),
             Some(sale_item_id),
+            None,
+            None,
             None,
             None,
             None,
@@ -1089,32 +1432,40 @@ pub async fn create_payroll_slip(
 }
 
 #[derive(Debug, Clone)]
-struct ProductSnapshot {
+struct ProductSkuSnapshot {
     id: i64,
-    name: String,
+    product_id: i64,
+    product_name: String,
     sku: String,
     unit: String,
     stock: f64,
     selling_price: f64,
 }
 
-async fn load_product_snapshot(
+async fn load_product_sku_snapshot(
     tx: &mut Transaction<'_, Postgres>,
     id: i64,
     for_update: bool,
-) -> AppResult<ProductSnapshot> {
+) -> AppResult<ProductSkuSnapshot> {
     let lock = if for_update { " FOR UPDATE" } else { "" };
     let sql = format!(
         r#"
         SELECT
-            id,
-            name,
-            sku,
-            unit,
-            stock::float8 AS stock,
-            selling_price::float8 AS selling_price
-        FROM products
-        WHERE id = $1 AND deleted_at IS NULL AND is_active = TRUE
+            ps.id,
+            ps.product_id,
+            p.name AS product_name,
+            ps.sku,
+            u.code AS unit,
+            ps.stock::float8 AS stock,
+            ps.selling_price::float8 AS selling_price
+        FROM product_skus ps
+        JOIN products p ON p.id = ps.product_id
+        JOIN units u ON u.id = ps.unit_id
+        WHERE ps.id = $1
+            AND ps.deleted_at IS NULL
+            AND ps.is_active = TRUE
+            AND p.deleted_at IS NULL
+            AND p.is_active = TRUE
         {lock}
         "#
     );
@@ -1125,9 +1476,10 @@ async fn load_product_snapshot(
         .await?
         .ok_or(AppError::NotFound)?;
 
-    Ok(ProductSnapshot {
+    Ok(ProductSkuSnapshot {
         id: row.get("id"),
-        name: row.get("name"),
+        product_id: row.get("product_id"),
+        product_name: row.get("product_name"),
         sku: row.get("sku"),
         unit: row.get("unit"),
         stock: row.get("stock"),
@@ -1176,6 +1528,19 @@ async fn load_stock_adjustment_items(
         .map_err(Into::into)
 }
 
+async fn load_stock_conversion_items(
+    tx: &mut Transaction<'_, Postgres>,
+    stock_conversion_id: i64,
+) -> AppResult<Vec<StockConversionItemResponse>> {
+    let sql = format!("{STOCK_CONVERSION_ITEM_SELECT} WHERE stock_conversion_id = $1 ORDER BY id");
+
+    sqlx::query_as::<_, StockConversionItemResponse>(&sql)
+        .bind(stock_conversion_id)
+        .fetch_all(&mut **tx)
+        .await
+        .map_err(Into::into)
+}
+
 async fn update_purchase_order_status(
     tx: &mut Transaction<'_, Postgres>,
     purchase_order_id: i64,
@@ -1208,6 +1573,7 @@ async fn update_purchase_order_status(
 async fn insert_stock_movement(
     tx: &mut Transaction<'_, Postgres>,
     product_id: i64,
+    product_sku_id: i64,
     movement_type: &str,
     quantity: f64,
     stock_before: f64,
@@ -1220,28 +1586,34 @@ async fn insert_stock_movement(
     goods_receipt_item_id: Option<i64>,
     stock_adjustment_id: Option<i64>,
     stock_adjustment_item_id: Option<i64>,
+    stock_conversion_id: Option<i64>,
+    stock_conversion_item_id: Option<i64>,
 ) -> AppResult<()> {
     validate_positive(quantity, "quantity")?;
     sqlx::query(
         r#"
         INSERT INTO stock_movements (
-            product_id, sale_id, sale_item_id, goods_receipt_id, goods_receipt_item_id,
-            stock_adjustment_id, stock_adjustment_item_id, movement_type, quantity,
+            product_id, product_sku_id, sale_id, sale_item_id, goods_receipt_id,
+            goods_receipt_item_id, stock_adjustment_id, stock_adjustment_item_id,
+            stock_conversion_id, stock_conversion_item_id, movement_type, quantity,
             stock_before, stock_after, notes, created_by
         )
         VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8::stock_movement_type,
-            $9::numeric, $10::numeric, $11::numeric, $12, $13
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::stock_movement_type,
+            $12::numeric, $13::numeric, $14::numeric, $15, $16
         )
         "#,
     )
     .bind(product_id)
+    .bind(product_sku_id)
     .bind(sale_id)
     .bind(sale_item_id)
     .bind(goods_receipt_id)
     .bind(goods_receipt_item_id)
     .bind(stock_adjustment_id)
     .bind(stock_adjustment_item_id)
+    .bind(stock_conversion_id)
+    .bind(stock_conversion_item_id)
     .bind(movement_type)
     .bind(quantity)
     .bind(stock_before)

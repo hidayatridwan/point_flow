@@ -25,4 +25,20 @@ pub fn routes() -> Router<AppState> {
             "/stock-adjustments/{id}/cancel",
             post(handler::cancel_stock_adjustment),
         )
+        .route(
+            "/stock-conversions",
+            get(handler::list_stock_conversions).post(handler::create_stock_conversion),
+        )
+        .route(
+            "/stock-conversions/{id}",
+            get(handler::get_stock_conversion),
+        )
+        .route(
+            "/stock-conversions/{id}/post",
+            post(handler::post_stock_conversion),
+        )
+        .route(
+            "/stock-conversions/{id}/cancel",
+            post(handler::cancel_stock_conversion),
+        )
 }

@@ -111,12 +111,6 @@ pub struct ProductResponse {
     pub category_id: Option<i64>,
     pub category_name: Option<String>,
     pub name: String,
-    pub sku: String,
-    pub purchase_price: f64,
-    pub selling_price: f64,
-    pub stock: f64,
-    pub minimum_stock: f64,
-    pub unit: String,
     pub is_active: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -127,12 +121,6 @@ pub struct ProductResponse {
 pub struct CreateProductRequest {
     pub category_id: Option<i64>,
     pub name: String,
-    pub sku: String,
-    pub purchase_price: f64,
-    pub selling_price: f64,
-    pub stock: Option<f64>,
-    pub minimum_stock: Option<f64>,
-    pub unit: Option<String>,
     pub is_active: Option<bool>,
 }
 
@@ -140,11 +128,84 @@ pub struct CreateProductRequest {
 pub struct UpdateProductRequest {
     pub category_id: Option<i64>,
     pub name: Option<String>,
+    pub is_active: Option<bool>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct UnitResponse {
+    pub id: i64,
+    pub code: String,
+    pub name: String,
+    pub allow_decimal: bool,
+    pub is_active: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub deleted_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateUnitRequest {
+    pub code: String,
+    pub name: String,
+    pub allow_decimal: Option<bool>,
+    pub is_active: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateUnitRequest {
+    pub code: Option<String>,
+    pub name: Option<String>,
+    pub allow_decimal: Option<bool>,
+    pub is_active: Option<bool>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct ProductSkuResponse {
+    pub id: i64,
+    pub product_id: i64,
+    pub product_name: String,
+    pub category_id: Option<i64>,
+    pub category_name: Option<String>,
+    pub sku: String,
+    pub barcode: Option<String>,
+    pub unit_id: i64,
+    pub unit_code: String,
+    pub unit_name: String,
+    pub contents_qty: f64,
+    pub purchase_price: f64,
+    pub selling_price: f64,
+    pub stock: f64,
+    pub minimum_stock: f64,
+    pub is_active: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub deleted_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateProductSkuRequest {
+    pub product_id: i64,
+    pub sku: String,
+    pub barcode: Option<String>,
+    pub unit_id: i64,
+    pub contents_qty: Option<f64>,
+    pub purchase_price: f64,
+    pub selling_price: f64,
+    pub stock: Option<f64>,
+    pub minimum_stock: Option<f64>,
+    pub is_active: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateProductSkuRequest {
     pub sku: Option<String>,
+    pub barcode: Option<String>,
+    pub unit_id: Option<i64>,
+    pub contents_qty: Option<f64>,
     pub purchase_price: Option<f64>,
     pub selling_price: Option<f64>,
+    pub stock: Option<f64>,
     pub minimum_stock: Option<f64>,
-    pub unit: Option<String>,
     pub is_active: Option<bool>,
 }
 
@@ -242,6 +303,7 @@ pub struct PurchaseOrderItemResponse {
     pub id: i64,
     pub purchase_order_id: i64,
     pub product_id: i64,
+    pub product_sku_id: i64,
     pub product_name: String,
     pub product_sku: String,
     pub unit: String,
@@ -271,7 +333,7 @@ pub struct CreatePurchaseOrderRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct PurchaseOrderItemInput {
-    pub product_id: i64,
+    pub product_sku_id: i64,
     pub quantity_ordered: f64,
     pub unit_cost: f64,
 }
@@ -301,6 +363,7 @@ pub struct GoodsReceiptItemResponse {
     pub goods_receipt_id: i64,
     pub purchase_order_item_id: i64,
     pub product_id: i64,
+    pub product_sku_id: i64,
     pub product_name: String,
     pub product_sku: String,
     pub unit: String,
@@ -356,6 +419,7 @@ pub struct StockAdjustmentItemResponse {
     pub id: i64,
     pub stock_adjustment_id: i64,
     pub product_id: i64,
+    pub product_sku_id: i64,
     pub product_name: String,
     pub product_sku: String,
     pub unit: String,
@@ -384,8 +448,73 @@ pub struct CreateStockAdjustmentRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct StockAdjustmentItemInput {
-    pub product_id: i64,
+    pub product_sku_id: i64,
     pub stock_after: f64,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct StockConversionResponse {
+    pub id: i64,
+    pub conversion_no: String,
+    pub converted_at: DateTime<Utc>,
+    pub status: String,
+    pub notes: Option<String>,
+    pub created_by: Option<i64>,
+    pub posted_at: Option<DateTime<Utc>>,
+    pub posted_by: Option<i64>,
+    pub cancelled_at: Option<DateTime<Utc>>,
+    pub cancelled_by: Option<i64>,
+    pub cancel_reason: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct StockConversionItemResponse {
+    pub id: i64,
+    pub stock_conversion_id: i64,
+    pub from_product_id: i64,
+    pub from_product_sku_id: i64,
+    pub from_product_name: String,
+    pub from_product_sku: String,
+    pub from_unit: String,
+    pub from_stock_before: f64,
+    pub from_quantity: f64,
+    pub from_stock_after: f64,
+    pub to_product_id: i64,
+    pub to_product_sku_id: i64,
+    pub to_product_name: String,
+    pub to_product_sku: String,
+    pub to_unit: String,
+    pub to_stock_before: f64,
+    pub to_quantity: f64,
+    pub to_stock_after: f64,
+    pub notes: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct StockConversionDetailResponse {
+    #[serde(flatten)]
+    pub stock_conversion: StockConversionResponse,
+    pub items: Vec<StockConversionItemResponse>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateStockConversionRequest {
+    pub converted_at: Option<DateTime<Utc>>,
+    pub notes: Option<String>,
+    pub items: Vec<StockConversionItemInput>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct StockConversionItemInput {
+    pub from_product_sku_id: i64,
+    pub from_quantity: f64,
+    pub to_product_sku_id: i64,
+    pub to_quantity: f64,
     pub notes: Option<String>,
 }
 
@@ -414,6 +543,7 @@ pub struct SaleItemResponse {
     pub id: i64,
     pub sale_id: i64,
     pub product_id: i64,
+    pub product_sku_id: i64,
     pub product_name: String,
     pub product_sku: String,
     pub unit: String,
@@ -440,7 +570,7 @@ pub struct CreateSaleRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct SaleItemInput {
-    pub product_id: i64,
+    pub product_sku_id: i64,
     pub quantity: f64,
 }
 
@@ -499,9 +629,11 @@ pub struct MonthlySalesReport {
 
 #[derive(Debug, Serialize, FromRow)]
 pub struct StockReport {
-    pub id: i64,
-    pub name: String,
+    pub product_sku_id: i64,
+    pub product_id: i64,
+    pub product_name: String,
     pub sku: String,
+    pub barcode: Option<String>,
     pub category_name: Option<String>,
     pub purchase_price: f64,
     pub selling_price: f64,

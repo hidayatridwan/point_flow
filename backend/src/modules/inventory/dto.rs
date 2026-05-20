@@ -1,1 +1,3 @@
-pub use crate::models::{CancelRequest, CreateStockAdjustmentRequest, ListQuery};
+pub use crate::models::{
+    CancelRequest, CreateStockAdjustmentRequest, CreateStockConversionRequest, ListQuery,
+};
