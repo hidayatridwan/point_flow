@@ -8,10 +8,10 @@ use crate::{
     auth::AuthUser,
     error::AppResult,
     models::{
-        CreateProductCategoryRequest, CreateProductRequest, CreateProductSkuRequest,
-        CreateUnitRequest, ListQuery, MessageResponse, ProductCategoryResponse, ProductResponse,
-        ProductSkuResponse, UnitResponse, UpdateProductCategoryRequest, UpdateProductRequest,
-        UpdateProductSkuRequest, UpdateUnitRequest,
+        ApiResponse, CreateProductCategoryRequest, CreateProductRequest, CreateProductSkuRequest,
+        CreateUnitRequest, ListQuery, MessageResponse, PaginationMeta, ProductCategoryResponse,
+        ProductResponse, ProductSkuResponse, UnitResponse, UpdateProductCategoryRequest,
+        UpdateProductRequest, UpdateProductSkuRequest, UpdateUnitRequest,
     },
 };
 
@@ -21,25 +21,34 @@ pub async fn list_categories(
     State(state): State<AppState>,
     _user: AuthUser,
     Query(query): Query<ListQuery>,
-) -> AppResult<Json<Vec<ProductCategoryResponse>>> {
-    Ok(Json(service::list_categories(&state.db, query).await?))
+) -> AppResult<Json<ApiResponse<Vec<ProductCategoryResponse>, PaginationMeta>>> {
+    let categories = service::list_categories(&state.db, query).await?;
+
+    Ok(Json(ApiResponse::success_with_meta(
+        categories.data,
+        categories.meta,
+    )))
 }
 
 pub async fn get_category(
     State(state): State<AppState>,
     _user: AuthUser,
     Path(id): Path<i64>,
-) -> AppResult<Json<ProductCategoryResponse>> {
-    Ok(Json(service::find_category(&state.db, id).await?))
+) -> AppResult<Json<ApiResponse<ProductCategoryResponse>>> {
+    Ok(Json(ApiResponse::success(
+        service::find_category(&state.db, id).await?,
+    )))
 }
 
 pub async fn create_category(
     State(state): State<AppState>,
     user: AuthUser,
     Json(payload): Json<CreateProductCategoryRequest>,
-) -> AppResult<Json<ProductCategoryResponse>> {
+) -> AppResult<Json<ApiResponse<ProductCategoryResponse>>> {
     user.require_admin()?;
-    Ok(Json(service::create_category(&state.db, payload).await?))
+    Ok(Json(ApiResponse::success(
+        service::create_category(&state.db, payload).await?,
+    )))
 }
 
 pub async fn update_category(
@@ -47,46 +56,54 @@ pub async fn update_category(
     user: AuthUser,
     Path(id): Path<i64>,
     Json(payload): Json<UpdateProductCategoryRequest>,
-) -> AppResult<Json<ProductCategoryResponse>> {
+) -> AppResult<Json<ApiResponse<ProductCategoryResponse>>> {
     user.require_admin()?;
-    Ok(Json(
+    Ok(Json(ApiResponse::success(
         service::update_category(&state.db, id, payload).await?,
-    ))
+    )))
 }
 
 pub async fn delete_category(
     State(state): State<AppState>,
     user: AuthUser,
     Path(id): Path<i64>,
-) -> AppResult<Json<MessageResponse>> {
+) -> AppResult<Json<ApiResponse<MessageResponse>>> {
     user.require_admin()?;
     service::delete_category(&state.db, id).await?;
-    Ok(Json(MessageResponse { message: "deleted" }))
+    Ok(Json(ApiResponse::success(MessageResponse {
+        message: "deleted",
+    })))
 }
 
 pub async fn list_products(
     State(state): State<AppState>,
     _user: AuthUser,
     Query(query): Query<ListQuery>,
-) -> AppResult<Json<Vec<ProductResponse>>> {
-    Ok(Json(service::list_products(&state.db, query).await?))
+) -> AppResult<Json<ApiResponse<Vec<ProductResponse>>>> {
+    Ok(Json(ApiResponse::success(
+        service::list_products(&state.db, query).await?,
+    )))
 }
 
 pub async fn get_product(
     State(state): State<AppState>,
     _user: AuthUser,
     Path(id): Path<i64>,
-) -> AppResult<Json<ProductResponse>> {
-    Ok(Json(service::find_product(&state.db, id).await?))
+) -> AppResult<Json<ApiResponse<ProductResponse>>> {
+    Ok(Json(ApiResponse::success(
+        service::find_product(&state.db, id).await?,
+    )))
 }
 
 pub async fn create_product(
     State(state): State<AppState>,
     user: AuthUser,
     Json(payload): Json<CreateProductRequest>,
-) -> AppResult<Json<ProductResponse>> {
+) -> AppResult<Json<ApiResponse<ProductResponse>>> {
     user.require_admin()?;
-    Ok(Json(service::create_product(&state.db, payload).await?))
+    Ok(Json(ApiResponse::success(
+        service::create_product(&state.db, payload).await?,
+    )))
 }
 
 pub async fn update_product(
@@ -94,44 +111,54 @@ pub async fn update_product(
     user: AuthUser,
     Path(id): Path<i64>,
     Json(payload): Json<UpdateProductRequest>,
-) -> AppResult<Json<ProductResponse>> {
+) -> AppResult<Json<ApiResponse<ProductResponse>>> {
     user.require_admin()?;
-    Ok(Json(service::update_product(&state.db, id, payload).await?))
+    Ok(Json(ApiResponse::success(
+        service::update_product(&state.db, id, payload).await?,
+    )))
 }
 
 pub async fn delete_product(
     State(state): State<AppState>,
     user: AuthUser,
     Path(id): Path<i64>,
-) -> AppResult<Json<MessageResponse>> {
+) -> AppResult<Json<ApiResponse<MessageResponse>>> {
     user.require_admin()?;
     service::delete_product(&state.db, id).await?;
-    Ok(Json(MessageResponse { message: "deleted" }))
+    Ok(Json(ApiResponse::success(MessageResponse {
+        message: "deleted",
+    })))
 }
 
 pub async fn list_units(
     State(state): State<AppState>,
     _user: AuthUser,
     Query(query): Query<ListQuery>,
-) -> AppResult<Json<Vec<UnitResponse>>> {
-    Ok(Json(service::list_units(&state.db, query).await?))
+) -> AppResult<Json<ApiResponse<Vec<UnitResponse>>>> {
+    Ok(Json(ApiResponse::success(
+        service::list_units(&state.db, query).await?,
+    )))
 }
 
 pub async fn get_unit(
     State(state): State<AppState>,
     _user: AuthUser,
     Path(id): Path<i64>,
-) -> AppResult<Json<UnitResponse>> {
-    Ok(Json(service::find_unit(&state.db, id).await?))
+) -> AppResult<Json<ApiResponse<UnitResponse>>> {
+    Ok(Json(ApiResponse::success(
+        service::find_unit(&state.db, id).await?,
+    )))
 }
 
 pub async fn create_unit(
     State(state): State<AppState>,
     user: AuthUser,
     Json(payload): Json<CreateUnitRequest>,
-) -> AppResult<Json<UnitResponse>> {
+) -> AppResult<Json<ApiResponse<UnitResponse>>> {
     user.require_admin()?;
-    Ok(Json(service::create_unit(&state.db, payload).await?))
+    Ok(Json(ApiResponse::success(
+        service::create_unit(&state.db, payload).await?,
+    )))
 }
 
 pub async fn update_unit(
@@ -139,44 +166,54 @@ pub async fn update_unit(
     user: AuthUser,
     Path(id): Path<i64>,
     Json(payload): Json<UpdateUnitRequest>,
-) -> AppResult<Json<UnitResponse>> {
+) -> AppResult<Json<ApiResponse<UnitResponse>>> {
     user.require_admin()?;
-    Ok(Json(service::update_unit(&state.db, id, payload).await?))
+    Ok(Json(ApiResponse::success(
+        service::update_unit(&state.db, id, payload).await?,
+    )))
 }
 
 pub async fn delete_unit(
     State(state): State<AppState>,
     user: AuthUser,
     Path(id): Path<i64>,
-) -> AppResult<Json<MessageResponse>> {
+) -> AppResult<Json<ApiResponse<MessageResponse>>> {
     user.require_admin()?;
     service::delete_unit(&state.db, id).await?;
-    Ok(Json(MessageResponse { message: "deleted" }))
+    Ok(Json(ApiResponse::success(MessageResponse {
+        message: "deleted",
+    })))
 }
 
 pub async fn list_product_skus(
     State(state): State<AppState>,
     _user: AuthUser,
     Query(query): Query<ListQuery>,
-) -> AppResult<Json<Vec<ProductSkuResponse>>> {
-    Ok(Json(service::list_product_skus(&state.db, query).await?))
+) -> AppResult<Json<ApiResponse<Vec<ProductSkuResponse>>>> {
+    Ok(Json(ApiResponse::success(
+        service::list_product_skus(&state.db, query).await?,
+    )))
 }
 
 pub async fn get_product_sku(
     State(state): State<AppState>,
     _user: AuthUser,
     Path(id): Path<i64>,
-) -> AppResult<Json<ProductSkuResponse>> {
-    Ok(Json(service::find_product_sku(&state.db, id).await?))
+) -> AppResult<Json<ApiResponse<ProductSkuResponse>>> {
+    Ok(Json(ApiResponse::success(
+        service::find_product_sku(&state.db, id).await?,
+    )))
 }
 
 pub async fn create_product_sku(
     State(state): State<AppState>,
     user: AuthUser,
     Json(payload): Json<CreateProductSkuRequest>,
-) -> AppResult<Json<ProductSkuResponse>> {
+) -> AppResult<Json<ApiResponse<ProductSkuResponse>>> {
     user.require_admin()?;
-    Ok(Json(service::create_product_sku(&state.db, payload).await?))
+    Ok(Json(ApiResponse::success(
+        service::create_product_sku(&state.db, payload).await?,
+    )))
 }
 
 pub async fn update_product_sku(
@@ -184,19 +221,21 @@ pub async fn update_product_sku(
     user: AuthUser,
     Path(id): Path<i64>,
     Json(payload): Json<UpdateProductSkuRequest>,
-) -> AppResult<Json<ProductSkuResponse>> {
+) -> AppResult<Json<ApiResponse<ProductSkuResponse>>> {
     user.require_admin()?;
-    Ok(Json(
+    Ok(Json(ApiResponse::success(
         service::update_product_sku(&state.db, id, payload).await?,
-    ))
+    )))
 }
 
 pub async fn delete_product_sku(
     State(state): State<AppState>,
     user: AuthUser,
     Path(id): Path<i64>,
-) -> AppResult<Json<MessageResponse>> {
+) -> AppResult<Json<ApiResponse<MessageResponse>>> {
     user.require_admin()?;
     service::delete_product_sku(&state.db, id).await?;
-    Ok(Json(MessageResponse { message: "deleted" }))
+    Ok(Json(ApiResponse::success(MessageResponse {
+        message: "deleted",
+    })))
 }

@@ -19,7 +19,7 @@ Authorization: Bearer {{access_token}}
 Catatan:
 
 - Kolom Postman request memakai format `Folder > Request` di dalam file `pos-backend.postman_collection.json`.
-- Placeholder seperti `{{product_id}}`, `{{product_sku_id}}`, dan `{{unit_id}}` adalah variable Postman collection.
+- Placeholder seperti `{{product_id}}`, `{{product_sku_id}}`, `{{unit_pcs_id}}`, `{{unit_dus_id}}`, `{{product_sku_from_id}}`, dan `{{product_sku_to_id}}` adalah variable Postman collection.
 - Response contoh dibuat ringkas agar mudah dibaca, tetapi tetap mengikuti field response backend.
 - Response error umum berbentuk:
 
@@ -358,17 +358,31 @@ Contoh response:
 | Request | Endpoint |
 | --- | --- |
 | `Units > List Units` | `GET {{base_url}}/units?search=&limit=50&offset=0` |
-| `Units > Create Unit` | `POST {{base_url}}/units` |
+| `Units > Create Base Unit (PCS)` | `POST {{base_url}}/units` |
+| `Units > Create Package Unit (DUS)` | `POST {{base_url}}/units` |
 | `Units > Get Unit` | `GET {{base_url}}/units/{{unit_id}}` |
 | `Units > Update Unit` | `PUT {{base_url}}/units/{{unit_id}}` |
 | `Units > Delete Unit` | `DELETE {{base_url}}/units/{{unit_id}}` |
 
-Contoh create request:
+Relasi: `units.id` dipakai oleh `product_skus.unit_id`. Collection membuat dua contoh unit agar SKU eceran dan SKU paket bisa langsung dipakai untuk stock conversion.
+
+Contoh create base unit request:
 
 ```json
 {
   "code": "pcs",
   "name": "Pieces",
+  "allow_decimal": false,
+  "is_active": true
+}
+```
+
+Contoh create package unit request:
+
+```json
+{
+  "code": "dus",
+  "name": "Dus",
   "allow_decimal": false,
   "is_active": true
 }
@@ -384,7 +398,7 @@ Contoh create request:
 | `Products > Update Product` | `PUT {{base_url}}/products/{{product_id}}` |
 | `Products > Delete Product` | `DELETE {{base_url}}/products/{{product_id}}` |
 
-Relasi: `products` adalah produk induk. Produk seperti Indomie dibuat satu kali di sini, lalu kemasan eceran/dus dibuat di `product_skus`.
+Relasi: `products` adalah produk induk. Produk seperti Mineral Water dibuat satu kali di sini, lalu kemasan eceran/dus dibuat di `product_skus`.
 
 Contoh create request:
 
@@ -426,26 +440,44 @@ Contoh update request:
 | Request | Endpoint |
 | --- | --- |
 | `Product SKUs > List Product SKUs` | `GET {{base_url}}/product-skus?search=&limit=50&offset=0` |
-| `Product SKUs > Create Product SKU` | `POST {{base_url}}/product-skus` |
+| `Product SKUs > Create Retail Product SKU` | `POST {{base_url}}/product-skus` |
+| `Product SKUs > Create Package Product SKU` | `POST {{base_url}}/product-skus` |
 | `Product SKUs > Get Product SKU` | `GET {{base_url}}/product-skus/{{product_sku_id}}` |
 | `Product SKUs > Update Product SKU` | `PUT {{base_url}}/product-skus/{{product_sku_id}}` |
 | `Product SKUs > Delete Product SKU` | `DELETE {{base_url}}/product-skus/{{product_sku_id}}` |
 
-Relasi: `product_skus.stock` berubah saat goods receipt diposting, stock adjustment diposting, stock conversion diposting, atau sale dibuat. SKU dan barcode unik di level kemasan.
+Relasi: `product_skus.stock` berubah saat goods receipt diposting, stock adjustment diposting, stock conversion diposting, atau sale dibuat. SKU dan barcode unik di level kemasan. `contents_qty` menyimpan isi unit tersebut terhadap unit dasar, misalnya 1 dus berisi 40 pcs.
 
-Contoh create request:
+Contoh create retail SKU request:
 
 ```json
 {
   "product_id": {{product_id}},
   "sku": "WTR-001-PCS",
   "barcode": "8990000000011",
-  "unit_id": {{unit_id}},
+  "unit_id": {{unit_pcs_id}},
   "contents_qty": 1,
   "purchase_price": 2500,
   "selling_price": 4000,
   "stock": 100,
   "minimum_stock": 10,
+  "is_active": true
+}
+```
+
+Contoh create package SKU request:
+
+```json
+{
+  "product_id": {{product_id}},
+  "sku": "WTR-001-DUS",
+  "barcode": "8990000000012",
+  "unit_id": {{unit_dus_id}},
+  "contents_qty": 40,
+  "purchase_price": 95000,
+  "selling_price": 120000,
+  "stock": 5,
+  "minimum_stock": 1,
   "is_active": true
 }
 ```
@@ -578,8 +610,9 @@ Contoh create response:
       "id": 1,
       "purchase_order_id": 1,
       "product_id": 1,
+      "product_sku_id": 1,
       "product_name": "Mineral Water",
-      "product_sku": "WTR-001",
+      "product_sku": "WTR-001-PCS",
       "unit": "pcs",
       "quantity_ordered": 20,
       "quantity_received": 0,
@@ -625,8 +658,9 @@ Contoh order response:
       "id": 1,
       "purchase_order_id": 1,
       "product_id": 1,
+      "product_sku_id": 1,
       "product_name": "Mineral Water",
-      "product_sku": "WTR-001",
+      "product_sku": "WTR-001-PCS",
       "unit": "pcs",
       "quantity_ordered": 20,
       "quantity_received": 0,
@@ -705,7 +739,7 @@ Contoh create response:
       "product_id": 1,
       "product_sku_id": 1,
       "product_name": "Mineral Water",
-      "product_sku": "WTR-001",
+      "product_sku": "WTR-001-PCS",
       "unit": "pcs",
       "quantity_received": 10,
       "unit_cost": 2500,
@@ -751,7 +785,7 @@ Contoh post response:
       "product_id": 1,
       "product_sku_id": 1,
       "product_name": "Mineral Water",
-      "product_sku": "WTR-001",
+      "product_sku": "WTR-001-PCS",
       "unit": "pcs",
       "quantity_received": 10,
       "unit_cost": 2500,
@@ -829,7 +863,7 @@ Contoh create response:
       "product_id": 1,
       "product_sku_id": 1,
       "product_name": "Mineral Water",
-      "product_sku": "WTR-001",
+      "product_sku": "WTR-001-PCS",
       "unit": "pcs",
       "stock_before": 110,
       "stock_after": 95,
@@ -874,7 +908,7 @@ Contoh post response:
       "product_id": 1,
       "product_sku_id": 1,
       "product_name": "Mineral Water",
-      "product_sku": "WTR-001",
+      "product_sku": "WTR-001-PCS",
       "unit": "pcs",
       "stock_before": 110,
       "stock_after": 95,
@@ -897,7 +931,7 @@ Contoh cancel request:
 
 ## 9. Stock Conversion
 
-Stock conversion dipakai untuk memecah atau menggabungkan stok antar SKU/kemasan secara manual. Contoh: 1 SKU dus Indomie dikonversi menjadi 40 SKU eceran Indomie.
+Stock conversion dipakai untuk memecah atau menggabungkan stok antar SKU/kemasan secara manual. Contoh: 1 SKU dus Mineral Water dikonversi menjadi 40 SKU eceran Mineral Water.
 
 | Request | Endpoint |
 | --- | --- |
@@ -915,9 +949,9 @@ Contoh create request:
   "notes": "Pecah dus ke eceran",
   "items": [
     {
-      "from_product_sku_id": {{product_sku_dus_id}},
+      "from_product_sku_id": {{product_sku_from_id}},
       "from_quantity": 1,
-      "to_product_sku_id": {{product_sku_pcs_id}},
+      "to_product_sku_id": {{product_sku_to_id}},
       "to_quantity": 40,
       "notes": "1 dus isi 40 pcs"
     }
@@ -983,7 +1017,7 @@ Contoh create response:
       "product_id": 1,
       "product_sku_id": 1,
       "product_name": "Mineral Water",
-      "product_sku": "WTR-001",
+      "product_sku": "WTR-001-PCS",
       "unit": "pcs",
       "quantity": 2,
       "unit_price": 4000,
@@ -1029,7 +1063,7 @@ Contoh cancel response:
       "product_id": 1,
       "product_sku_id": 1,
       "product_name": "Mineral Water",
-      "product_sku": "WTR-001",
+      "product_sku": "WTR-001-PCS",
       "unit": "pcs",
       "quantity": 2,
       "unit_price": 4000,
@@ -1200,9 +1234,11 @@ Contoh stock report response:
 ```json
 [
   {
-    "id": 1,
-    "name": "Mineral Water",
-    "sku": "WTR-001",
+    "product_sku_id": 1,
+    "product_id": 1,
+    "product_name": "Mineral Water",
+    "sku": "WTR-001-PCS",
+    "barcode": "8990000000011",
     "category_name": "Beverages",
     "purchase_price": 2500,
     "selling_price": 4000,
@@ -1306,19 +1342,25 @@ Urutan yang disarankan saat menjalankan collection:
 4. `Auth > Me`
 5. `Users > Create User` jika perlu akun cashier
 6. `Product Categories > Create Product Category`
-7. `Products > Create Product`
-8. `Suppliers > Create Supplier`
-9. `Purchase Orders > Create Purchase Order`
-10. `Purchase Orders > Order Purchase Order`
-11. `Goods Receipts > Create Goods Receipt`
-12. `Goods Receipts > Post Goods Receipt`
-13. `Stock Adjustments > Create Stock Adjustment` jika butuh koreksi stok
-14. `Stock Adjustments > Post Stock Adjustment`
-15. `Sales > Create Sale`
-16. `Employees > Create Employee`
-17. `Payroll Slips > Create Payroll Slip`
-18. Jalankan `Reports > Dashboard` dan report lain untuk memeriksa hasil agregasi.
-19. `Auth > Logout` untuk mencabut refresh token aktif.
+7. `Units > Create Base Unit (PCS)`
+8. `Units > Create Package Unit (DUS)`
+9. `Products > Create Product`
+10. `Product SKUs > Create Retail Product SKU`
+11. `Product SKUs > Create Package Product SKU`
+12. `Suppliers > Create Supplier`
+13. `Purchase Orders > Create Purchase Order`
+14. `Purchase Orders > Order Purchase Order`
+15. `Goods Receipts > Create Goods Receipt`
+16. `Goods Receipts > Post Goods Receipt`
+17. `Stock Adjustments > Create Stock Adjustment` jika butuh koreksi stok
+18. `Stock Adjustments > Post Stock Adjustment`
+19. `Stock Conversions > Create Stock Conversion` jika butuh pecah/gabung kemasan
+20. `Stock Conversions > Post Stock Conversion`
+21. `Sales > Create Sale`
+22. `Employees > Create Employee`
+23. `Payroll Slips > Create Payroll Slip`
+24. Jalankan `Reports > Dashboard` dan report lain untuk memeriksa hasil agregasi.
+25. `Auth > Logout` untuk mencabut refresh token aktif.
 
 Ringkasan relasi utama:
 
@@ -1335,9 +1377,17 @@ product_categories
   -> products.category_id
 
 products
+  -> product_skus.product_id
+
+units
+  -> product_skus.unit_id
+
+product_skus
   -> purchase_order_items.product_sku_id
   -> goods_receipt_items.product_sku_id
   -> stock_adjustment_items.product_sku_id
+  -> stock_conversion_items.from_product_sku_id
+  -> stock_conversion_items.to_product_sku_id
   -> sale_items.product_sku_id
 
 suppliers
@@ -1354,6 +1404,11 @@ goods_receipts posted
 stock_adjustments posted
   -> product_skus.stock becomes stock_after
   -> stock_movements movement_type = adjustment
+
+stock_conversions posted
+  -> product_skus.stock decreases for source SKU
+  -> product_skus.stock increases for target SKU
+  -> stock_movements movement_type = conversion_out and conversion_in
 
 sales completed
   -> product_skus.stock decreases

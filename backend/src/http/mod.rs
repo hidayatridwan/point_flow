@@ -2,7 +2,7 @@ use axum::{Json, Router, routing::get};
 
 use crate::{
     app::AppState,
-    models::MessageResponse,
+    models::{ApiResponse, MessageResponse},
     modules::{
         auth, employees, inventory, payroll, procurement, products, reports, sales, suppliers,
         users,
@@ -24,6 +24,6 @@ pub fn router() -> Router<AppState> {
         .merge(reports::routes::routes())
 }
 
-async fn health() -> Json<MessageResponse> {
-    Json(MessageResponse { message: "ok" })
+async fn health() -> Json<ApiResponse<MessageResponse>> {
+    Json(ApiResponse::success(MessageResponse { message: "ok" }))
 }

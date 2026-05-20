@@ -1,18 +1,21 @@
 <script lang="ts">
-	import BadgeCheckIcon from "@lucide/svelte/icons/badge-check";
-	import BellIcon from "@lucide/svelte/icons/bell";
-	import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
-	import CreditCardIcon from "@lucide/svelte/icons/credit-card";
-	import LogOutIcon from "@lucide/svelte/icons/log-out";
-	import SparklesIcon from "@lucide/svelte/icons/sparkles";
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
+	import BadgeCheckIcon from '@lucide/svelte/icons/badge-check';
+	import BellIcon from '@lucide/svelte/icons/bell';
+	import LogOutIcon from '@lucide/svelte/icons/log-out';
 
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import * as Sidebar from "$lib/components/ui/sidebar/index.js";
-	import { useSidebar } from "$lib/components/ui/sidebar/index.js";
+	import { logout } from '$lib/api/session.js';
+	import * as Avatar from '$lib/components/ui/avatar/index.js';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+	import { useSidebar } from '$lib/components/ui/sidebar/index.js';
+
+	const LOGOUT_TRANSITION_DELAY_MS = 700;
 
 	let {
-		user,
+		user
 	}: {
 		user: {
 			name: string;
@@ -22,6 +25,29 @@
 	} = $props();
 
 	const sidebar = useSidebar();
+	let isLoggingOut = $state(false);
+
+	async function handleLogout(event: Event) {
+		if (isLoggingOut) {
+			event.preventDefault();
+			return;
+		}
+
+		isLoggingOut = true;
+		const startedAt = Date.now();
+
+		try {
+			await logout();
+		} finally {
+			await waitForMinimumLoadingDuration(startedAt);
+			void goto(resolve('/login'), { invalidateAll: true, replaceState: true });
+		}
+	}
+
+	function waitForMinimumLoadingDuration(startedAt: number) {
+		const remainingMs = LOGOUT_TRANSITION_DELAY_MS - (Date.now() - startedAt);
+		return new Promise<void>((resolve) => setTimeout(resolve, Math.max(remainingMs, 0)));
+	}
 </script>
 
 <Sidebar.Menu>
@@ -48,7 +74,7 @@
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Content
 				class="w-(--bits-dropdown-menu-anchor-width) min-w-56 rounded-lg"
-				side={sidebar.isMobile ? "bottom" : "right"}
+				side={sidebar.isMobile ? 'bottom' : 'right'}
 				align="end"
 				sideOffset={4}
 			>
@@ -67,19 +93,8 @@
 				<DropdownMenu.Separator />
 				<DropdownMenu.Group>
 					<DropdownMenu.Item>
-						<SparklesIcon />
-						Upgrade to Pro
-					</DropdownMenu.Item>
-				</DropdownMenu.Group>
-				<DropdownMenu.Separator />
-				<DropdownMenu.Group>
-					<DropdownMenu.Item>
 						<BadgeCheckIcon />
 						Account
-					</DropdownMenu.Item>
-					<DropdownMenu.Item>
-						<CreditCardIcon />
-						Billing
 					</DropdownMenu.Item>
 					<DropdownMenu.Item>
 						<BellIcon />
@@ -87,9 +102,9 @@
 					</DropdownMenu.Item>
 				</DropdownMenu.Group>
 				<DropdownMenu.Separator />
-				<DropdownMenu.Item>
+				<DropdownMenu.Item onSelect={handleLogout} disabled={isLoggingOut}>
 					<LogOutIcon />
-					Log out
+					{isLoggingOut ? 'Logging out...' : 'Log out'}
 				</DropdownMenu.Item>
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>

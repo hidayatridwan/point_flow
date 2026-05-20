@@ -5,10 +5,10 @@ use crate::{
     models::{
         CreateEmployeeRequest, CreateProductCategoryRequest, CreateProductRequest,
         CreateProductSkuRequest, CreateSupplierRequest, CreateUnitRequest, CreateUserRequest,
-        EmployeeResponse, ListQuery, ProductCategoryResponse, ProductResponse, ProductSkuResponse,
-        SupplierResponse, UnitResponse, UpdateEmployeeRequest, UpdateProductCategoryRequest,
-        UpdateProductRequest, UpdateProductSkuRequest, UpdateSupplierRequest, UpdateUnitRequest,
-        UpdateUserRequest, UserResponse,
+        EmployeeResponse, ListQuery, Paginated, ProductCategoryResponse, ProductResponse,
+        ProductSkuResponse, SupplierResponse, UnitResponse, UpdateEmployeeRequest,
+        UpdateProductCategoryRequest, UpdateProductRequest, UpdateProductSkuRequest,
+        UpdateSupplierRequest, UpdateUnitRequest, UpdateUserRequest, UserResponse,
     },
     security,
 };
@@ -210,8 +210,10 @@ pub async fn delete_user(pool: &PgPool, id: i64) -> AppResult<()> {
 pub async fn list_categories(
     pool: &PgPool,
     query: ListQuery,
-) -> AppResult<Vec<ProductCategoryResponse>> {
+) -> AppResult<Paginated<ProductCategoryResponse>> {
     let search = query.search_pattern();
+    let limit = query.limit();
+    let offset = query.offset();
     let sql = format!(
         "{CATEGORY_SELECT}
         WHERE deleted_at IS NULL
@@ -220,13 +222,26 @@ pub async fn list_categories(
         LIMIT $2 OFFSET $3"
     );
 
-    sqlx::query_as::<_, ProductCategoryResponse>(&sql)
-        .bind(search)
-        .bind(query.limit())
-        .bind(query.offset())
+    let data = sqlx::query_as::<_, ProductCategoryResponse>(&sql)
+        .bind(&search)
+        .bind(limit)
+        .bind(offset)
         .fetch_all(pool)
-        .await
-        .map_err(Into::into)
+        .await?;
+
+    let total = sqlx::query_scalar::<_, i64>(
+        r#"
+        SELECT COUNT(*)
+        FROM product_categories
+        WHERE deleted_at IS NULL
+            AND ($1 = '%%' OR lower(name) LIKE $1)
+        "#,
+    )
+    .bind(&search)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(Paginated::new(data, limit, offset, total))
 }
 
 pub async fn find_category(pool: &PgPool, id: i64) -> AppResult<ProductCategoryResponse> {

@@ -1,14 +1,15 @@
 use std::net::SocketAddr;
 
 use anyhow::Context;
-use axum::Router;
+use axum::{Router, middleware};
 use tower_http::{
     compression::CompressionLayer,
-    cors::{Any, CorsLayer},
+    cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer},
+    request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer},
     trace::TraceLayer,
 };
 
-use crate::{app::AppState, config::AppConfig, http, infra::db};
+use crate::{app::AppState, common::request_context, config::AppConfig, http, infra::db};
 
 pub async fn run() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
@@ -44,11 +45,15 @@ pub fn app(state: AppState) -> Router {
         .layer(CompressionLayer::new())
         .layer(
             CorsLayer::new()
-                .allow_origin(Any)
-                .allow_methods(Any)
-                .allow_headers(Any),
+                .allow_origin(AllowOrigin::mirror_request())
+                .allow_methods(AllowMethods::mirror_request())
+                .allow_headers(AllowHeaders::mirror_request())
+                .allow_credentials(true),
         )
         .layer(TraceLayer::new_for_http())
+        .layer(PropagateRequestIdLayer::x_request_id())
+        .layer(middleware::from_fn(request_context::bind_request_id))
+        .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid))
         .with_state(state)
 }
 

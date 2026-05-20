@@ -4,9 +4,9 @@ use crate::{
     error::AppResult,
     models::{
         CreateProductCategoryRequest, CreateProductRequest, CreateProductSkuRequest,
-        CreateUnitRequest, ListQuery, ProductCategoryResponse, ProductResponse, ProductSkuResponse,
-        UnitResponse, UpdateProductCategoryRequest, UpdateProductRequest, UpdateProductSkuRequest,
-        UpdateUnitRequest,
+        CreateUnitRequest, ListQuery, Paginated, ProductCategoryResponse, ProductResponse,
+        ProductSkuResponse, UnitResponse, UpdateProductCategoryRequest, UpdateProductRequest,
+        UpdateProductSkuRequest, UpdateUnitRequest,
     },
     services::master,
 };
@@ -14,7 +14,7 @@ use crate::{
 pub async fn list_categories(
     pool: &PgPool,
     query: ListQuery,
-) -> AppResult<Vec<ProductCategoryResponse>> {
+) -> AppResult<Paginated<ProductCategoryResponse>> {
     master::list_categories(pool, query).await
 }
 

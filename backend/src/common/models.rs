@@ -26,6 +26,94 @@ impl ListQuery {
 }
 
 #[derive(Debug, Serialize)]
+pub struct ApiResponse<T, M = ()> {
+    pub data: Option<T>,
+    pub meta: Option<M>,
+    pub error: Option<ApiErrorBody>,
+    pub request_id: String,
+}
+
+impl<T> ApiResponse<T, ()> {
+    pub fn success(data: T) -> Self {
+        Self {
+            data: Some(data),
+            meta: None,
+            error: None,
+            request_id: crate::common::request_context::current_request_id(),
+        }
+    }
+}
+
+impl<T, M> ApiResponse<T, M> {
+    pub fn success_with_meta(data: T, meta: M) -> Self {
+        Self {
+            data: Some(data),
+            meta: Some(meta),
+            error: None,
+            request_id: crate::common::request_context::current_request_id(),
+        }
+    }
+}
+
+impl ApiResponse<(), ()> {
+    pub fn error(code: &'static str, message: String) -> Self {
+        Self {
+            data: None,
+            meta: None,
+            error: Some(ApiErrorBody { code, message }),
+            request_id: crate::common::request_context::current_request_id(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct ApiErrorBody {
+    pub code: &'static str,
+    pub message: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PaginationMeta {
+    pub page: i64,
+    pub limit: i64,
+    pub total_records: i64,
+    pub total_pages: i64,
+}
+
+impl PaginationMeta {
+    pub fn new(limit: i64, offset: i64, total_records: i64) -> Self {
+        let page = (offset / limit) + 1;
+        let total_pages = if total_records == 0 {
+            0
+        } else {
+            (total_records + limit - 1) / limit
+        };
+
+        Self {
+            page,
+            limit,
+            total_records,
+            total_pages,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Paginated<T> {
+    pub data: Vec<T>,
+    pub meta: PaginationMeta,
+}
+
+impl<T> Paginated<T> {
+    pub fn new(data: Vec<T>, limit: i64, offset: i64, total_records: i64) -> Self {
+        Self {
+            data,
+            meta: PaginationMeta::new(limit, offset, total_records),
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
 pub struct MessageResponse {
     pub message: &'static str,
 }

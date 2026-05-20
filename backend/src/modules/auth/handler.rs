@@ -10,7 +10,7 @@ use crate::{
     app::AppState,
     auth::AuthUser,
     error::{AppError, AppResult},
-    models::{CreateUserRequest, LoginRequest, MessageResponse, UserResponse},
+    models::{ApiResponse, CreateUserRequest, LoginRequest, MessageResponse, UserResponse},
 };
 
 use super::service;
@@ -30,7 +30,7 @@ pub async fn login(
 
     Ok((
         refresh_token_headers(&state, &session.refresh_token)?,
-        Json(session.response),
+        Json(ApiResponse::success(session.response)),
     ))
 }
 
@@ -49,7 +49,7 @@ pub async fn bootstrap_admin(
 
     Ok((
         refresh_token_headers(&state, &session.refresh_token)?,
-        Json(session.response),
+        Json(ApiResponse::success(session.response)),
     ))
 }
 
@@ -72,7 +72,7 @@ pub async fn refresh(
 
     Ok((
         refresh_token_headers(&state, &session.refresh_token)?,
-        Json(session.response),
+        Json(ApiResponse::success(session.response)),
     ))
 }
 
@@ -83,14 +83,19 @@ pub async fn logout(State(state): State<AppState>, jar: CookieJar) -> AppResult<
 
     Ok((
         clear_refresh_token_headers(&state)?,
-        Json(MessageResponse {
+        Json(ApiResponse::success(MessageResponse {
             message: "logged out",
-        }),
+        })),
     ))
 }
 
-pub async fn me(State(state): State<AppState>, user: AuthUser) -> AppResult<Json<UserResponse>> {
-    Ok(Json(service::find_user(&state.db, user.id).await?))
+pub async fn me(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> AppResult<Json<ApiResponse<UserResponse>>> {
+    Ok(Json(ApiResponse::success(
+        service::find_user(&state.db, user.id).await?,
+    )))
 }
 
 fn refresh_token_headers(state: &AppState, refresh_token: &str) -> AppResult<HeaderMap> {
