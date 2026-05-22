@@ -1,10 +1,7 @@
 <script lang="ts">
 	import CircleAlertIcon from '@lucide/svelte/icons/circle-alert';
 	import TrashIcon from '@lucide/svelte/icons/trash';
-	import {
-		deleteProductCategory,
-		type ProductCategory
-	} from '$lib/api/product-categories.js';
+	import { deleteProductCategory, type ProductCategory } from '$lib/api/product-categories.js';
 	import { ApiError } from '$lib/api/types.js';
 	import * as Alert from '$lib/components/ui/alert/index.js';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
@@ -49,7 +46,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Gagal menghapus product category.';
+		return 'Failed to delete product category.';
 	}
 </script>
 
@@ -58,8 +55,8 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>Delete Product Category?</AlertDialog.Title>
 			<AlertDialog.Description>
-				This action will delete <span class="font-medium text-foreground">{category.name}</span>. This
-				category will no longer appear in the product category list.
+				This action will delete <span class="font-medium text-foreground">{category.name}</span>.
+				This category will no longer appear in the product category list.
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 
@@ -73,11 +70,7 @@
 
 		<AlertDialog.Footer>
 			<AlertDialog.Cancel disabled={isDeleting}>Cancel</AlertDialog.Cancel>
-			<AlertDialog.Action
-				variant="destructive"
-				disabled={isDeleting}
-				onclick={handleDelete}
-			>
+			<AlertDialog.Action variant="destructive" disabled={isDeleting} onclick={handleDelete}>
 				<TrashIcon />
 				{isDeleting ? 'Deleting...' : 'Delete'}
 			</AlertDialog.Action>

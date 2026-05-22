@@ -88,7 +88,10 @@ export function createProductCategory(payload: CreateProductCategoryPayload) {
 }
 
 export function updateProductCategory(id: number, payload: UpdateProductCategoryPayload) {
-	return apiPut<ProductCategory, UpdateProductCategoryPayload>(`/product-categories/${id}`, payload);
+	return apiPut<ProductCategory, UpdateProductCategoryPayload>(
+		`/product-categories/${id}`,
+		payload
+	);
 }
 
 export function deleteProductCategory(id: number) {

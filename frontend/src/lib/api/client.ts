@@ -6,11 +6,7 @@ const DEFAULT_API_BASE_URL = 'http://localhost:8080/api/v1';
 const API_BASE_URL = (env.PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/$/, '');
 
 type ApiQueryParamPrimitive = string | number | boolean;
-type ApiQueryParamValue =
-	| ApiQueryParamPrimitive
-	| null
-	| undefined
-	| ApiQueryParamPrimitive[];
+type ApiQueryParamValue = ApiQueryParamPrimitive | null | undefined | ApiQueryParamPrimitive[];
 type ApiQueryParams = Record<string, ApiQueryParamValue>;
 
 type ApiRequestOptions = Omit<RequestInit, 'body' | 'method'> & {

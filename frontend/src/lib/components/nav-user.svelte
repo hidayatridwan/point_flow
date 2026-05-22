@@ -40,7 +40,7 @@
 			await logout();
 		} finally {
 			await waitForMinimumLoadingDuration(startedAt);
-			void goto(resolve('/login'), { invalidateAll: true, replaceState: true });
+			void goto(resolve('/'), { invalidateAll: true, replaceState: true });
 		}
 	}
 

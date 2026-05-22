@@ -46,7 +46,7 @@
 					variant="ghost"
 					size="icon-sm"
 					class="size-8"
-					aria-label={`Buka aksi untuk ${category.name}`}
+					aria-label={`Open actions for ${category.name}`}
 					title="Actions"
 				>
 					<EllipsisIcon />

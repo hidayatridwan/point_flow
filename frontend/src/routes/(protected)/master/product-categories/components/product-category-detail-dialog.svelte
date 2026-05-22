@@ -1,14 +1,12 @@
 <script lang="ts">
-	import CircleAlertIcon from '@lucide/svelte/icons/circle-alert';
-	import {
-		getProductCategory,
-		type ProductCategory
-	} from '$lib/api/product-categories.js';
+	import { getProductCategory, type ProductCategory } from '$lib/api/product-categories.js';
 	import { ApiError } from '$lib/api/types.js';
-	import * as Alert from '$lib/components/ui/alert/index.js';
+	import DetailField from '$lib/components/detail-field.svelte';
+	import ErrorAlert from '$lib/components/error-alert.svelte';
+	import StatusBadge from '$lib/components/status-badge.svelte';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
-	import StatusBadge from './status-badge.svelte';
+	import { formatDateTime } from '$lib/formatters.js';
 
 	let {
 		categoryId,
@@ -22,11 +20,6 @@
 	let isLoading = $state(false);
 	let errorMessage = $state<string | null>(null);
 	let latestRequestId = 0;
-
-	const dateFormatter = new Intl.DateTimeFormat('id-ID', {
-		dateStyle: 'medium',
-		timeStyle: 'short'
-	});
 
 	$effect(() => {
 		if (!open) return;
@@ -53,26 +46,18 @@
 		}
 	}
 
-	function formatDate(value: string | null | undefined) {
-		if (!value) return '-';
-
-		const date = new Date(value);
-		if (Number.isNaN(date.getTime())) return '-';
-		return dateFormatter.format(date);
-	}
-
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Gagal memuat detail product category.';
+		return 'Failed to load product category details.';
 	}
 </script>
 
 <Dialog.Root bind:open>
 	<Dialog.Content class="sm:max-w-lg">
 		<Dialog.Header>
-			<Dialog.Title>Detail Product Category</Dialog.Title>
-			<Dialog.Description>Informasi terbaru dari data kategori produk.</Dialog.Description>
+			<Dialog.Title>Product Category Details</Dialog.Title>
+			<Dialog.Description>Latest information from the product category record.</Dialog.Description>
 		</Dialog.Header>
 
 		{#if isLoading}
@@ -83,42 +68,22 @@
 				<Skeleton class="h-5 w-48" />
 			</div>
 		{:else if errorMessage}
-			<Alert.Root variant="destructive">
-				<CircleAlertIcon />
-				<Alert.Title>Gagal memuat detail.</Alert.Title>
-				<Alert.Description>{errorMessage}</Alert.Description>
-			</Alert.Root>
+			<ErrorAlert title="Failed to load details." message={errorMessage} />
 		{:else if category}
 			<div class="grid gap-4">
-				<div class="rounded-md border bg-muted/20 p-3">
-					<p class="text-xs font-medium text-muted-foreground">Name</p>
-					<p class="mt-1 font-medium">{category.name}</p>
-				</div>
+				<DetailField label="Name" value={category.name} />
 
-				<div class="rounded-md border bg-muted/20 p-3">
-					<p class="text-xs font-medium text-muted-foreground">Description</p>
-					<p class="mt-1 text-sm leading-relaxed">{category.description || '-'}</p>
-				</div>
+				<DetailField label="Description">
+					<p class="text-sm leading-relaxed">{category.description || '-'}</p>
+				</DetailField>
 
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<div class="rounded-md border bg-muted/20 p-3">
-						<p class="text-xs font-medium text-muted-foreground">Status</p>
-						<div class="mt-2">
-							<StatusBadge active={category.is_active} />
-						</div>
-					</div>
-					<div class="rounded-md border bg-muted/20 p-3">
-						<p class="text-xs font-medium text-muted-foreground">ID</p>
-						<p class="mt-1 font-medium">{category.id}</p>
-					</div>
-					<div class="rounded-md border bg-muted/20 p-3">
-						<p class="text-xs font-medium text-muted-foreground">Created At</p>
-						<p class="mt-1 font-medium">{formatDate(category.created_at)}</p>
-					</div>
-					<div class="rounded-md border bg-muted/20 p-3">
-						<p class="text-xs font-medium text-muted-foreground">Updated At</p>
-						<p class="mt-1 font-medium">{formatDate(category.updated_at)}</p>
-					</div>
+					<DetailField label="Status">
+						<StatusBadge active={category.is_active} />
+					</DetailField>
+					<DetailField label="ID" value={category.id} />
+					<DetailField label="Created At" value={formatDateTime(category.created_at)} />
+					<DetailField label="Updated At" value={formatDateTime(category.updated_at)} />
 				</div>
 			</div>
 		{/if}

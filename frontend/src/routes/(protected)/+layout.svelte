@@ -1,12 +1,12 @@
 <script lang="ts">
-	import '../layout.css';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { getAccessToken } from '$lib/api/auth.svelte.js';
 	import { refreshAccessToken } from '$lib/api/client.js';
-	import favicon from '$lib/assets/favicon.svg';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
+	import SessionTransition from '$lib/components/session-transition.svelte';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
@@ -30,9 +30,9 @@
 	};
 
 	const routeLabelByPath: Record<string, string> = {
-		'/dashboard': 'Ringkasan',
-		'/pos/sales/new': 'Transaksi Baru',
-		'/pos/sales': 'Riwayat Penjualan',
+		'/dashboard': 'Summary',
+		'/pos/sales/new': 'New Transaction',
+		'/pos/sales': 'Sales History',
 		'/master/users': 'Users',
 		'/master/product-categories': 'Product Categories',
 		'/master/products': 'Products',
@@ -56,6 +56,8 @@
 	};
 
 	const breadcrumbItems = $derived(buildBreadcrumbItems(page.url.pathname));
+	let isSessionReady = $state(false);
+	let isRedirecting = $state(false);
 
 	onMount(() => {
 		void ensureSession();
@@ -63,16 +65,22 @@
 
 	async function ensureSession() {
 		if (getAccessToken()) {
+			isSessionReady = true;
 			return;
 		}
 
 		const accessToken = await refreshAccessToken();
 		if (!accessToken) {
-			await goto(`/login?redirectTo=${encodeURIComponent(page.url.pathname + page.url.search)}`, {
+			isRedirecting = true;
+			const loginPath =
+				`/?redirectTo=${encodeURIComponent(page.url.pathname + page.url.search)}` as const;
+			await goto(resolve(loginPath), {
 				replaceState: true
 			});
 			return;
 		}
+
+		isSessionReady = true;
 	}
 
 	function buildBreadcrumbItems(pathname: string): BreadcrumbItem[] {
@@ -94,7 +102,8 @@
 
 		return segments.map((segment, index) => {
 			const href = `/${segments.slice(0, index + 1).join('/')}`;
-			const label = routeLabelByPath[href] ?? sectionLabelBySegment[segment] ?? formatSegmentLabel(segment);
+			const label =
+				routeLabelByPath[href] ?? sectionLabelBySegment[segment] ?? formatSegmentLabel(segment);
 			const isLast = index === segments.length - 1;
 
 			return {
@@ -118,37 +127,45 @@
 	}
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
-
-<Sidebar.Provider>
-	<AppSidebar />
-	<Sidebar.Inset>
-		<header class="flex h-16 shrink-0 items-center gap-2">
-			<div class="flex items-center gap-2 px-4">
-				<Sidebar.Trigger class="-ms-1" />
-				<Separator orientation="vertical" class="me-2 data-[orientation=vertical]:h-4" />
-				<Breadcrumb.Root>
-					<Breadcrumb.List>
-						{#each breadcrumbItems as breadcrumb, index (`${index}-${breadcrumb.label}`)}
-							<Breadcrumb.Item class={index < breadcrumbItems.length - 1 ? 'hidden md:block' : undefined}>
-								{#if index === breadcrumbItems.length - 1}
-									<Breadcrumb.Page>{breadcrumb.label}</Breadcrumb.Page>
-								{:else if breadcrumb.href}
-									<Breadcrumb.Link href={breadcrumb.href}>{breadcrumb.label}</Breadcrumb.Link>
-								{:else}
-									<span>{breadcrumb.label}</span>
+{#if isSessionReady}
+	<Sidebar.Provider>
+		<AppSidebar />
+		<Sidebar.Inset>
+			<header class="flex h-16 shrink-0 items-center gap-2">
+				<div class="flex items-center gap-2 px-4">
+					<Sidebar.Trigger class="-ms-1" />
+					<Separator orientation="vertical" class="me-2 data-[orientation=vertical]:h-4" />
+					<Breadcrumb.Root>
+						<Breadcrumb.List>
+							{#each breadcrumbItems as breadcrumb, index (`${index}-${breadcrumb.label}`)}
+								<Breadcrumb.Item
+									class={index < breadcrumbItems.length - 1 ? 'hidden md:block' : undefined}
+								>
+									{#if index === breadcrumbItems.length - 1}
+										<Breadcrumb.Page>{breadcrumb.label}</Breadcrumb.Page>
+									{:else if breadcrumb.href}
+										<Breadcrumb.Link href={breadcrumb.href}>{breadcrumb.label}</Breadcrumb.Link>
+									{:else}
+										<span>{breadcrumb.label}</span>
+									{/if}
+								</Breadcrumb.Item>
+								{#if index < breadcrumbItems.length - 1}
+									<Breadcrumb.Separator class="hidden md:block" />
 								{/if}
-							</Breadcrumb.Item>
-							{#if index < breadcrumbItems.length - 1}
-								<Breadcrumb.Separator class="hidden md:block" />
-							{/if}
-						{/each}
-					</Breadcrumb.List>
-				</Breadcrumb.Root>
+							{/each}
+						</Breadcrumb.List>
+					</Breadcrumb.Root>
+				</div>
+			</header>
+			<div class="flex flex-1 flex-col gap-4 p-4 pt-0">
+				{@render children()}
 			</div>
-		</header>
-		<div class="flex flex-1 flex-col gap-4 p-4 pt-0">
-			{@render children()}
-		</div>
-	</Sidebar.Inset>
-</Sidebar.Provider>
+		</Sidebar.Inset>
+	</Sidebar.Provider>
+{:else}
+	<SessionTransition
+		class="min-h-svh bg-muted p-6 md:p-10"
+		title={isRedirecting ? 'Opening sign in...' : 'Checking session...'}
+		description="Please wait a moment."
+	/>
+{/if}

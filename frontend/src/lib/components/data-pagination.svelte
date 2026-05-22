@@ -1,9 +1,17 @@
+<script lang="ts" module>
+	export type PaginationState = {
+		page: number;
+		pageSize: number;
+		totalRecords: number;
+		totalPages?: number;
+	};
+</script>
+
 <script lang="ts">
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import ChevronsLeftIcon from '@lucide/svelte/icons/chevrons-left';
 	import ChevronsRightIcon from '@lucide/svelte/icons/chevrons-right';
-	import type { ProductCategoryPagination } from '$lib/api/product-categories.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
 
@@ -14,16 +22,18 @@
 		onPageSizeChange,
 		disabled = false
 	}: {
-		pagination: ProductCategoryPagination;
+		pagination: PaginationState;
 		pageSizeOptions: number[];
 		onPageChange: (page: number) => void;
-		onPageSizeChange: (value: string) => void;
+		onPageSizeChange: (pageSize: number) => void;
 		disabled?: boolean;
 	} = $props();
 
 	const pageSize = $derived(Math.max(1, pagination.pageSize));
 	const totalRecords = $derived(Math.max(0, pagination.totalRecords));
-	const totalPages = $derived(totalRecords === 0 ? 1 : Math.ceil(totalRecords / pageSize));
+	const totalPages = $derived(
+		Math.max(1, pagination.totalPages ?? Math.ceil(totalRecords / pageSize))
+	);
 	const currentPage = $derived(Math.min(Math.max(1, pagination.page), totalPages));
 	const hasPreviousPage = $derived(currentPage > 1);
 	const hasNextPage = $derived(currentPage < totalPages);
@@ -34,6 +44,12 @@
 	const rowsPerPageItems = $derived(
 		pageSizeOptions.map((option) => ({ value: String(option), label: String(option) }))
 	);
+
+	function handlePageSizeChange(value: string) {
+		const pageSize = Number(value);
+		if (!Number.isFinite(pageSize)) return;
+		onPageSizeChange(pageSize);
+	}
 </script>
 
 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -48,7 +64,7 @@
 				value={String(pagination.pageSize)}
 				items={rowsPerPageItems}
 				{disabled}
-				onValueChange={onPageSizeChange}
+				onValueChange={handlePageSizeChange}
 			>
 				<Select.Trigger class="h-8 w-18">{pagination.pageSize}</Select.Trigger>
 				<Select.Content side="top">
@@ -69,9 +85,9 @@
 				class="hidden size-8 p-0 lg:flex"
 				disabled={!canGoToPreviousPage}
 				onclick={() => onPageChange(1)}
-				title="Ke halaman pertama"
+				title="Go to first page"
 			>
-				<span class="sr-only">Ke halaman pertama</span>
+				<span class="sr-only">Go to first page</span>
 				<ChevronsLeftIcon class="h-4 w-4" />
 			</Button>
 			<Button
@@ -79,9 +95,9 @@
 				class="size-8 p-0"
 				disabled={!canGoToPreviousPage}
 				onclick={() => onPageChange(currentPage - 1)}
-				title="Ke halaman sebelumnya"
+				title="Go to previous page"
 			>
-				<span class="sr-only">Ke halaman sebelumnya</span>
+				<span class="sr-only">Go to previous page</span>
 				<ChevronLeftIcon class="h-4 w-4" />
 			</Button>
 			<Button
@@ -89,9 +105,9 @@
 				class="size-8 p-0"
 				disabled={!canGoToNextPage}
 				onclick={() => onPageChange(currentPage + 1)}
-				title="Ke halaman berikutnya"
+				title="Go to next page"
 			>
-				<span class="sr-only">Ke halaman berikutnya</span>
+				<span class="sr-only">Go to next page</span>
 				<ChevronRightIcon class="h-4 w-4" />
 			</Button>
 			<Button
@@ -99,9 +115,9 @@
 				class="hidden size-8 p-0 lg:flex"
 				disabled={!canGoToNextPage}
 				onclick={() => onPageChange(totalPages)}
-				title="Ke halaman terakhir"
+				title="Go to last page"
 			>
-				<span class="sr-only">Ke halaman terakhir</span>
+				<span class="sr-only">Go to last page</span>
 				<ChevronsRightIcon class="h-4 w-4" />
 			</Button>
 		</div>

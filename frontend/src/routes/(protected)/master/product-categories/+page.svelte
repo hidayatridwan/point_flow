@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { replaceState } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import type { PathnameWithSearchOrHash } from '$app/types';
 	import { onDestroy, onMount } from 'svelte';
-	import { CircleAlert } from '@lucide/svelte';
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import {
 		listProductCategories,
@@ -10,11 +12,12 @@
 		type ProductCategoryPagination
 	} from '$lib/api/product-categories.js';
 	import { ApiError } from '$lib/api/types.js';
-	import * as Alert from '$lib/components/ui/alert/index.js';
+	import DataPagination from '$lib/components/data-pagination.svelte';
+	import ErrorAlert from '$lib/components/error-alert.svelte';
+	import PageHeader from '$lib/components/page-header.svelte';
+	import SearchField from '$lib/components/search-field.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import ProductCategoryCreateDialog from './components/product-category-create-dialog.svelte';
-	import ProductCategoriesPagination from './components/product-categories-pagination.svelte';
-	import ProductCategoriesSearch from './components/product-categories-search.svelte';
 	import ProductCategoriesTable from './components/product-categories-table.svelte';
 
 	const pageSizeOptions = [10, 25, 50, 100];
@@ -58,6 +61,7 @@
 				result.pagination.page > result.pagination.totalPages
 			) {
 				query = { ...query, page: result.pagination.totalPages };
+				syncProductCategoryQueryUrl(query);
 				await loadProductCategories(query);
 				return;
 			}
@@ -75,11 +79,11 @@
 		}
 	}
 
-	function updatePageSize(value: string) {
-		const nextLimit = Number(value);
-		if (!pageSizeOptions.includes(nextLimit)) return;
+	function updatePageSize(pageSize: number) {
+		if (!pageSizeOptions.includes(pageSize)) return;
 
-		query = { ...query, limit: nextLimit, page: 1 };
+		query = { ...query, limit: pageSize, page: 1 };
+		syncProductCategoryQueryUrl(query);
 		void loadProductCategories(query);
 	}
 
@@ -88,6 +92,7 @@
 		if (page === query.page) return;
 
 		query = { ...query, page };
+		syncProductCategoryQueryUrl(query);
 		void loadProductCategories(query);
 	}
 
@@ -97,6 +102,7 @@
 
 		searchTimer = setTimeout(() => {
 			query = { ...query, search: value.trim(), page: 1 };
+			syncProductCategoryQueryUrl(query);
 			void loadProductCategories(query);
 		}, 350);
 	}
@@ -113,6 +119,7 @@
 
 	async function refreshCategoriesAfterCreate() {
 		query = { ...query, page: 1 };
+		syncProductCategoryQueryUrl(query);
 		await loadProductCategories(query);
 	}
 
@@ -134,6 +141,33 @@
 		};
 	}
 
+	function syncProductCategoryQueryUrl(nextQuery: Required<ProductCategoryListParams>) {
+		const nextUrl = new URL(page.url);
+
+		if (nextQuery.page === defaultPagination.page) {
+			nextUrl.searchParams.delete('page');
+		} else {
+			nextUrl.searchParams.set('page', String(nextQuery.page));
+		}
+
+		if (nextQuery.limit === defaultPagination.pageSize) {
+			nextUrl.searchParams.delete('limit');
+		} else {
+			nextUrl.searchParams.set('limit', String(nextQuery.limit));
+		}
+
+		if (nextQuery.search) {
+			nextUrl.searchParams.set('search', nextQuery.search);
+		} else {
+			nextUrl.searchParams.delete('search');
+		}
+
+		replaceState(
+			resolve(`${nextUrl.pathname}${nextUrl.search}` as PathnameWithSearchOrHash),
+			page.state
+		);
+	}
+
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
@@ -146,33 +180,31 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-		<div class="flex flex-col gap-1">
-			<h1 class="text-xl font-semibold tracking-tight">Product Categories</h1>
-			<p class="max-w-2xl text-sm text-muted-foreground">
-				Kelola pengelompokan produk agar pencatatan barang, pencarian item, dan laporan penjualan
-				lebih mudah dibaca.
-			</p>
-		</div>
-		<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
-			<PlusIcon />
-			Add Category
-		</Button>
-	</div>
+	<PageHeader
+		title="Product Categories"
+		description="Manage product grouping so inventory records, item search, and sales reports stay easy to read."
+	>
+		{#snippet actions()}
+			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
+				<PlusIcon />
+				Add Category
+			</Button>
+		{/snippet}
+	</PageHeader>
 
-	<section class="flex flex-col gap-3">
-		<ProductCategoriesSearch
+	<section class="flex flex-col gap-3" aria-labelledby="product-categories-table-title">
+		<h2 id="product-categories-table-title" class="sr-only">Product category records</h2>
+
+		<SearchField
 			value={searchValue}
 			disabled={isLoading}
+			ariaLabel="Search product categories"
+			placeholder="Search product categories..."
 			onValueChange={updateSearchValue}
 		/>
 
 		{#if errorMessage && !isLoading}
-			<Alert.Root variant="destructive">
-				<CircleAlert />
-				<Alert.Title>Gagal memuat product categories.</Alert.Title>
-				<Alert.Description>{errorMessage}</Alert.Description>
-			</Alert.Root>
+			<ErrorAlert title="Failed to load product categories." message={errorMessage} />
 		{:else}
 			<ProductCategoriesTable
 				{categories}
@@ -180,11 +212,11 @@
 				onCategoryDeleted={refreshCategoriesAfterDelete}
 				onCategoryUpdated={updateCategoryInList}
 				emptyMessage={query.search
-					? 'Tidak ada kategori produk yang cocok dengan pencarian.'
-					: 'Belum ada kategori produk.'}
+					? 'No product categories match your search.'
+					: 'No product categories yet.'}
 			/>
 			{#if !isLoading}
-				<ProductCategoriesPagination
+				<DataPagination
 					{pagination}
 					{pageSizeOptions}
 					onPageChange={updatePage}

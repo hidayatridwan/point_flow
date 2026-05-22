@@ -6,14 +6,15 @@
 	} from '$lib/components/ui/data-table/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import type { ProductCategory } from '$lib/api/product-categories.js';
+	import StatusBadge from '$lib/components/status-badge.svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
+	import { formatDateTime } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
 	import ProductCategoryActions from './product-category-actions.svelte';
-	import StatusBadge from './status-badge.svelte';
 
 	let {
 		categories,
-		emptyMessage = 'Tidak ada kategori produk.',
+		emptyMessage = 'No product categories.',
 		isLoading = false,
 		onCategoryDeleted,
 		onCategoryUpdated
@@ -25,12 +26,8 @@
 		onCategoryUpdated?: (category: ProductCategory) => void;
 	} = $props();
 
-	const skeletonRows = Array.from({ length: 10 });
+	const skeletonRows = [...Array(10).keys()];
 	const columnHelper = createColumnHelper<ProductCategory>();
-	const dateFormatter = new Intl.DateTimeFormat('id-ID', {
-		dateStyle: 'medium',
-		timeStyle: 'short'
-	});
 
 	const columns = [
 		columnHelper.accessor('name', {
@@ -47,11 +44,11 @@
 		}),
 		columnHelper.accessor('created_at', {
 			header: 'Created At',
-			cell: (info) => formatDate(info.getValue())
+			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.accessor('updated_at', {
 			header: 'Updated At',
-			cell: (info) => formatDate(info.getValue())
+			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.display({
 			id: 'actions',
@@ -72,12 +69,6 @@
 		columns,
 		getCoreRowModel: getCoreRowModel()
 	});
-
-	function formatDate(value: string) {
-		const date = new Date(value);
-		if (Number.isNaN(date.getTime())) return '-';
-		return dateFormatter.format(date);
-	}
 
 	function getSkeletonClass(columnIndex: number) {
 		const widths = ['h-5 w-36', 'h-5 w-full max-w-md', 'h-5 w-20', 'h-5 w-32', 'h-5 w-32'];
@@ -105,7 +96,7 @@
 		</Table.Header>
 		<Table.Body>
 			{#if isLoading}
-				{#each skeletonRows as _, rowIndex (rowIndex)}
+				{#each skeletonRows as rowIndex (rowIndex)}
 					<Table.Row>
 						{#each columns as column, columnIndex (column.id ?? columnIndex)}
 							<Table.Cell class={column.id === 'actions' ? 'w-20 text-center' : undefined}>

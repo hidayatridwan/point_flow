@@ -1,24 +1,34 @@
+<script lang="ts" module>
+	let editFormSequence = 0;
+
+	function getNextEditFormId() {
+		editFormSequence += 1;
+		return `product-category-edit-${editFormSequence}`;
+	}
+</script>
+
 <script lang="ts">
-	import CircleAlertIcon from '@lucide/svelte/icons/circle-alert';
-	import {
-		updateProductCategory,
-		type ProductCategory
-	} from '$lib/api/product-categories.js';
+	import { updateProductCategory, type ProductCategory } from '$lib/api/product-categories.js';
 	import { ApiError } from '$lib/api/types.js';
-	import * as Alert from '$lib/components/ui/alert/index.js';
+	import ErrorAlert from '$lib/components/error-alert.svelte';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import * as Form from '$lib/components/ui/form/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
+	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { cn } from '$lib/utils.js';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4, zod4Client } from 'sveltekit-superforms/adapters';
 	import { z } from 'zod';
 
 	const editCategorySchema = z.object({
-		name: z.string().trim().min(1, 'Name wajib diisi.').max(100, 'Name maksimal 100 karakter.'),
-		description: z.string().trim().max(500, 'Description maksimal 500 karakter.'),
+		name: z
+			.string()
+			.trim()
+			.min(1, 'Name is required.')
+			.max(100, 'Name must be at most 100 characters.'),
+		description: z.string().trim().max(500, 'Description must be at most 500 characters.'),
 		is_active: z.enum(['true', 'false'])
 	});
 
@@ -42,15 +52,14 @@
 		description: '',
 		is_active: 'true'
 	};
+	const formId = getNextEditFormId();
 
-	const form = superForm(
-		defaults(defaultFormData, zod4(editCategorySchema)),
-		{
-			SPA: true,
-			validationMethod: 'submit-only',
-			validators: zod4Client(editCategorySchema)
-		}
-	);
+	const form = superForm(defaults(defaultFormData, zod4(editCategorySchema)), {
+		id: formId,
+		SPA: true,
+		validationMethod: 'submit-only',
+		validators: zod4Client(editCategorySchema)
+	});
 	const { form: formData, validateForm } = form;
 
 	$effect(() => {
@@ -96,7 +105,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Gagal menyimpan product category.';
+		return 'Failed to save product category.';
 	}
 </script>
 
@@ -106,7 +115,7 @@
 			<Dialog.Header class="px-6 pt-6">
 				<Dialog.Title>Edit Product Category</Dialog.Title>
 				<Dialog.Description>
-					Ubah data kategori produk, lalu simpan perubahan ke server.
+					Update product category details, then save the changes to the server.
 				</Dialog.Description>
 			</Dialog.Header>
 
@@ -117,7 +126,7 @@
 							<Form.Label>Name</Form.Label>
 							<Input
 								{...props}
-								placeholder="Masukkan nama kategori"
+								placeholder="Enter category name"
 								disabled={isSubmitting}
 								bind:value={$formData.name}
 							/>
@@ -130,13 +139,12 @@
 					<Form.Control>
 						{#snippet children({ props })}
 							<Form.Label>Description</Form.Label>
-							<textarea
+							<Textarea
 								{...props}
-								class="min-h-24 w-full rounded-md border border-input bg-transparent px-2.5 py-2 text-sm shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
-								placeholder="Masukkan deskripsi kategori"
+								placeholder="Enter category description"
 								disabled={isSubmitting}
 								bind:value={$formData.description}
-							></textarea>
+							/>
 						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
@@ -158,7 +166,7 @@
 								}}
 							>
 								<Select.Trigger {...props} class="w-full">
-									<Select.Value placeholder="Pilih status" />
+									<Select.Value placeholder="Select status" />
 								</Select.Trigger>
 								<Select.Content>
 									<Select.Item value="true" label="Active">Active</Select.Item>
@@ -171,11 +179,7 @@
 				</Form.Field>
 
 				{#if errorMessage}
-					<Alert.Root variant="destructive">
-						<CircleAlertIcon />
-						<Alert.Title>Gagal menyimpan.</Alert.Title>
-						<Alert.Description>{errorMessage}</Alert.Description>
-					</Alert.Root>
+					<ErrorAlert title="Save failed." message={errorMessage} />
 				{/if}
 			</div>
 
@@ -188,7 +192,7 @@
 					Cancel
 				</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting}>
-					{isSubmitting ? 'Menyimpan...' : 'Save changes'}
+					{isSubmitting ? 'Saving...' : 'Save changes'}
 				</Button>
 			</Dialog.Footer>
 		</form>
