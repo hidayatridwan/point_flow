@@ -2,7 +2,6 @@
 	import { replaceState } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import type { PathnameWithSearchOrHash } from '$app/types';
 	import { onDestroy, onMount } from 'svelte';
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import {
@@ -162,10 +161,7 @@
 			nextUrl.searchParams.delete('search');
 		}
 
-		replaceState(
-			resolve(`${nextUrl.pathname}${nextUrl.search}` as PathnameWithSearchOrHash),
-			page.state
-		);
+		replaceState(resolve(`${nextUrl.pathname}${nextUrl.search}` as '/'), page.state);
 	}
 
 	function getErrorMessage(error: unknown) {

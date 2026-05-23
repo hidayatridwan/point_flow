@@ -7,11 +7,38 @@ pub struct ListQuery {
     pub search: Option<String>,
     pub from: Option<NaiveDate>,
     pub to: Option<NaiveDate>,
+    pub status: Option<String>,
     pub limit: Option<i64>,
     pub offset: Option<i64>,
 }
 
 impl ListQuery {
+    pub fn limit(&self) -> i64 {
+        self.limit.unwrap_or(50).clamp(1, 100)
+    }
+
+    pub fn offset(&self) -> i64 {
+        self.offset.unwrap_or(0).max(0)
+    }
+
+    pub fn search_pattern(&self) -> String {
+        format!("%{}%", self.search.as_deref().unwrap_or("").to_lowercase())
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct StockMovementReportQuery {
+    pub search: Option<String>,
+    pub from: Option<NaiveDate>,
+    pub to: Option<NaiveDate>,
+    #[serde(rename = "type")]
+    pub movement_type: Option<String>,
+    pub product_sku_id: Option<String>,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+
+impl StockMovementReportQuery {
     pub fn limit(&self) -> i64 {
         self.limit.unwrap_or(50).clamp(1, 100)
     }
@@ -731,6 +758,28 @@ pub struct StockReport {
     pub quantity_on_order: f64,
     pub is_low_stock: bool,
     pub is_active: bool,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct StockMovementReport {
+    pub id: i64,
+    pub created_at: DateTime<Utc>,
+    pub product_id: i64,
+    pub product_sku_id: i64,
+    pub product_name: String,
+    pub sku: String,
+    pub unit: String,
+    pub movement_type: String,
+    pub direction: String,
+    pub quantity: f64,
+    pub stock_before: f64,
+    pub stock_after: f64,
+    pub quantity_delta: f64,
+    pub reference_type: String,
+    pub reference_id: Option<i64>,
+    pub reference_no: Option<String>,
+    pub notes: Option<String>,
+    pub created_by: Option<i64>,
 }
 
 #[derive(Debug, Serialize, FromRow)]

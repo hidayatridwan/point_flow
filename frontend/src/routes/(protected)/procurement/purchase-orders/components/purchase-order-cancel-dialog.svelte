@@ -1,0 +1,115 @@
+<script lang="ts">
+	import BanIcon from '@lucide/svelte/icons/ban';
+	import { cancelPurchaseOrder, type PurchaseOrder } from '$lib/api/purchase-orders.js';
+	import { ApiError } from '$lib/api/types.js';
+	import ErrorAlert from '$lib/components/error-alert.svelte';
+	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import { Spinner } from '$lib/components/ui/spinner/index.js';
+	import { Textarea } from '$lib/components/ui/textarea/index.js';
+	import { cn } from '$lib/utils.js';
+	import { toast } from 'svelte-sonner';
+
+	let {
+		purchaseOrder,
+		open = $bindable(false),
+		onCancelled
+	}: {
+		purchaseOrder: PurchaseOrder;
+		open: boolean;
+		onCancelled?: (purchaseOrder: PurchaseOrder) => void | Promise<void>;
+	} = $props();
+
+	let reason = $state('');
+	let isSubmitting = $state(false);
+	let errorMessage = $state<string | null>(null);
+
+	$effect(() => {
+		if (!open) return;
+		reason = '';
+		errorMessage = null;
+	});
+
+	async function handleSubmit(event: SubmitEvent) {
+		event.preventDefault();
+		if (isSubmitting) return;
+
+		isSubmitting = true;
+		errorMessage = null;
+
+		try {
+			const cancelledPurchaseOrder = await cancelPurchaseOrder(purchaseOrder.id, {
+				reason: emptyToNull(reason)
+			});
+			await onCancelled?.(cancelledPurchaseOrder);
+			toast.success('Purchase order cancelled.', {
+				description: `${cancelledPurchaseOrder.po_no} was cancelled.`
+			});
+			open = false;
+		} catch (error) {
+			errorMessage = getErrorMessage(error);
+		} finally {
+			isSubmitting = false;
+		}
+	}
+
+	function emptyToNull(value: string) {
+		const trimmed = value.trim();
+		return trimmed ? trimmed : null;
+	}
+
+	function getErrorMessage(error: unknown) {
+		if (error instanceof ApiError) return error.message;
+		if (error instanceof Error) return error.message;
+		return 'Failed to cancel purchase order.';
+	}
+</script>
+
+<Dialog.Root bind:open>
+	<Dialog.Content class="overflow-hidden p-0 sm:max-w-lg">
+		<form class="grid gap-6" onsubmit={handleSubmit}>
+			<Dialog.Header class="px-6 pt-6">
+				<Dialog.Title>Cancel Purchase Order</Dialog.Title>
+				<Dialog.Description>
+					Cancel {purchaseOrder.po_no}. Add a reason if this needs audit context.
+				</Dialog.Description>
+			</Dialog.Header>
+
+			<div class="grid gap-4 px-6">
+				<div class="space-y-2">
+					<label for={`cancel-reason-${purchaseOrder.id}`} class="text-sm font-medium">
+						Cancel Reason
+					</label>
+					<Textarea
+						id={`cancel-reason-${purchaseOrder.id}`}
+						placeholder="Wrong input"
+						disabled={isSubmitting}
+						bind:value={reason}
+					/>
+				</div>
+
+				{#if errorMessage}
+					<ErrorAlert title="Cancel failed." message={errorMessage} />
+				{/if}
+			</div>
+
+			<Dialog.Footer class="border-t bg-muted/30 px-6 py-4">
+				<Dialog.Close
+					type="button"
+					class={cn(buttonVariants({ variant: 'outline' }))}
+					disabled={isSubmitting}
+				>
+					Keep order
+				</Dialog.Close>
+				<Button type="submit" variant="destructive" disabled={isSubmitting}>
+					{#if isSubmitting}
+						<Spinner />
+					{:else}
+						<BanIcon />
+					{/if}
+					{isSubmitting ? 'Cancelling...' : 'Cancel purchase order'}
+				</Button>
+			</Dialog.Footer>
+		</form>
+	</Dialog.Content>
+</Dialog.Root>

@@ -5,6 +5,7 @@
 	import { ApiError } from '$lib/api/types.js';
 	import * as Alert from '$lib/components/ui/alert/index.js';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
+	import { toast } from 'svelte-sonner';
 
 	let {
 		category,
@@ -35,6 +36,9 @@
 		try {
 			await deleteProductCategory(category.id);
 			await onDeleted?.(category.id);
+			toast.success('Product category deleted.', {
+				description: `${category.name} was removed.`
+			});
 			open = false;
 		} catch (error) {
 			errorMessage = getErrorMessage(error);

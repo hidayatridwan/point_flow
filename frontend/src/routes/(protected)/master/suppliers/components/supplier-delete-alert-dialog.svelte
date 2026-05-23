@@ -4,6 +4,7 @@
 	import { ApiError } from '$lib/api/types.js';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
+	import { toast } from 'svelte-sonner';
 
 	let {
 		supplier,
@@ -33,6 +34,9 @@
 		try {
 			await deleteSupplier(supplier.id);
 			await onDeleted?.(supplier.id);
+			toast.success('Supplier deleted.', {
+				description: `${supplier.name} was removed.`
+			});
 			open = false;
 		} catch (error) {
 			errorMessage = getErrorMessage(error);

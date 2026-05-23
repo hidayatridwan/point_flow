@@ -9,7 +9,8 @@ use crate::{
     error::AppResult,
     models::{
         ApiResponse, DailySalesReport, DashboardResponse, GoodsReceiptReport, ListQuery,
-        MonthlySalesReport, PayrollReport, PurchaseOrderReport, StockAdjustmentReport, StockReport,
+        MonthlySalesReport, PayrollReport, PurchaseOrderReport, StockAdjustmentReport,
+        StockMovementReport, StockMovementReportQuery, StockReport,
     },
 };
 
@@ -51,6 +52,16 @@ pub async fn stock(
 ) -> AppResult<Json<ApiResponse<Vec<StockReport>>>> {
     Ok(Json(ApiResponse::success(
         service::stock(&state.db, query).await?,
+    )))
+}
+
+pub async fn stock_movements(
+    State(state): State<AppState>,
+    _user: AuthUser,
+    Query(query): Query<StockMovementReportQuery>,
+) -> AppResult<Json<ApiResponse<Vec<StockMovementReport>>>> {
+    Ok(Json(ApiResponse::success(
+        service::stock_movements(&state.db, query).await?,
     )))
 }
 

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import type { PathnameWithSearchOrHash } from '$app/types';
 	import * as Collapsible from '$lib/components/ui/collapsible/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
@@ -32,7 +31,7 @@
 	const currentPath = $derived(normalizePath(page.url.pathname));
 
 	function resolveMenuPath(path: string) {
-		return resolve(path as PathnameWithSearchOrHash);
+		return resolve(path as '/');
 	}
 
 	function isMenuItemActive(item: NavItem) {

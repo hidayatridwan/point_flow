@@ -10,6 +10,7 @@ pub fn routes() -> Router<AppState> {
         .route("/reports/daily-sales", get(handler::daily_sales))
         .route("/reports/monthly-sales", get(handler::monthly_sales))
         .route("/reports/stock", get(handler::stock))
+        .route("/reports/stock-movements", get(handler::stock_movements))
         .route("/reports/purchase-orders", get(handler::purchase_orders))
         .route("/reports/goods-receipts", get(handler::goods_receipts))
         .route(

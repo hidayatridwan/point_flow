@@ -10,6 +10,8 @@ pub type AppResult<T> = Result<T, AppError>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
+    #[error("bad request: {0}")]
+    BadRequest(String),
     #[error("unauthorized")]
     Unauthorized,
     #[error("forbidden")]
@@ -29,6 +31,7 @@ pub enum AppError {
 impl AppError {
     fn status_code(&self) -> StatusCode {
         match self {
+            Self::BadRequest(_) => StatusCode::BAD_REQUEST,
             Self::Unauthorized => StatusCode::UNAUTHORIZED,
             Self::Forbidden => StatusCode::FORBIDDEN,
             Self::NotFound => StatusCode::NOT_FOUND,
@@ -40,6 +43,7 @@ impl AppError {
 
     fn code(&self) -> &'static str {
         match self {
+            Self::BadRequest(_) => "bad_request",
             Self::Unauthorized => "unauthorized",
             Self::Forbidden => "forbidden",
             Self::NotFound => "not_found",

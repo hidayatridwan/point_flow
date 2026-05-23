@@ -16,7 +16,11 @@ use crate::{
     },
 };
 
-use super::{validate_non_negative, validate_positive, validate_required};
+use super::{
+    GOODS_RECEIPT_STATUSES, PURCHASE_ORDER_STATUSES, SALE_STATUSES, STOCK_ADJUSTMENT_STATUSES,
+    STOCK_CONVERSION_STATUSES, parse_status_filter, validate_non_negative, validate_positive,
+    validate_required,
+};
 
 const PURCHASE_ORDER_SELECT: &str = r#"
     SELECT
@@ -241,19 +245,26 @@ pub async fn list_purchase_orders(
     query: ListQuery,
 ) -> AppResult<Vec<PurchaseOrderResponse>> {
     let search = query.search_pattern();
+    let statuses = parse_status_filter(
+        query.status.as_deref(),
+        PURCHASE_ORDER_STATUSES,
+        "purchase order",
+    )?;
     let sql = format!(
         "{PURCHASE_ORDER_SELECT}
         WHERE ($1 = '%%' OR lower(po.po_no) LIKE $1 OR lower(s.name) LIKE $1)
             AND ($2::date IS NULL OR po.order_date >= $2)
             AND ($3::date IS NULL OR po.order_date <= $3)
+            AND (COALESCE(array_length($4::text[], 1), 0) = 0 OR po.status::text = ANY($4::text[]))
         ORDER BY po.id DESC
-        LIMIT $4 OFFSET $5"
+        LIMIT $5 OFFSET $6"
     );
 
     sqlx::query_as::<_, PurchaseOrderResponse>(&sql)
         .bind(search)
         .bind(query.from)
         .bind(query.to)
+        .bind(statuses)
         .bind(query.limit())
         .bind(query.offset())
         .fetch_all(pool)
@@ -416,19 +427,26 @@ pub async fn list_goods_receipts(
     query: ListQuery,
 ) -> AppResult<Vec<GoodsReceiptResponse>> {
     let search = query.search_pattern();
+    let statuses = parse_status_filter(
+        query.status.as_deref(),
+        GOODS_RECEIPT_STATUSES,
+        "goods receipt",
+    )?;
     let sql = format!(
         "{GOODS_RECEIPT_SELECT}
         WHERE ($1 = '%%' OR lower(gr.gr_no) LIKE $1 OR lower(po.po_no) LIKE $1)
             AND ($2::date IS NULL OR gr.received_at::date >= $2)
             AND ($3::date IS NULL OR gr.received_at::date <= $3)
+            AND (COALESCE(array_length($4::text[], 1), 0) = 0 OR gr.status::text = ANY($4::text[]))
         ORDER BY gr.id DESC
-        LIMIT $4 OFFSET $5"
+        LIMIT $5 OFFSET $6"
     );
 
     sqlx::query_as::<_, GoodsReceiptResponse>(&sql)
         .bind(search)
         .bind(query.from)
         .bind(query.to)
+        .bind(statuses)
         .bind(query.limit())
         .bind(query.offset())
         .fetch_all(pool)
@@ -661,19 +679,26 @@ pub async fn list_stock_adjustments(
     query: ListQuery,
 ) -> AppResult<Vec<StockAdjustmentResponse>> {
     let search = query.search_pattern();
+    let statuses = parse_status_filter(
+        query.status.as_deref(),
+        STOCK_ADJUSTMENT_STATUSES,
+        "stock adjustment",
+    )?;
     let sql = format!(
         "{STOCK_ADJUSTMENT_SELECT}
         WHERE ($1 = '%%' OR lower(adjustment_no) LIKE $1 OR lower(reason) LIKE $1)
             AND ($2::date IS NULL OR adjusted_at::date >= $2)
             AND ($3::date IS NULL OR adjusted_at::date <= $3)
+            AND (COALESCE(array_length($4::text[], 1), 0) = 0 OR status::text = ANY($4::text[]))
         ORDER BY id DESC
-        LIMIT $4 OFFSET $5"
+        LIMIT $5 OFFSET $6"
     );
 
     sqlx::query_as::<_, StockAdjustmentResponse>(&sql)
         .bind(search)
         .bind(query.from)
         .bind(query.to)
+        .bind(statuses)
         .bind(query.limit())
         .bind(query.offset())
         .fetch_all(pool)
@@ -870,19 +895,26 @@ pub async fn list_stock_conversions(
     query: ListQuery,
 ) -> AppResult<Vec<StockConversionResponse>> {
     let search = query.search_pattern();
+    let statuses = parse_status_filter(
+        query.status.as_deref(),
+        STOCK_CONVERSION_STATUSES,
+        "stock conversion",
+    )?;
     let sql = format!(
         "{STOCK_CONVERSION_SELECT}
         WHERE ($1 = '%%' OR lower(conversion_no) LIKE $1)
             AND ($2::date IS NULL OR converted_at::date >= $2)
             AND ($3::date IS NULL OR converted_at::date <= $3)
+            AND (COALESCE(array_length($4::text[], 1), 0) = 0 OR status::text = ANY($4::text[]))
         ORDER BY id DESC
-        LIMIT $4 OFFSET $5"
+        LIMIT $5 OFFSET $6"
     );
 
     sqlx::query_as::<_, StockConversionResponse>(&sql)
         .bind(search)
         .bind(query.from)
         .bind(query.to)
+        .bind(statuses)
         .bind(query.limit())
         .bind(query.offset())
         .fetch_all(pool)
@@ -1151,6 +1183,7 @@ pub async fn list_sales(
     query: ListQuery,
 ) -> AppResult<Vec<SaleResponse>> {
     let search = query.search_pattern();
+    let statuses = parse_status_filter(query.status.as_deref(), SALE_STATUSES, "sale")?;
     let cashier_filter = if user.role == "admin" {
         None
     } else {
@@ -1162,8 +1195,9 @@ pub async fn list_sales(
             AND ($2::date IS NULL OR s.sold_at::date >= $2)
             AND ($3::date IS NULL OR s.sold_at::date <= $3)
             AND ($4::bigint IS NULL OR s.cashier_id = $4)
+            AND (COALESCE(array_length($5::text[], 1), 0) = 0 OR s.status::text = ANY($5::text[]))
         ORDER BY s.id DESC
-        LIMIT $5 OFFSET $6"
+        LIMIT $6 OFFSET $7"
     );
 
     sqlx::query_as::<_, SaleResponse>(&sql)
@@ -1171,6 +1205,7 @@ pub async fn list_sales(
         .bind(query.from)
         .bind(query.to)
         .bind(cashier_filter)
+        .bind(statuses)
         .bind(query.limit())
         .bind(query.offset())
         .fetch_all(pool)

@@ -107,6 +107,10 @@
 							{
 								title: 'Stock Report',
 								url: '/inventory/stock-report'
+							},
+							{
+								title: 'Stock Movements',
+								url: '/inventory/stock-movements'
 							}
 						]
 					},

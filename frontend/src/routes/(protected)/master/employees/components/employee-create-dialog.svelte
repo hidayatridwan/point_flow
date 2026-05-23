@@ -7,22 +7,32 @@
 	import * as Form from '$lib/components/ui/form/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
+	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { cn } from '$lib/utils.js';
+	import { toast } from 'svelte-sonner';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4, zod4Client } from 'sveltekit-superforms/adapters';
 	import { z } from 'zod';
 
-	const salarySchema = z
-		.string()
-		.trim()
-		.min(1, 'Base salary is required.')
-		.refine((value) => Number.isFinite(Number(value)), {
-			message: 'Base salary must be a valid number.'
-		})
-		.refine((value) => Number(value) >= 0, {
-			message: 'Base salary must be zero or greater.'
-		});
+	const normalizeStringInput = (value: unknown) => {
+		if (value === null || value === undefined) return '';
+		return String(value);
+	};
+
+	const salarySchema = z.preprocess(
+		normalizeStringInput,
+		z
+			.string()
+			.trim()
+			.min(1, 'Base salary is required.')
+			.refine((value) => Number.isFinite(Number(value)), {
+				message: 'Base salary must be a valid number.'
+			})
+			.refine((value) => Number(value) >= 0, {
+				message: 'Base salary must be zero or greater.'
+			})
+	);
 
 	const createEmployeeSchema = z.object({
 		name: z
@@ -96,6 +106,9 @@
 				is_active: result.data.is_active === 'true'
 			});
 			await onCreated?.(createdEmployee);
+			toast.success('Employee created.', {
+				description: `${createdEmployee.name} was added.`
+			});
 			open = false;
 		} catch (error) {
 			errorMessage = getErrorMessage(error);
@@ -249,6 +262,9 @@
 					Cancel
 				</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting}>
+					{#if isSubmitting}
+						<Spinner />
+					{/if}
 					{isSubmitting ? 'Creating...' : 'Create employee'}
 				</Button>
 			</Dialog.Footer>

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import type { PathnameWithSearchOrHash } from '$app/types';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import StoreIcon from '@lucide/svelte/icons/store';
@@ -29,7 +28,7 @@
 		try {
 			const accessToken = getAccessToken() ?? (await refreshAccessToken());
 			if (accessToken) {
-				await goto(resolve(redirectTo as PathnameWithSearchOrHash), { replaceState: true });
+				await goto(resolve(redirectTo as '/'), { replaceState: true });
 			}
 		} finally {
 			isCheckingSession = false;
@@ -45,7 +44,7 @@
 			await login(credentials);
 			transitionMessage = 'Opening dashboard...';
 			await wait(AUTH_TRANSITION_DELAY_MS);
-			await goto(resolve(redirectTo as PathnameWithSearchOrHash), { replaceState: true });
+			await goto(resolve(redirectTo as '/'), { replaceState: true });
 		} catch (error) {
 			transitionMessage = null;
 			errorMessage = getLoginErrorMessage(error);

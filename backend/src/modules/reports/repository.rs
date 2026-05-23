@@ -4,7 +4,8 @@ use crate::{
     error::AppResult,
     models::{
         DailySalesReport, DashboardResponse, GoodsReceiptReport, ListQuery, MonthlySalesReport,
-        PayrollReport, PurchaseOrderReport, StockAdjustmentReport, StockReport,
+        PayrollReport, PurchaseOrderReport, StockAdjustmentReport, StockMovementReport,
+        StockMovementReportQuery, StockReport,
     },
     services::reports,
 };
@@ -23,6 +24,13 @@ pub async fn monthly_sales(pool: &PgPool, query: ListQuery) -> AppResult<Vec<Mon
 
 pub async fn stock(pool: &PgPool, query: ListQuery) -> AppResult<Vec<StockReport>> {
     reports::stock(pool, query).await
+}
+
+pub async fn stock_movements(
+    pool: &PgPool,
+    query: StockMovementReportQuery,
+) -> AppResult<Vec<StockMovementReport>> {
+    reports::stock_movements(pool, query).await
 }
 
 pub async fn purchase_orders(

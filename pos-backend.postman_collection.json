@@ -831,7 +831,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{base_url}}/purchase-orders?search=&from=&to=&limit=50&offset=0"
+            "url": "{{base_url}}/purchase-orders?search=&from=&to=&status=draft,ordered,cancelled&limit=50&offset=0"
           },
           "response": []
         },
@@ -915,7 +915,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{base_url}}/goods-receipts?search=&from=&to=&limit=50&offset=0"
+            "url": "{{base_url}}/goods-receipts?search=&from=&to=&status=draft,posted,cancelled&limit=50&offset=0"
           },
           "response": []
         },
@@ -998,7 +998,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{base_url}}/stock-adjustments?search=&from=&to=&limit=50&offset=0"
+            "url": "{{base_url}}/stock-adjustments?search=&from=&to=&status=draft,posted,cancelled&limit=50&offset=0"
           },
           "response": []
         },
@@ -1081,7 +1081,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{base_url}}/stock-conversions?search=&from=&to=&limit=50&offset=0"
+            "url": "{{base_url}}/stock-conversions?search=&from=&to=&status=draft,posted,cancelled&limit=50&offset=0"
           },
           "response": []
         },
@@ -1164,7 +1164,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{base_url}}/sales?search=&from=&to=&limit=50&offset=0"
+            "url": "{{base_url}}/sales?search=&from=&to=&status=completed,cancelled&limit=50&offset=0"
           },
           "response": []
         },
@@ -1404,7 +1404,16 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{base_url}}/reports/stock?search=&limit=50&offset=0"
+            "url": "{{base_url}}/reports/stock?search=&status=low_stock,in_stock,inactive&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Stock Movement Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/reports/stock-movements?search=&from=&to=&type=purchase_receipt,adjustment,sale,conversion_in,conversion_out&product_sku_id=&limit=50&offset=0"
           },
           "response": []
         },
@@ -1413,7 +1422,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{base_url}}/reports/purchase-orders?search=&from=&to=&limit=50&offset=0"
+            "url": "{{base_url}}/reports/purchase-orders?search=&from=&to=&status=draft,ordered,partially_received,received,cancelled&limit=50&offset=0"
           },
           "response": []
         },
@@ -1422,7 +1431,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{base_url}}/reports/goods-receipts?search=&from=&to=&limit=50&offset=0"
+            "url": "{{base_url}}/reports/goods-receipts?search=&from=&to=&status=draft,posted,cancelled&limit=50&offset=0"
           },
           "response": []
         },
@@ -1431,7 +1440,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{base_url}}/reports/stock-adjustments?search=&from=&to=&limit=50&offset=0"
+            "url": "{{base_url}}/reports/stock-adjustments?search=&from=&to=&status=draft,posted,cancelled&limit=50&offset=0"
           },
           "response": []
         },

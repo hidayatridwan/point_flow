@@ -1,11 +1,17 @@
 use sqlx::PgPool;
 
 use crate::{
-    error::AppResult,
+    error::{AppError, AppResult},
     models::{
         DailySalesReport, DashboardResponse, GoodsReceiptReport, ListQuery, MonthlySalesReport,
-        PayrollReport, PurchaseOrderReport, StockAdjustmentReport, StockReport,
+        PayrollReport, PurchaseOrderReport, StockAdjustmentReport, StockMovementReport,
+        StockMovementReportQuery, StockReport,
     },
+};
+
+use super::{
+    GOODS_RECEIPT_STATUSES, PURCHASE_ORDER_STATUSES, STOCK_ADJUSTMENT_STATUSES,
+    STOCK_MOVEMENT_TYPES, STOCK_REPORT_STATUSES, parse_status_filter,
 };
 
 pub async fn dashboard(pool: &PgPool) -> AppResult<DashboardResponse> {
@@ -75,6 +81,7 @@ pub async fn monthly_sales(pool: &PgPool, query: ListQuery) -> AppResult<Vec<Mon
 
 pub async fn stock(pool: &PgPool, query: ListQuery) -> AppResult<Vec<StockReport>> {
     let search = query.search_pattern();
+    let statuses = parse_status_filter(query.status.as_deref(), STOCK_REPORT_STATUSES, "stock")?;
     sqlx::query_as::<_, StockReport>(
         r#"
         SELECT
@@ -93,12 +100,112 @@ pub async fn stock(pool: &PgPool, query: ListQuery) -> AppResult<Vec<StockReport
             is_low_stock,
             is_active
         FROM v_stock_report
-        WHERE $1 = '%%' OR lower(product_name) LIKE $1 OR lower(sku) LIKE $1 OR lower(coalesce(barcode, '')) LIKE $1
+        WHERE ($1 = '%%' OR lower(product_name) LIKE $1 OR lower(sku) LIKE $1 OR lower(coalesce(barcode, '')) LIKE $1)
+            AND (
+                COALESCE(array_length($2::text[], 1), 0) = 0
+                OR ('low_stock' = ANY($2::text[]) AND is_active = TRUE AND is_low_stock = TRUE)
+                OR ('in_stock' = ANY($2::text[]) AND is_active = TRUE AND is_low_stock = FALSE)
+                OR ('inactive' = ANY($2::text[]) AND is_active = FALSE)
+            )
         ORDER BY is_low_stock DESC, product_name, sku
-        LIMIT $2 OFFSET $3
+        LIMIT $3 OFFSET $4
         "#,
     )
     .bind(search)
+    .bind(statuses)
+    .bind(query.limit())
+    .bind(query.offset())
+    .fetch_all(pool)
+    .await
+    .map_err(Into::into)
+}
+
+pub async fn stock_movements(
+    pool: &PgPool,
+    query: StockMovementReportQuery,
+) -> AppResult<Vec<StockMovementReport>> {
+    let search = query.search_pattern();
+    let movement_types = parse_status_filter(
+        query.movement_type.as_deref(),
+        STOCK_MOVEMENT_TYPES,
+        "stock movement",
+    )?;
+    let product_sku_id = parse_optional_i64(query.product_sku_id.as_deref(), "product_sku_id")?;
+
+    sqlx::query_as::<_, StockMovementReport>(
+        r#"
+        SELECT
+            sm.id,
+            sm.created_at,
+            sm.product_id,
+            sm.product_sku_id,
+            p.name AS product_name,
+            ps.sku,
+            u.code AS unit,
+            sm.movement_type::text AS movement_type,
+            CASE
+                WHEN sm.stock_after >= sm.stock_before THEN 'in'
+                ELSE 'out'
+            END AS direction,
+            sm.quantity::float8 AS quantity,
+            sm.stock_before::float8 AS stock_before,
+            sm.stock_after::float8 AS stock_after,
+            (sm.stock_after - sm.stock_before)::float8 AS quantity_delta,
+            CASE
+                WHEN sm.sale_id IS NOT NULL THEN 'sale'
+                WHEN sm.goods_receipt_id IS NOT NULL THEN 'goods_receipt'
+                WHEN sm.stock_adjustment_id IS NOT NULL THEN 'stock_adjustment'
+                WHEN sm.stock_conversion_id IS NOT NULL THEN 'stock_conversion'
+                ELSE 'unknown'
+            END AS reference_type,
+            CASE
+                WHEN sm.sale_id IS NOT NULL THEN sm.sale_id
+                WHEN sm.goods_receipt_id IS NOT NULL THEN sm.goods_receipt_id
+                WHEN sm.stock_adjustment_id IS NOT NULL THEN sm.stock_adjustment_id
+                WHEN sm.stock_conversion_id IS NOT NULL THEN sm.stock_conversion_id
+                ELSE NULL
+            END AS reference_id,
+            CASE
+                WHEN sm.sale_id IS NOT NULL THEN s.transaction_no
+                WHEN sm.goods_receipt_id IS NOT NULL THEN gr.gr_no
+                WHEN sm.stock_adjustment_id IS NOT NULL THEN sa.adjustment_no
+                WHEN sm.stock_conversion_id IS NOT NULL THEN sc.conversion_no
+                ELSE NULL
+            END AS reference_no,
+            sm.notes,
+            sm.created_by
+        FROM stock_movements sm
+        JOIN products p ON p.id = sm.product_id
+        JOIN product_skus ps ON ps.id = sm.product_sku_id
+        JOIN units u ON u.id = ps.unit_id
+        LEFT JOIN sales s ON s.id = sm.sale_id
+        LEFT JOIN goods_receipts gr ON gr.id = sm.goods_receipt_id
+        LEFT JOIN stock_adjustments sa ON sa.id = sm.stock_adjustment_id
+        LEFT JOIN stock_conversions sc ON sc.id = sm.stock_conversion_id
+        WHERE (
+                $1 = '%%'
+                OR lower(p.name) LIKE $1
+                OR lower(ps.sku) LIKE $1
+                OR lower(coalesce(ps.barcode, '')) LIKE $1
+                OR lower(coalesce(s.transaction_no, '')) LIKE $1
+                OR lower(coalesce(gr.gr_no, '')) LIKE $1
+                OR lower(coalesce(sa.adjustment_no, '')) LIKE $1
+                OR lower(coalesce(sc.conversion_no, '')) LIKE $1
+                OR lower(coalesce(sm.notes, '')) LIKE $1
+            )
+            AND ($2::date IS NULL OR sm.created_at::date >= $2)
+            AND ($3::date IS NULL OR sm.created_at::date <= $3)
+            AND (COALESCE(array_length($4::text[], 1), 0) = 0 OR sm.movement_type::text = ANY($4::text[]))
+            AND ($5::bigint IS NULL OR sm.product_sku_id = $5)
+        ORDER BY sm.created_at DESC, sm.id DESC
+        LIMIT $6 OFFSET $7
+        "#,
+    )
+    .bind(search)
+    .bind(query.from)
+    .bind(query.to)
+    .bind(movement_types)
+    .bind(product_sku_id)
     .bind(query.limit())
     .bind(query.offset())
     .fetch_all(pool)
@@ -111,6 +218,11 @@ pub async fn purchase_orders(
     query: ListQuery,
 ) -> AppResult<Vec<PurchaseOrderReport>> {
     let search = query.search_pattern();
+    let statuses = parse_status_filter(
+        query.status.as_deref(),
+        PURCHASE_ORDER_STATUSES,
+        "purchase order",
+    )?;
     sqlx::query_as::<_, PurchaseOrderReport>(
         r#"
         SELECT
@@ -131,13 +243,15 @@ pub async fn purchase_orders(
         WHERE ($1 = '%%' OR lower(po_no) LIKE $1 OR lower(supplier_name) LIKE $1)
             AND ($2::date IS NULL OR order_date >= $2)
             AND ($3::date IS NULL OR order_date <= $3)
+            AND (COALESCE(array_length($4::text[], 1), 0) = 0 OR status::text = ANY($4::text[]))
         ORDER BY id DESC
-        LIMIT $4 OFFSET $5
+        LIMIT $5 OFFSET $6
         "#,
     )
     .bind(search)
     .bind(query.from)
     .bind(query.to)
+    .bind(statuses)
     .bind(query.limit())
     .bind(query.offset())
     .fetch_all(pool)
@@ -145,8 +259,24 @@ pub async fn purchase_orders(
     .map_err(Into::into)
 }
 
+fn parse_optional_i64(value: Option<&str>, field: &str) -> AppResult<Option<i64>> {
+    let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
+        return Ok(None);
+    };
+
+    value
+        .parse::<i64>()
+        .map(Some)
+        .map_err(|_| AppError::BadRequest(format!("{field} must be a valid integer")))
+}
+
 pub async fn goods_receipts(pool: &PgPool, query: ListQuery) -> AppResult<Vec<GoodsReceiptReport>> {
     let search = query.search_pattern();
+    let statuses = parse_status_filter(
+        query.status.as_deref(),
+        GOODS_RECEIPT_STATUSES,
+        "goods receipt",
+    )?;
     sqlx::query_as::<_, GoodsReceiptReport>(
         r#"
         SELECT
@@ -165,13 +295,15 @@ pub async fn goods_receipts(pool: &PgPool, query: ListQuery) -> AppResult<Vec<Go
         WHERE ($1 = '%%' OR lower(gr_no) LIKE $1 OR lower(po_no) LIKE $1 OR lower(supplier_name) LIKE $1)
             AND ($2::date IS NULL OR received_at::date >= $2)
             AND ($3::date IS NULL OR received_at::date <= $3)
+            AND (COALESCE(array_length($4::text[], 1), 0) = 0 OR status::text = ANY($4::text[]))
         ORDER BY id DESC
-        LIMIT $4 OFFSET $5
+        LIMIT $5 OFFSET $6
         "#,
     )
     .bind(search)
     .bind(query.from)
     .bind(query.to)
+    .bind(statuses)
     .bind(query.limit())
     .bind(query.offset())
     .fetch_all(pool)
@@ -184,6 +316,11 @@ pub async fn stock_adjustments(
     query: ListQuery,
 ) -> AppResult<Vec<StockAdjustmentReport>> {
     let search = query.search_pattern();
+    let statuses = parse_status_filter(
+        query.status.as_deref(),
+        STOCK_ADJUSTMENT_STATUSES,
+        "stock adjustment",
+    )?;
     sqlx::query_as::<_, StockAdjustmentReport>(
         r#"
         SELECT
@@ -204,13 +341,15 @@ pub async fn stock_adjustments(
         WHERE ($1 = '%%' OR lower(adjustment_no) LIKE $1 OR lower(reason) LIKE $1)
             AND ($2::date IS NULL OR adjusted_at::date >= $2)
             AND ($3::date IS NULL OR adjusted_at::date <= $3)
+            AND (COALESCE(array_length($4::text[], 1), 0) = 0 OR status::text = ANY($4::text[]))
         ORDER BY id DESC
-        LIMIT $4 OFFSET $5
+        LIMIT $5 OFFSET $6
         "#,
     )
     .bind(search)
     .bind(query.from)
     .bind(query.to)
+    .bind(statuses)
     .bind(query.limit())
     .bind(query.offset())
     .fetch_all(pool)

@@ -45,6 +45,7 @@
 		'/inventory/stock-adjustments': 'Stock Adjustments',
 		'/inventory/stock-conversions': 'Stock Conversions',
 		'/inventory/stock-report': 'Stock Report',
+		'/inventory/stock-movements': 'Stock Movements',
 		'/payroll/slips': 'Payroll Slips',
 		'/payroll/report': 'Payroll Report',
 		'/reports/daily-sales': 'Daily Sales',

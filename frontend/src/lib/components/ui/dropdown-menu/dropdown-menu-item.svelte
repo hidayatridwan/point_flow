@@ -1,14 +1,17 @@
 <script lang="ts">
-	import { cn } from '$lib/utils.js';
+	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
 	import { DropdownMenu as DropdownMenuPrimitive } from 'bits-ui';
+	import type { Snippet } from 'svelte';
 
 	let {
 		ref = $bindable(null),
 		class: className,
+		children,
 		inset,
 		variant = 'default',
 		...restProps
-	}: DropdownMenuPrimitive.ItemProps & {
+	}: WithoutChildrenOrChild<DropdownMenuPrimitive.ItemProps> & {
+		children?: Snippet;
 		inset?: boolean;
 		variant?: 'default' | 'destructive';
 	} = $props();
@@ -24,4 +27,6 @@
 		className
 	)}
 	{...restProps}
-/>
+>
+	{@render children?.()}
+</DropdownMenuPrimitive.Item>

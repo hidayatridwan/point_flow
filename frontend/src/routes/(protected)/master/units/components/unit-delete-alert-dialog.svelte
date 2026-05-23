@@ -4,6 +4,7 @@
 	import { ApiError } from '$lib/api/types.js';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
+	import { toast } from 'svelte-sonner';
 
 	let {
 		unit,
@@ -33,6 +34,9 @@
 		try {
 			await deleteUnit(unit.id);
 			await onDeleted?.(unit.id);
+			toast.success('Unit deleted.', {
+				description: `${unit.name} was removed.`
+			});
 			open = false;
 		} catch (error) {
 			errorMessage = getErrorMessage(error);
