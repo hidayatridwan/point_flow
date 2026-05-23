@@ -18,9 +18,10 @@ use super::service;
 
 pub async fn list_purchase_orders(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Query(query): Query<ListQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<PurchaseOrderResponse>>>> {
+    user.require_permission(&state.db, "procurement").await?;
     Ok(Json(ApiResponse::success(
         service::list_purchase_orders(&state.db, query).await?,
     )))
@@ -28,9 +29,10 @@ pub async fn list_purchase_orders(
 
 pub async fn get_purchase_order(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<PurchaseOrderDetailResponse>>> {
+    user.require_permission(&state.db, "procurement").await?;
     Ok(Json(ApiResponse::success(
         service::find_purchase_order(&state.db, id).await?,
     )))
@@ -41,7 +43,7 @@ pub async fn create_purchase_order(
     user: AuthUser,
     Json(payload): Json<CreatePurchaseOrderRequest>,
 ) -> AppResult<Json<ApiResponse<PurchaseOrderDetailResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "procurement").await?;
     Ok(Json(ApiResponse::success(
         service::create_purchase_order(&state.db, &user, payload).await?,
     )))
@@ -52,7 +54,7 @@ pub async fn order_purchase_order(
     user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<PurchaseOrderDetailResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "procurement").await?;
     Ok(Json(ApiResponse::success(
         service::order_purchase_order(&state.db, &user, id).await?,
     )))
@@ -64,7 +66,7 @@ pub async fn cancel_purchase_order(
     Path(id): Path<i64>,
     Json(payload): Json<CancelRequest>,
 ) -> AppResult<Json<ApiResponse<PurchaseOrderDetailResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "procurement").await?;
     Ok(Json(ApiResponse::success(
         service::cancel_purchase_order(&state.db, &user, id, payload).await?,
     )))
@@ -72,9 +74,10 @@ pub async fn cancel_purchase_order(
 
 pub async fn list_goods_receipts(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Query(query): Query<ListQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<GoodsReceiptResponse>>>> {
+    user.require_permission(&state.db, "procurement").await?;
     Ok(Json(ApiResponse::success(
         service::list_goods_receipts(&state.db, query).await?,
     )))
@@ -82,9 +85,10 @@ pub async fn list_goods_receipts(
 
 pub async fn get_goods_receipt(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<GoodsReceiptDetailResponse>>> {
+    user.require_permission(&state.db, "procurement").await?;
     Ok(Json(ApiResponse::success(
         service::find_goods_receipt(&state.db, id).await?,
     )))
@@ -95,7 +99,7 @@ pub async fn create_goods_receipt(
     user: AuthUser,
     Json(payload): Json<CreateGoodsReceiptRequest>,
 ) -> AppResult<Json<ApiResponse<GoodsReceiptDetailResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "procurement").await?;
     Ok(Json(ApiResponse::success(
         service::create_goods_receipt(&state.db, &user, payload).await?,
     )))
@@ -106,7 +110,7 @@ pub async fn post_goods_receipt(
     user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<GoodsReceiptDetailResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "procurement").await?;
     Ok(Json(ApiResponse::success(
         service::post_goods_receipt(&state.db, &user, id).await?,
     )))
@@ -118,7 +122,7 @@ pub async fn cancel_goods_receipt(
     Path(id): Path<i64>,
     Json(payload): Json<CancelRequest>,
 ) -> AppResult<Json<ApiResponse<GoodsReceiptDetailResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "procurement").await?;
     Ok(Json(ApiResponse::success(
         service::cancel_goods_receipt(&state.db, &user, id, payload).await?,
     )))

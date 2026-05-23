@@ -19,9 +19,10 @@ use super::service;
 
 pub async fn list_categories(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Query(query): Query<ListQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<ProductCategoryResponse>, PaginationMeta>>> {
+    user.require_permission(&state.db, "master_data").await?;
     let categories = service::list_categories(&state.db, query).await?;
 
     Ok(Json(ApiResponse::success_with_meta(
@@ -32,9 +33,10 @@ pub async fn list_categories(
 
 pub async fn get_category(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<ProductCategoryResponse>>> {
+    user.require_permission(&state.db, "master_data").await?;
     Ok(Json(ApiResponse::success(
         service::find_category(&state.db, id).await?,
     )))
@@ -45,7 +47,7 @@ pub async fn create_category(
     user: AuthUser,
     Json(payload): Json<CreateProductCategoryRequest>,
 ) -> AppResult<Json<ApiResponse<ProductCategoryResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "master_data").await?;
     Ok(Json(ApiResponse::success(
         service::create_category(&state.db, payload).await?,
     )))
@@ -57,7 +59,7 @@ pub async fn update_category(
     Path(id): Path<i64>,
     Json(payload): Json<UpdateProductCategoryRequest>,
 ) -> AppResult<Json<ApiResponse<ProductCategoryResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "master_data").await?;
     Ok(Json(ApiResponse::success(
         service::update_category(&state.db, id, payload).await?,
     )))
@@ -68,7 +70,7 @@ pub async fn delete_category(
     user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<MessageResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "master_data").await?;
     service::delete_category(&state.db, id).await?;
     Ok(Json(ApiResponse::success(MessageResponse {
         message: "deleted",
@@ -77,9 +79,10 @@ pub async fn delete_category(
 
 pub async fn list_products(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Query(query): Query<ListQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<ProductResponse>>>> {
+    user.require_permission(&state.db, "master_data").await?;
     Ok(Json(ApiResponse::success(
         service::list_products(&state.db, query).await?,
     )))
@@ -87,9 +90,10 @@ pub async fn list_products(
 
 pub async fn get_product(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<ProductResponse>>> {
+    user.require_permission(&state.db, "master_data").await?;
     Ok(Json(ApiResponse::success(
         service::find_product(&state.db, id).await?,
     )))
@@ -100,7 +104,7 @@ pub async fn create_product(
     user: AuthUser,
     Json(payload): Json<CreateProductRequest>,
 ) -> AppResult<Json<ApiResponse<ProductResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "master_data").await?;
     Ok(Json(ApiResponse::success(
         service::create_product(&state.db, payload).await?,
     )))
@@ -112,7 +116,7 @@ pub async fn update_product(
     Path(id): Path<i64>,
     Json(payload): Json<UpdateProductRequest>,
 ) -> AppResult<Json<ApiResponse<ProductResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "master_data").await?;
     Ok(Json(ApiResponse::success(
         service::update_product(&state.db, id, payload).await?,
     )))
@@ -123,7 +127,7 @@ pub async fn delete_product(
     user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<MessageResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "master_data").await?;
     service::delete_product(&state.db, id).await?;
     Ok(Json(ApiResponse::success(MessageResponse {
         message: "deleted",
@@ -132,9 +136,10 @@ pub async fn delete_product(
 
 pub async fn list_units(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Query(query): Query<ListQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<UnitResponse>>>> {
+    user.require_permission(&state.db, "master_data").await?;
     Ok(Json(ApiResponse::success(
         service::list_units(&state.db, query).await?,
     )))
@@ -142,9 +147,10 @@ pub async fn list_units(
 
 pub async fn get_unit(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<UnitResponse>>> {
+    user.require_permission(&state.db, "master_data").await?;
     Ok(Json(ApiResponse::success(
         service::find_unit(&state.db, id).await?,
     )))
@@ -155,7 +161,7 @@ pub async fn create_unit(
     user: AuthUser,
     Json(payload): Json<CreateUnitRequest>,
 ) -> AppResult<Json<ApiResponse<UnitResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "master_data").await?;
     Ok(Json(ApiResponse::success(
         service::create_unit(&state.db, payload).await?,
     )))
@@ -167,7 +173,7 @@ pub async fn update_unit(
     Path(id): Path<i64>,
     Json(payload): Json<UpdateUnitRequest>,
 ) -> AppResult<Json<ApiResponse<UnitResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "master_data").await?;
     Ok(Json(ApiResponse::success(
         service::update_unit(&state.db, id, payload).await?,
     )))
@@ -178,7 +184,7 @@ pub async fn delete_unit(
     user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<MessageResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "master_data").await?;
     service::delete_unit(&state.db, id).await?;
     Ok(Json(ApiResponse::success(MessageResponse {
         message: "deleted",
@@ -187,9 +193,14 @@ pub async fn delete_unit(
 
 pub async fn list_product_skus(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Query(query): Query<ListQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<ProductSkuResponse>>>> {
+    user.require_any_permission(
+        &state.db,
+        &["master_data", "pos", "procurement", "inventory"],
+    )
+    .await?;
     Ok(Json(ApiResponse::success(
         service::list_product_skus(&state.db, query).await?,
     )))
@@ -197,9 +208,14 @@ pub async fn list_product_skus(
 
 pub async fn get_product_sku(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<ProductSkuResponse>>> {
+    user.require_any_permission(
+        &state.db,
+        &["master_data", "pos", "procurement", "inventory"],
+    )
+    .await?;
     Ok(Json(ApiResponse::success(
         service::find_product_sku(&state.db, id).await?,
     )))
@@ -210,7 +226,7 @@ pub async fn create_product_sku(
     user: AuthUser,
     Json(payload): Json<CreateProductSkuRequest>,
 ) -> AppResult<Json<ApiResponse<ProductSkuResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "master_data").await?;
     Ok(Json(ApiResponse::success(
         service::create_product_sku(&state.db, payload).await?,
     )))
@@ -222,7 +238,7 @@ pub async fn update_product_sku(
     Path(id): Path<i64>,
     Json(payload): Json<UpdateProductSkuRequest>,
 ) -> AppResult<Json<ApiResponse<ProductSkuResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "master_data").await?;
     Ok(Json(ApiResponse::success(
         service::update_product_sku(&state.db, id, payload).await?,
     )))
@@ -233,7 +249,7 @@ pub async fn delete_product_sku(
     user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<MessageResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "master_data").await?;
     service::delete_product_sku(&state.db, id).await?;
     Ok(Json(ApiResponse::success(MessageResponse {
         message: "deleted",

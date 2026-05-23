@@ -18,9 +18,10 @@ use super::service;
 
 pub async fn list_stock_adjustments(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Query(query): Query<ListQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<StockAdjustmentResponse>>>> {
+    user.require_permission(&state.db, "inventory").await?;
     Ok(Json(ApiResponse::success(
         service::list_stock_adjustments(&state.db, query).await?,
     )))
@@ -28,9 +29,10 @@ pub async fn list_stock_adjustments(
 
 pub async fn get_stock_adjustment(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<StockAdjustmentDetailResponse>>> {
+    user.require_permission(&state.db, "inventory").await?;
     Ok(Json(ApiResponse::success(
         service::find_stock_adjustment(&state.db, id).await?,
     )))
@@ -41,7 +43,7 @@ pub async fn create_stock_adjustment(
     user: AuthUser,
     Json(payload): Json<CreateStockAdjustmentRequest>,
 ) -> AppResult<Json<ApiResponse<StockAdjustmentDetailResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "inventory").await?;
     Ok(Json(ApiResponse::success(
         service::create_stock_adjustment(&state.db, &user, payload).await?,
     )))
@@ -52,7 +54,7 @@ pub async fn post_stock_adjustment(
     user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<StockAdjustmentDetailResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "inventory").await?;
     Ok(Json(ApiResponse::success(
         service::post_stock_adjustment(&state.db, &user, id).await?,
     )))
@@ -64,7 +66,7 @@ pub async fn cancel_stock_adjustment(
     Path(id): Path<i64>,
     Json(payload): Json<CancelRequest>,
 ) -> AppResult<Json<ApiResponse<StockAdjustmentDetailResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "inventory").await?;
     Ok(Json(ApiResponse::success(
         service::cancel_stock_adjustment(&state.db, &user, id, payload).await?,
     )))
@@ -72,9 +74,10 @@ pub async fn cancel_stock_adjustment(
 
 pub async fn list_stock_conversions(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Query(query): Query<ListQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<StockConversionResponse>>>> {
+    user.require_permission(&state.db, "inventory").await?;
     Ok(Json(ApiResponse::success(
         service::list_stock_conversions(&state.db, query).await?,
     )))
@@ -82,9 +85,10 @@ pub async fn list_stock_conversions(
 
 pub async fn get_stock_conversion(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<StockConversionDetailResponse>>> {
+    user.require_permission(&state.db, "inventory").await?;
     Ok(Json(ApiResponse::success(
         service::find_stock_conversion(&state.db, id).await?,
     )))
@@ -95,7 +99,7 @@ pub async fn create_stock_conversion(
     user: AuthUser,
     Json(payload): Json<CreateStockConversionRequest>,
 ) -> AppResult<Json<ApiResponse<StockConversionDetailResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "inventory").await?;
     Ok(Json(ApiResponse::success(
         service::create_stock_conversion(&state.db, &user, payload).await?,
     )))
@@ -106,7 +110,7 @@ pub async fn post_stock_conversion(
     user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<StockConversionDetailResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "inventory").await?;
     Ok(Json(ApiResponse::success(
         service::post_stock_conversion(&state.db, &user, id).await?,
     )))
@@ -118,7 +122,7 @@ pub async fn cancel_stock_conversion(
     Path(id): Path<i64>,
     Json(payload): Json<CancelRequest>,
 ) -> AppResult<Json<ApiResponse<StockConversionDetailResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "inventory").await?;
     Ok(Json(ApiResponse::success(
         service::cancel_stock_conversion(&state.db, &user, id, payload).await?,
     )))

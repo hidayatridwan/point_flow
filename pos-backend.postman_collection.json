@@ -45,6 +45,14 @@
       "value": "1"
     },
     {
+      "key": "role_id",
+      "value": "1"
+    },
+    {
+      "key": "permission_code",
+      "value": "pos"
+    },
+    {
       "key": "category_id",
       "value": "1"
     },
@@ -296,7 +304,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Cashier\",\n  \"email\": \"cashier@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"cashier\",\n  \"is_active\": true\n}"
+              "raw": "{\n  \"name\": \"Cashier\",\n  \"email\": \"cashier@example.com\",\n  \"password\": \"password123\",\n  \"role_id\": 2,\n  \"role\": \"cashier\",\n  \"is_active\": true\n}"
             },
             "url": "{{base_url}}/users"
           },
@@ -323,7 +331,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Cashier Updated\",\n  \"email\": \"cashier@example.com\",\n  \"role\": \"cashier\",\n  \"is_active\": true\n}"
+              "raw": "{\n  \"name\": \"Cashier Updated\",\n  \"email\": \"cashier@example.com\",\n  \"role_id\": 2,\n  \"role\": \"cashier\",\n  \"is_active\": true\n}"
             },
             "url": "{{base_url}}/users/{{user_id}}"
           },
@@ -335,6 +343,116 @@
             "method": "DELETE",
             "header": [],
             "url": "{{base_url}}/users/{{user_id}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Roles & Permissions",
+      "item": [
+        {
+          "name": "List Roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/roles?search=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Role",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const body = pm.response.json();",
+                  "  const json = body.data || body;",
+                  "  if (json.id) pm.collectionVariables.set('role_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"cashier_procurement\",\n  \"name\": \"Cashier Procurement\",\n  \"description\": \"Point of sale and procurement access.\",\n  \"permission_codes\": [\"dashboard\", \"pos\", \"procurement\"]\n}"
+            },
+            "url": "{{base_url}}/roles"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Role",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/roles/{{role_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cashier Procurement Updated\",\n  \"description\": \"Updated role description.\"\n}"
+            },
+            "url": "{{base_url}}/roles/{{role_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Role Permissions",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permission_codes\": [\"dashboard\", \"pos\", \"procurement\"]\n}"
+            },
+            "url": "{{base_url}}/roles/{{role_id}}/permissions"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/roles/{{role_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "List Permissions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/permissions?search=&limit=50&offset=0"
           },
           "response": []
         }

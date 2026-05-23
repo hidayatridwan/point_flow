@@ -26,6 +26,7 @@
 		inventory: 'Inventory',
 		payroll: 'Payroll',
 		reports: 'Reports',
+		config: 'Config',
 		account: 'Account'
 	};
 
@@ -33,7 +34,7 @@
 		'/dashboard': 'Summary',
 		'/pos/sales/new': 'New Transaction',
 		'/pos/sales': 'Sales History',
-		'/master/users': 'Users',
+		'/config/users': 'Users',
 		'/master/product-categories': 'Product Categories',
 		'/master/products': 'Products',
 		'/master/units': 'Units',
@@ -53,6 +54,7 @@
 		'/reports/purchase-orders': 'Purchase Orders',
 		'/reports/goods-receipts': 'Goods Receipts',
 		'/reports/stock-adjustments': 'Stock Adjustments',
+		'/config/roles': 'Roles',
 		'/account/me': 'Current User'
 	};
 

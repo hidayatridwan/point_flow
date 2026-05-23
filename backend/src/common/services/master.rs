@@ -13,20 +13,31 @@ use crate::{
     security,
 };
 
-use super::{validate_non_negative, validate_required, validate_status};
+use super::{rbac, validate_non_negative, validate_required};
 
 const USER_SELECT: &str = r#"
     SELECT
-        id,
-        name,
-        email,
-        role::text AS role,
-        is_active,
-        last_login_at,
-        created_at,
-        updated_at,
-        deleted_at
-    FROM users
+        u.id,
+        u.name,
+        u.email,
+        r.id AS role_id,
+        r.code AS role_code,
+        r.name AS role_name,
+        r.code AS role,
+        ARRAY(
+            SELECT p.code
+            FROM role_permissions rp
+            JOIN permissions p ON p.id = rp.permission_id
+            WHERE rp.role_id = r.id
+            ORDER BY p.code
+        ) AS permissions,
+        u.is_active,
+        u.last_login_at,
+        u.created_at,
+        u.updated_at,
+        u.deleted_at
+    FROM users u
+    JOIN roles r ON r.id = u.role_id
 "#;
 
 const CATEGORY_SELECT: &str = r#"
@@ -104,9 +115,10 @@ pub async fn list_users(pool: &PgPool, query: ListQuery) -> AppResult<Vec<UserRe
     let search = query.search_pattern();
     let sql = format!(
         "{USER_SELECT}
-        WHERE deleted_at IS NULL
-            AND ($1 = '%%' OR lower(name) LIKE $1 OR lower(email) LIKE $1)
-        ORDER BY id DESC
+        WHERE u.deleted_at IS NULL
+            AND r.deleted_at IS NULL
+            AND ($1 = '%%' OR lower(u.name) LIKE $1 OR lower(u.email) LIKE $1)
+        ORDER BY u.id DESC
         LIMIT $2 OFFSET $3"
     );
 
@@ -120,7 +132,8 @@ pub async fn list_users(pool: &PgPool, query: ListQuery) -> AppResult<Vec<UserRe
 }
 
 pub async fn find_user(pool: &PgPool, id: i64) -> AppResult<UserResponse> {
-    let sql = format!("{USER_SELECT} WHERE id = $1 AND deleted_at IS NULL");
+    let sql =
+        format!("{USER_SELECT} WHERE u.id = $1 AND u.deleted_at IS NULL AND r.deleted_at IS NULL");
 
     sqlx::query_as::<_, UserResponse>(&sql)
         .bind(id)
@@ -132,22 +145,30 @@ pub async fn find_user(pool: &PgPool, id: i64) -> AppResult<UserResponse> {
 pub async fn create_user(pool: &PgPool, request: CreateUserRequest) -> AppResult<UserResponse> {
     validate_required(&request.name, "name")?;
     validate_required(&request.email, "email")?;
-    let role = request.role.unwrap_or_else(|| "cashier".to_string());
-    validate_status(&role, &["admin", "cashier"], "role")?;
+    let (role_id, role_code) =
+        rbac::resolve_role(pool, request.role_id, request.role, "cashier").await?;
+    if role_code == "admin" {
+        return Err(AppError::Validation(
+            "admin users must be created through bootstrap only".to_string(),
+        ));
+    }
+
     let password_hash = security::hash_password(&request.password)?;
     let is_active = request.is_active.unwrap_or(true);
+    let legacy_role = legacy_role_code(&role_code);
 
     let id: i64 = sqlx::query_scalar(
         r#"
-        INSERT INTO users (name, email, password_hash, role, is_active)
-        VALUES ($1, $2, $3, $4::user_role, $5)
+        INSERT INTO users (name, email, password_hash, role_id, role, is_active)
+        VALUES ($1, $2, $3, $4, $5::user_role, $6)
         RETURNING id
         "#,
     )
     .bind(request.name.trim())
     .bind(request.email.trim())
     .bind(password_hash)
-    .bind(role)
+    .bind(role_id)
+    .bind(legacy_role)
     .bind(is_active)
     .fetch_one(pool)
     .await?;
@@ -160,9 +181,6 @@ pub async fn update_user(
     id: i64,
     request: UpdateUserRequest,
 ) -> AppResult<UserResponse> {
-    if let Some(role) = &request.role {
-        validate_status(role, &["admin", "cashier"], "role")?;
-    }
     if let Some(name) = &request.name {
         validate_required(name, "name")?;
     }
@@ -170,10 +188,26 @@ pub async fn update_user(
         validate_required(email, "email")?;
     }
 
+    let current_user = find_user(pool, id).await?;
     let password_hash = match request.password {
         Some(password) => Some(security::hash_password(&password)?),
         None => None,
     };
+    let role = if request.role_id.is_some() || request.role.is_some() {
+        Some(rbac::resolve_role(pool, request.role_id, request.role, "cashier").await?)
+    } else {
+        None
+    };
+    if let Some((_, role_code)) = &role {
+        if role_code == "admin" && current_user.role_code != "admin" {
+            return Err(AppError::Validation(
+                "admin role cannot be assigned from user management".to_string(),
+            ));
+        }
+    }
+
+    let role_id = role.as_ref().map(|(id, _)| *id);
+    let legacy_role = role.as_ref().and_then(|(_, code)| legacy_role_code(code));
 
     let updated_id: Option<i64> = sqlx::query_scalar(
         r#"
@@ -182,8 +216,13 @@ pub async fn update_user(
             name = COALESCE($2, name),
             email = COALESCE($3, email),
             password_hash = COALESCE($4, password_hash),
-            role = COALESCE($5::user_role, role),
-            is_active = COALESCE($6, is_active)
+            role_id = COALESCE($5, role_id),
+            role = CASE
+                WHEN $5::bigint IS NULL THEN role
+                WHEN $6::text IS NULL THEN NULL
+                ELSE $6::user_role
+            END,
+            is_active = COALESCE($7, is_active)
         WHERE id = $1 AND deleted_at IS NULL
         RETURNING id
         "#,
@@ -192,7 +231,8 @@ pub async fn update_user(
     .bind(request.name)
     .bind(request.email)
     .bind(password_hash)
-    .bind(request.role)
+    .bind(role_id)
+    .bind(legacy_role)
     .bind(request.is_active)
     .fetch_optional(pool)
     .await?;
@@ -205,6 +245,13 @@ pub async fn update_user(
 
 pub async fn delete_user(pool: &PgPool, id: i64) -> AppResult<()> {
     soft_delete(pool, "users", id).await
+}
+
+fn legacy_role_code(role_code: &str) -> Option<String> {
+    match role_code {
+        "admin" | "cashier" => Some(role_code.to_string()),
+        _ => None,
+    }
 }
 
 pub async fn list_categories(

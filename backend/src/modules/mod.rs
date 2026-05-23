@@ -5,6 +5,7 @@ pub mod payroll;
 pub mod procurement;
 pub mod products;
 pub mod reports;
+pub mod roles;
 pub mod sales;
 pub mod suppliers;
 pub mod users;

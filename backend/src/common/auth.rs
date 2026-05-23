@@ -2,6 +2,7 @@ use axum::{
     extract::FromRequestParts,
     http::{header::AUTHORIZATION, request::Parts},
 };
+use sqlx::Row;
 
 use crate::{
     app::AppState,
@@ -18,6 +19,26 @@ pub struct AuthUser {
 impl AuthUser {
     pub fn require_admin(&self) -> AppResult<()> {
         if self.role == "admin" {
+            Ok(())
+        } else {
+            Err(AppError::Forbidden)
+        }
+    }
+
+    pub async fn require_permission(
+        &self,
+        pool: &sqlx::PgPool,
+        permission_code: &str,
+    ) -> AppResult<()> {
+        self.require_any_permission(pool, &[permission_code]).await
+    }
+
+    pub async fn require_any_permission(
+        &self,
+        pool: &sqlx::PgPool,
+        permission_codes: &[&str],
+    ) -> AppResult<()> {
+        if crate::services::rbac::user_has_any_permission(pool, self.id, permission_codes).await? {
             Ok(())
         } else {
             Err(AppError::Forbidden)
@@ -40,10 +61,25 @@ impl FromRequestParts<AppState> for AuthUser {
             .ok_or(AppError::Unauthorized)?;
 
         let claims = security::verify_token(token, &state.jwt_secret)?;
+        let row = sqlx::query(
+            r#"
+            SELECT r.code AS role
+            FROM users u
+            JOIN roles r ON r.id = u.role_id
+            WHERE u.id = $1
+                AND u.deleted_at IS NULL
+                AND u.is_active = TRUE
+                AND r.deleted_at IS NULL
+            "#,
+        )
+        .bind(claims.sub)
+        .fetch_optional(&state.db)
+        .await?
+        .ok_or(AppError::Unauthorized)?;
 
         Ok(Self {
             id: claims.sub,
-            role: claims.role,
+            role: row.get("role"),
         })
     }
 }

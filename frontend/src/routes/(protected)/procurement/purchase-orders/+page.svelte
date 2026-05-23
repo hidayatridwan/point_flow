@@ -306,7 +306,7 @@
 				<Popover.Trigger
 					class={cn(
 						buttonVariants({ variant: 'outline' }),
-						'h-9 w-full justify-start gap-2 px-3 text-left font-normal sm:w-[280px]',
+						'h-9 w-full justify-start gap-2 px-3 text-left font-normal sm:w-70',
 						!query.from && !query.to && 'text-muted-foreground'
 					)}
 					disabled={isLoading}

@@ -1,5 +1,5 @@
 import { clearAccessToken, setAccessToken } from './auth.svelte.js';
-import { apiPost } from './client.js';
+import { apiGet, apiPost } from './client.js';
 
 export type LoginCredentials = {
 	email: string;
@@ -36,6 +36,10 @@ export async function login(credentials: LoginCredentials) {
 	});
 	setAccessToken(session.access_token);
 	return session;
+}
+
+export function getCurrentUser() {
+	return apiGet<AuthUser>('/auth/me');
 }
 
 export async function logout() {

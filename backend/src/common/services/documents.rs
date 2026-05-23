@@ -1351,7 +1351,7 @@ pub async fn cancel_sale(
     id: i64,
     request: CancelRequest,
 ) -> AppResult<SaleDetailResponse> {
-    user.require_admin()?;
+    user.require_permission(pool, "pos").await?;
     let result = sqlx::query(
         r#"
         UPDATE sales

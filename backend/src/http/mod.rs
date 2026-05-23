@@ -4,8 +4,8 @@ use crate::{
     app::AppState,
     models::{ApiResponse, MessageResponse},
     modules::{
-        auth, employees, inventory, payroll, procurement, products, reports, sales, suppliers,
-        users,
+        auth, employees, inventory, payroll, procurement, products, reports, roles, sales,
+        suppliers, users,
     },
 };
 
@@ -22,6 +22,7 @@ pub fn router() -> Router<AppState> {
         .merge(employees::routes::routes())
         .merge(payroll::routes::routes())
         .merge(reports::routes::routes())
+        .merge(roles::routes::routes())
 }
 
 async fn health() -> Json<ApiResponse<MessageResponse>> {

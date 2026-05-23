@@ -27,6 +27,10 @@
 	const sidebar = useSidebar();
 	let isLoggingOut = $state(false);
 
+	function handleAccountSelect() {
+		void goto(resolve('/account/me'));
+	}
+
 	async function handleLogout(event: Event) {
 		if (isLoggingOut) {
 			event.preventDefault();
@@ -92,7 +96,7 @@
 				</DropdownMenu.Label>
 				<DropdownMenu.Separator />
 				<DropdownMenu.Group>
-					<DropdownMenu.Item>
+					<DropdownMenu.Item onSelect={handleAccountSelect}>
 						<BadgeCheckIcon />
 						Account
 					</DropdownMenu.Item>

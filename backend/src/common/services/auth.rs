@@ -7,20 +7,31 @@ use crate::{
     security,
 };
 
-use super::{validate_required, validate_status};
+use super::{rbac, validate_required, validate_status};
 
 const USER_SELECT: &str = r#"
     SELECT
-        id,
-        name,
-        email,
-        role::text AS role,
-        is_active,
-        last_login_at,
-        created_at,
-        updated_at,
-        deleted_at
-    FROM users
+        u.id,
+        u.name,
+        u.email,
+        r.id AS role_id,
+        r.code AS role_code,
+        r.name AS role_name,
+        r.code AS role,
+        ARRAY(
+            SELECT p.code
+            FROM role_permissions rp
+            JOIN permissions p ON p.id = rp.permission_id
+            WHERE rp.role_id = r.id
+            ORDER BY p.code
+        ) AS permissions,
+        u.is_active,
+        u.last_login_at,
+        u.created_at,
+        u.updated_at,
+        u.deleted_at
+    FROM users u
+    JOIN roles r ON r.id = u.role_id
 "#;
 
 #[derive(Debug)]
@@ -41,10 +52,12 @@ pub async fn login(
 
     let row = sqlx::query(
         r#"
-        SELECT id, password_hash, is_active
-        FROM users
-        WHERE lower(email) = lower($1)
-            AND deleted_at IS NULL
+        SELECT u.id, u.password_hash, u.is_active
+        FROM users u
+        JOIN roles r ON r.id = u.role_id
+        WHERE lower(u.email) = lower($1)
+            AND u.deleted_at IS NULL
+            AND r.deleted_at IS NULL
         "#,
     )
     .bind(&request.email)
@@ -94,20 +107,26 @@ pub async fn bootstrap_admin(
 
     validate_required(&request.name, "name")?;
     validate_required(&request.email, "email")?;
-    let role = request.role.unwrap_or_else(|| "admin".to_string());
+    let role = request.role.clone().unwrap_or_else(|| "admin".to_string());
     validate_status(&role, &["admin"], "role")?;
+    let (role_id, role_code) =
+        rbac::resolve_role(pool, request.role_id, request.role, "admin").await?;
+    if role_code != "admin" {
+        return Err(AppError::Validation("role must be admin".to_string()));
+    }
     let password_hash = security::hash_password(&request.password)?;
 
     let user_id: i64 = sqlx::query_scalar(
         r#"
-        INSERT INTO users (name, email, password_hash, role, is_active)
-        VALUES ($1, $2, $3, 'admin', TRUE)
+        INSERT INTO users (name, email, password_hash, role_id, role, is_active)
+        VALUES ($1, $2, $3, $4, 'admin', TRUE)
         RETURNING id
         "#,
     )
     .bind(request.name.trim())
     .bind(request.email.trim())
     .bind(password_hash)
+    .bind(role_id)
     .fetch_one(pool)
     .await?;
 
@@ -140,10 +159,12 @@ pub async fn refresh(
         SELECT rt.id, rt.user_id, u.is_active
         FROM refresh_tokens rt
         JOIN users u ON u.id = rt.user_id
+        JOIN roles r ON r.id = u.role_id
         WHERE rt.token_hash = $1
             AND rt.revoked_at IS NULL
             AND rt.expires_at > now()
             AND u.deleted_at IS NULL
+            AND r.deleted_at IS NULL
         FOR UPDATE
         "#,
     )
@@ -220,7 +241,8 @@ pub async fn logout(pool: &PgPool, refresh_token: &str) -> AppResult<()> {
 }
 
 pub async fn find_user(pool: &PgPool, id: i64) -> AppResult<UserResponse> {
-    let query = format!("{USER_SELECT} WHERE id = $1 AND deleted_at IS NULL");
+    let query =
+        format!("{USER_SELECT} WHERE u.id = $1 AND u.deleted_at IS NULL AND r.deleted_at IS NULL");
 
     sqlx::query_as::<_, UserResponse>(&query)
         .bind(id)

@@ -17,9 +17,11 @@ use super::service;
 
 pub async fn list_suppliers(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Query(query): Query<ListQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<SupplierResponse>>>> {
+    user.require_any_permission(&state.db, &["master_data", "procurement"])
+        .await?;
     Ok(Json(ApiResponse::success(
         service::list_suppliers(&state.db, query).await?,
     )))
@@ -27,9 +29,11 @@ pub async fn list_suppliers(
 
 pub async fn get_supplier(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<SupplierResponse>>> {
+    user.require_any_permission(&state.db, &["master_data", "procurement"])
+        .await?;
     Ok(Json(ApiResponse::success(
         service::find_supplier(&state.db, id).await?,
     )))
@@ -40,7 +44,7 @@ pub async fn create_supplier(
     user: AuthUser,
     Json(payload): Json<CreateSupplierRequest>,
 ) -> AppResult<Json<ApiResponse<SupplierResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "master_data").await?;
     Ok(Json(ApiResponse::success(
         service::create_supplier(&state.db, payload).await?,
     )))
@@ -52,7 +56,7 @@ pub async fn update_supplier(
     Path(id): Path<i64>,
     Json(payload): Json<UpdateSupplierRequest>,
 ) -> AppResult<Json<ApiResponse<SupplierResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "master_data").await?;
     Ok(Json(ApiResponse::success(
         service::update_supplier(&state.db, id, payload).await?,
     )))
@@ -63,7 +67,7 @@ pub async fn delete_supplier(
     user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<MessageResponse>>> {
-    user.require_admin()?;
+    user.require_permission(&state.db, "master_data").await?;
     service::delete_supplier(&state.db, id).await?;
     Ok(Json(ApiResponse::success(MessageResponse {
         message: "deleted",

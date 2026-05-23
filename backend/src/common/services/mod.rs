@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod documents;
 pub mod master;
+pub mod rbac;
 pub mod reports;
 
 use crate::error::{AppError, AppResult};

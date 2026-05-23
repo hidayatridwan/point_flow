@@ -169,7 +169,11 @@ pub struct UserResponse {
     pub id: i64,
     pub name: String,
     pub email: String,
+    pub role_id: i64,
+    pub role_code: String,
+    pub role_name: String,
     pub role: String,
+    pub permissions: Vec<String>,
     pub is_active: bool,
     pub last_login_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
@@ -182,6 +186,7 @@ pub struct CreateUserRequest {
     pub name: String,
     pub email: String,
     pub password: String,
+    pub role_id: Option<i64>,
     pub role: Option<String>,
     pub is_active: Option<bool>,
 }
@@ -191,8 +196,52 @@ pub struct UpdateUserRequest {
     pub name: Option<String>,
     pub email: Option<String>,
     pub password: Option<String>,
+    pub role_id: Option<i64>,
     pub role: Option<String>,
     pub is_active: Option<bool>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct RoleResponse {
+    pub id: i64,
+    pub code: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub is_system: bool,
+    pub permissions: Vec<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub deleted_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct PermissionResponse {
+    pub id: i64,
+    pub code: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateRoleRequest {
+    pub code: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub permission_codes: Option<Vec<String>>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateRoleRequest {
+    pub code: Option<String>,
+    pub name: Option<String>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateRolePermissionsRequest {
+    pub permission_codes: Vec<String>,
 }
 
 #[derive(Debug, Serialize, FromRow)]

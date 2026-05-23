@@ -5,6 +5,7 @@
 	import DatabaseIcon from '@lucide/svelte/icons/database';
 	import HeadsetIcon from '@lucide/svelte/icons/headset';
 	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
+	import ShieldCheckIcon from '@lucide/svelte/icons/shield-check';
 	import ShoppingCartIcon from '@lucide/svelte/icons/shopping-cart';
 	import TruckIcon from '@lucide/svelte/icons/truck';
 	import UserCogIcon from '@lucide/svelte/icons/user-cog';
@@ -163,8 +164,13 @@
 				items: [
 					{
 						title: 'Users',
-						url: '/master/users',
+						url: '/config/users',
 						icon: UserCogIcon
+					},
+					{
+						title: 'Roles',
+						url: '/config/roles',
+						icon: ShieldCheckIcon
 					},
 					{
 						title: 'Help Desk',
