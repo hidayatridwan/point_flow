@@ -5,6 +5,7 @@
 	import DatabaseIcon from '@lucide/svelte/icons/database';
 	import HeadsetIcon from '@lucide/svelte/icons/headset';
 	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
+	import ScrollTextIcon from '@lucide/svelte/icons/scroll-text';
 	import ShieldCheckIcon from '@lucide/svelte/icons/shield-check';
 	import ShoppingCartIcon from '@lucide/svelte/icons/shopping-cart';
 	import TruckIcon from '@lucide/svelte/icons/truck';
@@ -19,140 +20,156 @@
 		},
 		navGroups: [
 			{
-				title: 'Overview',
+				titleKey: 'navGroup.overview',
 				items: [
 					{
-						title: 'Dashboard',
+						titleKey: 'nav.dashboard',
 						url: '/dashboard',
 						icon: LayoutDashboardIcon
 					}
 				]
 			},
 			{
-				title: 'Core',
+				titleKey: 'navGroup.core',
 				items: [
 					{
-						title: 'Cashier',
+						titleKey: 'nav.cashier',
 						url: '/pos/sales/new',
 						icon: ShoppingCartIcon,
 						items: [
 							{
-								title: 'New Transaction',
+								titleKey: 'nav.registerSession',
+								url: '/pos/register-session'
+							},
+							{
+								titleKey: 'nav.newTransaction',
 								url: '/pos/sales/new'
 							},
 							{
-								title: 'Sales History',
+								titleKey: 'nav.salesHistory',
 								url: '/pos/sales'
+							},
+							{
+								titleKey: 'nav.saleReturns',
+								url: '/pos/sale-returns'
+							},
+							{
+								titleKey: 'nav.cashMovements',
+								url: '/pos/cash-drawer-movements'
 							}
 						]
 					},
 					{
-						title: 'Master Data',
+						titleKey: 'nav.masterData',
 						url: '/master/product-categories',
 						icon: DatabaseIcon,
 						items: [
 							{
-								title: 'Product Categories',
+								titleKey: 'nav.productCategories',
 								url: '/master/product-categories'
 							},
 							{
-								title: 'Products',
+								titleKey: 'nav.products',
 								url: '/master/products'
 							},
 							{
-								title: 'Units',
+								titleKey: 'nav.units',
 								url: '/master/units'
 							},
 							{
-								title: 'Product SKUs',
+								titleKey: 'nav.productSkus',
 								url: '/master/product-skus'
 							},
 							{
-								title: 'Suppliers',
+								titleKey: 'nav.suppliers',
 								url: '/master/suppliers'
 							},
 							{
-								title: 'Employees',
+								titleKey: 'nav.cashRegisters',
+								url: '/master/cash-registers'
+							},
+							{
+								titleKey: 'nav.employees',
 								url: '/master/employees'
 							}
 						]
 					},
 					{
-						title: 'Procurement',
+						titleKey: 'nav.procurement',
 						url: '/procurement/purchase-orders',
 						icon: TruckIcon,
 						items: [
 							{
-								title: 'Purchase Orders',
+								titleKey: 'nav.purchaseOrders',
 								url: '/procurement/purchase-orders'
 							},
 							{
-								title: 'Goods Receipts',
+								titleKey: 'nav.goodsReceipts',
 								url: '/procurement/goods-receipts'
 							}
 						]
 					},
 					{
-						title: 'Inventory',
+						titleKey: 'nav.inventory',
 						url: '/inventory/stock-adjustments',
 						icon: WarehouseIcon,
 						items: [
 							{
-								title: 'Stock Adjustments',
+								titleKey: 'nav.stockAdjustments',
 								url: '/inventory/stock-adjustments'
 							},
 							{
-								title: 'Stock Conversions',
+								titleKey: 'nav.stockConversions',
 								url: '/inventory/stock-conversions'
 							},
 							{
-								title: 'Stock Report',
+								titleKey: 'nav.stockReport',
 								url: '/inventory/stock-report'
 							},
 							{
-								title: 'Stock Movements',
+								titleKey: 'nav.stockMovements',
 								url: '/inventory/stock-movements'
 							}
 						]
 					},
 					{
-						title: 'Payroll',
+						titleKey: 'nav.payroll',
 						url: '/payroll/slips',
 						icon: BadgeDollarSignIcon,
 						items: [
 							{
-								title: 'Payroll Slips',
+								titleKey: 'nav.payrollSlips',
 								url: '/payroll/slips'
 							},
 							{
-								title: 'Payroll Report',
+								titleKey: 'nav.payrollReport',
 								url: '/payroll/report'
 							}
 						]
 					},
 					{
-						title: 'Reports',
+						titleKey: 'nav.reports',
 						url: '/reports/daily-sales',
 						icon: ChartColumnIcon,
 						items: [
 							{
-								title: 'Daily Sales',
+								titleKey: 'nav.dailySales',
 								url: '/reports/daily-sales'
 							},
 							{
-								title: 'Monthly Sales',
+								titleKey: 'nav.monthlySales',
 								url: '/reports/monthly-sales'
 							},
 							{
-								title: 'Purchase Orders',
+								titleKey: 'nav.purchaseOrders',
 								url: '/reports/purchase-orders'
 							},
 							{
-								title: 'Goods Receipts',
+								titleKey: 'nav.goodsReceipts',
 								url: '/reports/goods-receipts'
 							},
 							{
-								title: 'Stock Adjustments',
+								titleKey: 'nav.stockAdjustments',
 								url: '/reports/stock-adjustments'
 							}
 						]
@@ -160,20 +177,25 @@
 				]
 			},
 			{
-				title: 'Config',
+				titleKey: 'navGroup.config',
 				items: [
 					{
-						title: 'Users',
+						titleKey: 'nav.users',
 						url: '/config/users',
 						icon: UserCogIcon
 					},
 					{
-						title: 'Roles',
+						titleKey: 'nav.roles',
 						url: '/config/roles',
 						icon: ShieldCheckIcon
 					},
 					{
-						title: 'Help Desk',
+						titleKey: 'nav.auditLogs',
+						url: '/config/audit-logs',
+						icon: ScrollTextIcon
+					},
+					{
+						titleKey: 'nav.helpDesk',
 						url: '/help-desk',
 						icon: HeadsetIcon
 					}
@@ -188,6 +210,7 @@
 	import NavUser from './nav-user.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import CommandIcon from '@lucide/svelte/icons/command';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import type { ComponentProps } from 'svelte';
 
 	let { ref = $bindable(null), ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
@@ -206,8 +229,8 @@
 								<CommandIcon class="size-4" />
 							</div>
 							<div class="grid flex-1 text-start text-sm leading-tight">
-								<span class="truncate font-medium">POS System</span>
-								<span class="truncate text-xs">Cashier & Inventory</span>
+								<span class="truncate font-medium">{t('app.name')}</span>
+								<span class="truncate text-xs">{t('app.subtitle')}</span>
 							</div>
 						</a>
 					{/snippet}

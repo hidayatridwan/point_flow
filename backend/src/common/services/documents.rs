@@ -1,4 +1,7 @@
+use std::collections::HashSet;
+
 use chrono::Utc;
+use serde_json::json;
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::{
@@ -6,20 +9,21 @@ use crate::{
     error::{AppError, AppResult},
     models::{
         CancelRequest, CreateGoodsReceiptRequest, CreatePayrollSlipRequest,
-        CreatePurchaseOrderRequest, CreateSaleRequest, CreateStockAdjustmentRequest,
-        CreateStockConversionRequest, GoodsReceiptDetailResponse, GoodsReceiptItemResponse,
-        GoodsReceiptResponse, ListQuery, PayrollSlipResponse, PurchaseOrderDetailResponse,
-        PurchaseOrderItemResponse, PurchaseOrderResponse, SaleDetailResponse, SaleItemResponse,
-        SaleResponse, StockAdjustmentDetailResponse, StockAdjustmentItemResponse,
-        StockAdjustmentResponse, StockConversionDetailResponse, StockConversionItemResponse,
-        StockConversionResponse,
+        CreatePurchaseOrderRequest, CreateSaleRequest, CreateSaleReturnRequest,
+        CreateStockAdjustmentRequest, CreateStockConversionRequest, GoodsReceiptDetailResponse,
+        GoodsReceiptItemResponse, GoodsReceiptResponse, ListQuery, PayrollSlipResponse,
+        PurchaseOrderDetailResponse, PurchaseOrderItemResponse, PurchaseOrderResponse,
+        ReturnableSaleItemResponse, SaleDetailResponse, SaleItemResponse, SaleResponse,
+        SaleReturnDetailResponse, SaleReturnItemResponse, SaleReturnResponse,
+        StockAdjustmentDetailResponse, StockAdjustmentItemResponse, StockAdjustmentResponse,
+        StockConversionDetailResponse, StockConversionItemResponse, StockConversionResponse,
     },
 };
 
 use super::{
-    GOODS_RECEIPT_STATUSES, PURCHASE_ORDER_STATUSES, SALE_STATUSES, STOCK_ADJUSTMENT_STATUSES,
-    STOCK_CONVERSION_STATUSES, parse_status_filter, validate_non_negative, validate_positive,
-    validate_required,
+    GOODS_RECEIPT_STATUSES, PURCHASE_ORDER_STATUSES, SALE_RETURN_STATUSES, SALE_STATUSES,
+    STOCK_ADJUSTMENT_STATUSES, STOCK_CONVERSION_STATUSES, audit, cash_registers,
+    parse_status_filter, validate_non_negative, validate_positive, validate_required,
 };
 
 const PURCHASE_ORDER_SELECT: &str = r#"
@@ -190,6 +194,10 @@ const SALE_SELECT: &str = r#"
         s.sold_at,
         s.cashier_id,
         u.name AS cashier_name,
+        s.cash_register_session_id,
+        crs.cash_register_id,
+        cr.code AS cash_register_code,
+        cr.name AS cash_register_name,
         s.subtotal_amount::float8 AS subtotal_amount,
         s.total_amount::float8 AS total_amount,
         s.paid_amount::float8 AS paid_amount,
@@ -203,6 +211,8 @@ const SALE_SELECT: &str = r#"
         s.updated_at
     FROM sales s
     JOIN users u ON u.id = s.cashier_id
+    LEFT JOIN cash_register_sessions crs ON crs.id = s.cash_register_session_id
+    LEFT JOIN cash_registers cr ON cr.id = crs.cash_register_id
 "#;
 
 const SALE_ITEM_SELECT: &str = r#"
@@ -219,6 +229,55 @@ const SALE_ITEM_SELECT: &str = r#"
         line_total::float8 AS line_total,
         created_at
     FROM sale_items
+"#;
+
+const SALE_RETURN_SELECT: &str = r#"
+    SELECT
+        sr.id,
+        sr.return_no,
+        sr.sale_id,
+        s.transaction_no AS sale_transaction_no,
+        sr.returned_at,
+        sr.cashier_id,
+        u.name AS cashier_name,
+        sr.cash_register_session_id,
+        crs.cash_register_id,
+        cr.code AS cash_register_code,
+        cr.name AS cash_register_name,
+        sr.subtotal_amount::float8 AS subtotal_amount,
+        sr.refund_amount::float8 AS refund_amount,
+        sr.status::text AS status,
+        sr.reason,
+        sr.notes,
+        sr.cancelled_at,
+        sr.cancelled_by,
+        sr.cancel_reason,
+        sr.created_at,
+        sr.updated_at
+    FROM sale_returns sr
+    JOIN sales s ON s.id = sr.sale_id
+    JOIN users u ON u.id = sr.cashier_id
+    JOIN cash_register_sessions crs ON crs.id = sr.cash_register_session_id
+    JOIN cash_registers cr ON cr.id = crs.cash_register_id
+"#;
+
+const SALE_RETURN_ITEM_SELECT: &str = r#"
+    SELECT
+        sri.id,
+        sri.sale_return_id,
+        sri.sale_item_id,
+        sri.product_id,
+        sri.product_sku_id,
+        sri.product_name,
+        sri.product_sku,
+        sri.unit,
+        sri.quantity::float8 AS quantity,
+        sri.unit_price::float8 AS unit_price,
+        sri.line_total::float8 AS line_total,
+        sri.restock,
+        sri.reason,
+        sri.created_at
+    FROM sale_return_items sri
 "#;
 
 const PAYROLL_SELECT: &str = r#"
@@ -1248,8 +1307,13 @@ pub async fn create_sale(
         return Err(AppError::Validation("items must not be empty".to_string()));
     }
     validate_non_negative(request.paid_amount, "paid_amount")?;
+    let cash_register_session_id = request
+        .cash_register_session_id
+        .ok_or_else(|| AppError::Validation("cash_register_session_id is required".to_string()))?;
 
     let mut tx = pool.begin().await?;
+    cash_registers::ensure_open_cash_register_session(&mut tx, cash_register_session_id).await?;
+
     let mut subtotal = 0.0;
     let mut prepared_items = Vec::new();
 
@@ -1275,16 +1339,19 @@ pub async fn create_sale(
     let sale_id: i64 = sqlx::query_scalar(
         r#"
         INSERT INTO sales (
-            sold_at, cashier_id, subtotal_amount, total_amount, paid_amount, change_amount, notes
+            sold_at, cashier_id, cash_register_session_id, subtotal_amount, total_amount,
+            paid_amount, change_amount, notes
         )
         VALUES (
-            COALESCE($1, now()), $2, $3::numeric, $3::numeric, $4::numeric, ($4 - $3)::numeric, $5
+            COALESCE($1, now()), $2, $3, $4::numeric, $4::numeric, $5::numeric,
+            ($5::numeric - $4::numeric), $6
         )
         RETURNING id
         "#,
     )
     .bind(request.sold_at)
     .bind(user.id)
+    .bind(cash_register_session_id)
     .bind(subtotal)
     .bind(request.paid_amount)
     .bind(request.notes)
@@ -1342,6 +1409,18 @@ pub async fn create_sale(
     }
 
     tx.commit().await?;
+    audit::record_audit_log_best_effort(
+        pool,
+        audit::AuditLogRecord::success(Some(user.id), "sale.create", "sale", Some(sale_id))
+            .with_metadata(json!({
+                "cash_register_session_id": cash_register_session_id,
+                "subtotal_amount": subtotal,
+                "total_amount": subtotal,
+                "paid_amount": request.paid_amount
+            })),
+    )
+    .await;
+
     find_sale(pool, user, sale_id).await
 }
 
@@ -1352,6 +1431,7 @@ pub async fn cancel_sale(
     request: CancelRequest,
 ) -> AppResult<SaleDetailResponse> {
     user.require_permission(pool, "pos").await?;
+    let cancel_reason = normalize_optional_string(request.reason);
     let result = sqlx::query(
         r#"
         UPDATE sales
@@ -1361,7 +1441,7 @@ pub async fn cancel_sale(
     )
     .bind(id)
     .bind(user.id)
-    .bind(request.reason)
+    .bind(cancel_reason.as_deref())
     .execute(pool)
     .await?;
 
@@ -1369,7 +1449,440 @@ pub async fn cancel_sale(
         return Err(AppError::Conflict("sale cannot be cancelled".to_string()));
     }
 
+    audit::record_audit_log_best_effort(
+        pool,
+        audit::AuditLogRecord::success(Some(user.id), "sale.cancel", "sale", Some(id))
+            .with_metadata(json!({ "reason": cancel_reason })),
+    )
+    .await;
+
     find_sale(pool, user, id).await
+}
+
+pub async fn list_sale_returns(
+    pool: &PgPool,
+    user: &AuthUser,
+    query: ListQuery,
+) -> AppResult<Vec<SaleReturnResponse>> {
+    let search = query.search_pattern();
+    let statuses =
+        parse_status_filter(query.status.as_deref(), SALE_RETURN_STATUSES, "sale return")?;
+    let cashier_filter = if user.role == "admin" {
+        None
+    } else {
+        Some(user.id)
+    };
+    let sql = format!(
+        "{SALE_RETURN_SELECT}
+        WHERE ($1 = '%%'
+            OR lower(sr.return_no) LIKE $1
+            OR lower(s.transaction_no) LIKE $1
+            OR lower(u.name) LIKE $1)
+            AND ($2::date IS NULL OR sr.returned_at::date >= $2)
+            AND ($3::date IS NULL OR sr.returned_at::date <= $3)
+            AND ($4::bigint IS NULL OR sr.cashier_id = $4)
+            AND (COALESCE(array_length($5::text[], 1), 0) = 0 OR sr.status::text = ANY($5::text[]))
+        ORDER BY sr.id DESC
+        LIMIT $6 OFFSET $7"
+    );
+
+    sqlx::query_as::<_, SaleReturnResponse>(&sql)
+        .bind(search)
+        .bind(query.from)
+        .bind(query.to)
+        .bind(cashier_filter)
+        .bind(statuses)
+        .bind(query.limit())
+        .bind(query.offset())
+        .fetch_all(pool)
+        .await
+        .map_err(Into::into)
+}
+
+pub async fn find_sale_return(
+    pool: &PgPool,
+    user: &AuthUser,
+    id: i64,
+) -> AppResult<SaleReturnDetailResponse> {
+    let cashier_filter = if user.role == "admin" {
+        None
+    } else {
+        Some(user.id)
+    };
+    let header_sql = format!(
+        "{SALE_RETURN_SELECT}
+        WHERE sr.id = $1 AND ($2::bigint IS NULL OR sr.cashier_id = $2)"
+    );
+    let item_sql =
+        format!("{SALE_RETURN_ITEM_SELECT} WHERE sri.sale_return_id = $1 ORDER BY sri.id");
+
+    let sale_return = sqlx::query_as::<_, SaleReturnResponse>(&header_sql)
+        .bind(id)
+        .bind(cashier_filter)
+        .fetch_optional(pool)
+        .await?
+        .ok_or(AppError::NotFound)?;
+    let items = sqlx::query_as::<_, SaleReturnItemResponse>(&item_sql)
+        .bind(id)
+        .fetch_all(pool)
+        .await?;
+
+    Ok(SaleReturnDetailResponse { sale_return, items })
+}
+
+pub async fn list_returnable_sale_items(
+    pool: &PgPool,
+    user: &AuthUser,
+    sale_id: i64,
+) -> AppResult<Vec<ReturnableSaleItemResponse>> {
+    let cashier_filter = if user.role == "admin" {
+        None
+    } else {
+        Some(user.id)
+    };
+    let sale_exists = sqlx::query_scalar::<_, i64>(
+        r#"
+        SELECT id
+        FROM sales
+        WHERE id = $1
+            AND status = 'completed'
+            AND ($2::bigint IS NULL OR cashier_id = $2)
+        "#,
+    )
+    .bind(sale_id)
+    .bind(cashier_filter)
+    .fetch_optional(pool)
+    .await?;
+
+    if sale_exists.is_none() {
+        return Err(AppError::NotFound);
+    }
+
+    sqlx::query_as::<_, ReturnableSaleItemResponse>(
+        r#"
+        SELECT
+            si.id,
+            si.sale_id,
+            si.product_id,
+            si.product_sku_id,
+            si.product_name,
+            si.product_sku,
+            si.unit,
+            si.quantity::float8 AS quantity,
+            COALESCE(SUM(sri.quantity) FILTER (WHERE sr.id IS NOT NULL), 0)::float8 AS returned_quantity,
+            (
+                si.quantity - COALESCE(SUM(sri.quantity) FILTER (WHERE sr.id IS NOT NULL), 0)
+            )::float8 AS returnable_quantity,
+            si.unit_price::float8 AS unit_price,
+            si.line_total::float8 AS line_total,
+            si.created_at
+        FROM sale_items si
+        LEFT JOIN sale_return_items sri ON sri.sale_item_id = si.id
+        LEFT JOIN sale_returns sr ON sr.id = sri.sale_return_id AND sr.status = 'completed'
+        WHERE si.sale_id = $1
+        GROUP BY si.id
+        ORDER BY si.id
+        "#,
+    )
+    .bind(sale_id)
+    .fetch_all(pool)
+    .await
+    .map_err(Into::into)
+}
+
+pub async fn create_sale_return(
+    pool: &PgPool,
+    user: &AuthUser,
+    request: CreateSaleReturnRequest,
+) -> AppResult<SaleReturnDetailResponse> {
+    if request.items.is_empty() {
+        return Err(AppError::Validation("items must not be empty".to_string()));
+    }
+
+    let mut tx = pool.begin().await?;
+    cash_registers::ensure_open_cash_register_session(&mut tx, request.cash_register_session_id)
+        .await?;
+
+    let cashier_filter = if user.role == "admin" {
+        None
+    } else {
+        Some(user.id)
+    };
+    let sale = sqlx::query(
+        r#"
+        SELECT id, status::text AS status
+        FROM sales
+        WHERE id = $1
+            AND ($2::bigint IS NULL OR cashier_id = $2)
+        FOR UPDATE
+        "#,
+    )
+    .bind(request.sale_id)
+    .bind(cashier_filter)
+    .fetch_optional(&mut *tx)
+    .await?
+    .ok_or(AppError::NotFound)?;
+
+    let sale_status: String = sale.get("status");
+    if sale_status != "completed" {
+        return Err(AppError::Conflict(
+            "sale return requires a completed sale".to_string(),
+        ));
+    }
+
+    let mut sale_item_ids = HashSet::new();
+    let mut subtotal = 0.0;
+    let mut prepared_items = Vec::new();
+
+    for item in request.items {
+        validate_positive(item.quantity, "quantity")?;
+        if !sale_item_ids.insert(item.sale_item_id) {
+            return Err(AppError::Validation(
+                "items must not contain duplicate sale_item_id".to_string(),
+            ));
+        }
+
+        let sale_item_sql = format!(
+            "{SALE_ITEM_SELECT}
+            WHERE id = $1 AND sale_id = $2"
+        );
+        let sale_item = sqlx::query_as::<_, SaleItemResponse>(&sale_item_sql)
+            .bind(item.sale_item_id)
+            .bind(request.sale_id)
+            .fetch_optional(&mut *tx)
+            .await?
+            .ok_or(AppError::NotFound)?;
+
+        let returned_quantity: f64 = sqlx::query_scalar(
+            r#"
+            SELECT COALESCE(SUM(sri.quantity) FILTER (WHERE sr.status = 'completed'), 0)::float8
+            FROM sale_return_items sri
+            JOIN sale_returns sr ON sr.id = sri.sale_return_id
+            WHERE sri.sale_item_id = $1
+            "#,
+        )
+        .bind(item.sale_item_id)
+        .fetch_one(&mut *tx)
+        .await?;
+        let returnable_quantity = sale_item.quantity - returned_quantity;
+        if item.quantity - returnable_quantity > 0.000_001 {
+            return Err(AppError::Conflict(format!(
+                "return quantity exceeds returnable quantity for sale item {}",
+                item.sale_item_id
+            )));
+        }
+
+        subtotal += item.quantity * sale_item.unit_price;
+        prepared_items.push((sale_item, item.quantity, item.restock, item.reason));
+    }
+
+    let return_reason = normalize_optional_string(request.reason);
+    let return_notes = normalize_optional_string(request.notes);
+    let sale_return_id: i64 = sqlx::query_scalar(
+        r#"
+        INSERT INTO sale_returns (
+            sale_id, returned_at, cashier_id, cash_register_session_id, subtotal_amount,
+            refund_amount, reason, notes
+        )
+        VALUES (
+            $1, COALESCE($2, now()), $3, $4, $5::numeric, $5::numeric, $6, $7
+        )
+        RETURNING id
+        "#,
+    )
+    .bind(request.sale_id)
+    .bind(request.returned_at)
+    .bind(user.id)
+    .bind(request.cash_register_session_id)
+    .bind(subtotal)
+    .bind(return_reason.as_deref())
+    .bind(return_notes.as_deref())
+    .fetch_one(&mut *tx)
+    .await?;
+
+    for (sale_item, quantity, restock, reason) in prepared_items {
+        let sale_return_item_id: i64 = sqlx::query_scalar(
+            r#"
+            INSERT INTO sale_return_items (
+                sale_return_id, sale_item_id, product_id, product_sku_id, product_name,
+                product_sku, unit, quantity, unit_price, restock, reason
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8::numeric, $9::numeric, $10, $11)
+            RETURNING id
+            "#,
+        )
+        .bind(sale_return_id)
+        .bind(sale_item.id)
+        .bind(sale_item.product_id)
+        .bind(sale_item.product_sku_id)
+        .bind(sale_item.product_name.as_str())
+        .bind(sale_item.product_sku.as_str())
+        .bind(sale_item.unit.as_str())
+        .bind(quantity)
+        .bind(sale_item.unit_price)
+        .bind(restock)
+        .bind(normalize_optional_string(reason))
+        .fetch_one(&mut *tx)
+        .await?;
+
+        if restock {
+            let stock_before = lock_product_sku_stock(&mut tx, sale_item.product_sku_id).await?;
+            let stock_after = stock_before + quantity;
+            update_product_sku_stock(&mut tx, sale_item.product_sku_id, stock_after).await?;
+            insert_sale_return_stock_movement(
+                &mut tx,
+                sale_item.product_id,
+                sale_item.product_sku_id,
+                "sale_return",
+                quantity,
+                stock_before,
+                stock_after,
+                Some("Sale return completed"),
+                Some(user.id),
+                request.sale_id,
+                sale_item.id,
+                sale_return_id,
+                sale_return_item_id,
+            )
+            .await?;
+        }
+    }
+
+    tx.commit().await?;
+    audit::record_audit_log_best_effort(
+        pool,
+        audit::AuditLogRecord::success(
+            Some(user.id),
+            "sale_return.create",
+            "sale_return",
+            Some(sale_return_id),
+        )
+        .with_metadata(json!({
+            "sale_id": request.sale_id,
+            "cash_register_session_id": request.cash_register_session_id,
+            "refund_amount": subtotal,
+            "reason": return_reason,
+            "notes": return_notes
+        })),
+    )
+    .await;
+
+    find_sale_return(pool, user, sale_return_id).await
+}
+
+pub async fn cancel_sale_return(
+    pool: &PgPool,
+    user: &AuthUser,
+    id: i64,
+    request: CancelRequest,
+) -> AppResult<SaleReturnDetailResponse> {
+    let cancel_reason = normalize_optional_string(request.reason);
+    let mut tx = pool.begin().await?;
+    let cashier_filter = if user.role == "admin" {
+        None
+    } else {
+        Some(user.id)
+    };
+    let sale_return = sqlx::query(
+        r#"
+        SELECT
+            sr.sale_id,
+            sr.status::text AS status,
+            crs.status::text AS cash_register_session_status
+        FROM sale_returns sr
+        JOIN cash_register_sessions crs ON crs.id = sr.cash_register_session_id
+        WHERE sr.id = $1
+            AND ($2::bigint IS NULL OR sr.cashier_id = $2)
+        FOR UPDATE
+        "#,
+    )
+    .bind(id)
+    .bind(cashier_filter)
+    .fetch_optional(&mut *tx)
+    .await?
+    .ok_or_else(|| AppError::Conflict("sale return cannot be cancelled".to_string()))?;
+
+    let status: String = sale_return.get("status");
+    if status != "completed" {
+        return Err(AppError::Conflict(
+            "sale return cannot be cancelled".to_string(),
+        ));
+    }
+
+    let cash_register_session_status: String = sale_return.get("cash_register_session_status");
+    if cash_register_session_status != "open" {
+        return Err(AppError::Conflict(
+            "sale return cannot be cancelled after cash register session is closed".to_string(),
+        ));
+    }
+
+    let sale_id: i64 = sale_return.get("sale_id");
+    let item_sql =
+        format!("{SALE_RETURN_ITEM_SELECT} WHERE sri.sale_return_id = $1 ORDER BY sri.id");
+    let items = sqlx::query_as::<_, SaleReturnItemResponse>(&item_sql)
+        .bind(id)
+        .fetch_all(&mut *tx)
+        .await?;
+
+    for item in items {
+        if !item.restock {
+            continue;
+        }
+
+        let stock_before = lock_product_sku_stock(&mut tx, item.product_sku_id).await?;
+        if stock_before < item.quantity {
+            return Err(AppError::Conflict(format!(
+                "insufficient stock to cancel sale return item {}",
+                item.id
+            )));
+        }
+        let stock_after = stock_before - item.quantity;
+        update_product_sku_stock(&mut tx, item.product_sku_id, stock_after).await?;
+        insert_sale_return_stock_movement(
+            &mut tx,
+            item.product_id,
+            item.product_sku_id,
+            "correction",
+            item.quantity,
+            stock_before,
+            stock_after,
+            Some("Sale return cancelled"),
+            Some(user.id),
+            sale_id,
+            item.sale_item_id,
+            id,
+            item.id,
+        )
+        .await?;
+    }
+
+    sqlx::query(
+        r#"
+        UPDATE sale_returns
+        SET status = 'cancelled', cancelled_at = now(), cancelled_by = $2, cancel_reason = $3
+        WHERE id = $1
+        "#,
+    )
+    .bind(id)
+    .bind(user.id)
+    .bind(cancel_reason.as_deref())
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+    audit::record_audit_log_best_effort(
+        pool,
+        audit::AuditLogRecord::success(
+            Some(user.id),
+            "sale_return.cancel",
+            "sale_return",
+            Some(id),
+        )
+        .with_metadata(json!({ "sale_id": sale_id, "reason": cancel_reason })),
+    )
+    .await;
+
+    find_sale_return(pool, user, id).await
 }
 
 pub async fn list_payroll_slips(
@@ -1604,6 +2117,86 @@ async fn update_purchase_order_status(
     Ok(())
 }
 
+async fn lock_product_sku_stock(
+    tx: &mut Transaction<'_, Postgres>,
+    product_sku_id: i64,
+) -> AppResult<f64> {
+    sqlx::query_scalar(
+        r#"
+        SELECT stock::float8
+        FROM product_skus
+        WHERE id = $1
+        FOR UPDATE
+        "#,
+    )
+    .bind(product_sku_id)
+    .fetch_optional(&mut **tx)
+    .await?
+    .ok_or(AppError::NotFound)
+}
+
+async fn update_product_sku_stock(
+    tx: &mut Transaction<'_, Postgres>,
+    product_sku_id: i64,
+    stock: f64,
+) -> AppResult<()> {
+    sqlx::query("UPDATE product_skus SET stock = $2::numeric WHERE id = $1")
+        .bind(product_sku_id)
+        .bind(stock)
+        .execute(&mut **tx)
+        .await?;
+
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn insert_sale_return_stock_movement(
+    tx: &mut Transaction<'_, Postgres>,
+    product_id: i64,
+    product_sku_id: i64,
+    movement_type: &str,
+    quantity: f64,
+    stock_before: f64,
+    stock_after: f64,
+    notes: Option<&str>,
+    created_by: Option<i64>,
+    sale_id: i64,
+    sale_item_id: i64,
+    sale_return_id: i64,
+    sale_return_item_id: i64,
+) -> AppResult<()> {
+    validate_positive(quantity, "quantity")?;
+    sqlx::query(
+        r#"
+        INSERT INTO stock_movements (
+            product_id, product_sku_id, sale_id, sale_item_id, sale_return_id,
+            sale_return_item_id, movement_type, quantity, stock_before, stock_after,
+            notes, created_by
+        )
+        VALUES (
+            $1, $2, $3, $4, $5, $6, $7::stock_movement_type, $8::numeric,
+            $9::numeric, $10::numeric, $11, $12
+        )
+        "#,
+    )
+    .bind(product_id)
+    .bind(product_sku_id)
+    .bind(sale_id)
+    .bind(sale_item_id)
+    .bind(sale_return_id)
+    .bind(sale_return_item_id)
+    .bind(movement_type)
+    .bind(quantity)
+    .bind(stock_before)
+    .bind(stock_after)
+    .bind(notes)
+    .bind(created_by)
+    .execute(&mut **tx)
+    .await?;
+
+    Ok(())
+}
+
 #[allow(clippy::too_many_arguments)]
 async fn insert_stock_movement(
     tx: &mut Transaction<'_, Postgres>,
@@ -1659,4 +2252,11 @@ async fn insert_stock_movement(
     .await?;
 
     Ok(())
+}
+
+fn normalize_optional_string(value: Option<String>) -> Option<String> {
+    value.and_then(|value| {
+        let value = value.trim().to_string();
+        if value.is_empty() { None } else { Some(value) }
+    })
 }

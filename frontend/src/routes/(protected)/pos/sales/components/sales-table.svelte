@@ -40,6 +40,10 @@
 			header: 'Cashier',
 			cell: (info) => info.getValue()
 		}),
+		columnHelper.accessor('cash_register_code', {
+			header: 'Register',
+			cell: (info) => info.getValue() ?? '-'
+		}),
 		columnHelper.accessor('status', {
 			header: 'Status',
 			cell: (info) => renderComponent(SaleStatusBadge, { status: info.getValue() })
@@ -80,6 +84,7 @@
 			'h-5 w-40',
 			'h-5 w-36',
 			'h-5 w-32',
+			'h-5 w-24',
 			'h-5 w-28',
 			'h-5 w-28',
 			'h-5 w-28',

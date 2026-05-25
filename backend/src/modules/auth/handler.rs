@@ -10,7 +10,10 @@ use crate::{
     app::AppState,
     auth::AuthUser,
     error::{AppError, AppResult},
-    models::{ApiResponse, CreateUserRequest, LoginRequest, MessageResponse, UserResponse},
+    models::{
+        ApiResponse, ChangePasswordRequest, CreateUserRequest, LoginRequest, MessageResponse,
+        UserResponse,
+    },
 };
 
 use super::service;
@@ -85,6 +88,21 @@ pub async fn logout(State(state): State<AppState>, jar: CookieJar) -> AppResult<
         clear_refresh_token_headers(&state)?,
         Json(ApiResponse::success(MessageResponse {
             message: "logged out",
+        })),
+    ))
+}
+
+pub async fn change_password(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<ChangePasswordRequest>,
+) -> AppResult<impl IntoResponse> {
+    service::change_password(&state.db, user.id, payload).await?;
+
+    Ok((
+        clear_refresh_token_headers(&state)?,
+        Json(ApiResponse::success(MessageResponse {
+            message: "password changed",
         })),
     ))
 }

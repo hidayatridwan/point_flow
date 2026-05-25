@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -19,6 +19,14 @@
 				const shouldUseDark = theme === 'dark' || (!theme && systemPrefersDark);
 
 				document.documentElement.classList.toggle('dark', shouldUseDark);
+
+				try {
+					const storedLocale = localStorage.getItem('locale');
+					document.documentElement.lang =
+						storedLocale === 'id' || storedLocale === 'en' ? storedLocale : 'id';
+				} catch {
+					document.documentElement.lang = 'id';
+				}
 			})();
 		</script>
 		%sveltekit.head%

@@ -1,4 +1,6 @@
+pub mod audit;
 pub mod auth;
+pub mod cash_registers;
 pub mod employees;
 pub mod inventory;
 pub mod payroll;
@@ -6,6 +8,7 @@ pub mod procurement;
 pub mod products;
 pub mod reports;
 pub mod roles;
+pub mod sale_returns;
 pub mod sales;
 pub mod suppliers;
 pub mod users;

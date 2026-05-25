@@ -1,4 +1,6 @@
+pub mod audit;
 pub mod auth;
+pub mod cash_registers;
 pub mod documents;
 pub mod master;
 pub mod rbac;
@@ -17,6 +19,11 @@ pub const GOODS_RECEIPT_STATUSES: &[&str] = &["draft", "posted", "cancelled"];
 pub const STOCK_ADJUSTMENT_STATUSES: &[&str] = &["draft", "posted", "cancelled"];
 pub const STOCK_CONVERSION_STATUSES: &[&str] = &["draft", "posted", "cancelled"];
 pub const SALE_STATUSES: &[&str] = &["completed", "cancelled"];
+pub const SALE_RETURN_STATUSES: &[&str] = &["completed", "cancelled"];
+pub const CASH_REGISTER_STATUSES: &[&str] = &["active", "inactive"];
+pub const CASH_REGISTER_SESSION_STATUSES: &[&str] = &["open", "closed"];
+pub const CASH_DRAWER_MOVEMENT_TYPES: &[&str] = &["cash_in", "cash_out", "cash_drop", "petty_cash"];
+pub const CASH_DRAWER_MOVEMENT_STATUSES: &[&str] = &["completed", "cancelled"];
 pub const STOCK_REPORT_STATUSES: &[&str] = &["in_stock", "low_stock", "inactive"];
 pub const STOCK_MOVEMENT_TYPES: &[&str] = &[
     "stock_in",
@@ -26,6 +33,7 @@ pub const STOCK_MOVEMENT_TYPES: &[&str] = &[
     "adjustment",
     "conversion_in",
     "conversion_out",
+    "sale_return",
     "correction",
 ];
 

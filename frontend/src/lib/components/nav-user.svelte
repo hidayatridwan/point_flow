@@ -11,6 +11,7 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const LOGOUT_TRANSITION_DELAY_MS = 700;
 
@@ -98,17 +99,17 @@
 				<DropdownMenu.Group>
 					<DropdownMenu.Item onSelect={handleAccountSelect}>
 						<BadgeCheckIcon />
-						Account
+						{t('common.account')}
 					</DropdownMenu.Item>
 					<DropdownMenu.Item>
 						<BellIcon />
-						Notifications
+						{t('common.notifications')}
 					</DropdownMenu.Item>
 				</DropdownMenu.Group>
 				<DropdownMenu.Separator />
 				<DropdownMenu.Item onSelect={handleLogout} disabled={isLoggingOut}>
 					<LogOutIcon />
-					{isLoggingOut ? 'Logging out...' : 'Log out'}
+					{isLoggingOut ? t('common.loggingOut') : t('common.logOut')}
 				</DropdownMenu.Item>
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>

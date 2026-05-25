@@ -1,4 +1,7 @@
-use axum::{Router, routing::get};
+use axum::{
+    Router,
+    routing::{get, put},
+};
 
 use crate::app::AppState;
 
@@ -18,7 +21,7 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/roles/{id}/permissions",
-            get(handler::get_role).put(handler::replace_role_permissions),
+            put(handler::replace_role_permissions),
         )
         .route("/permissions", get(handler::list_permissions))
 }

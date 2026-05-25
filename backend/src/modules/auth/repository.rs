@@ -2,7 +2,7 @@ use sqlx::PgPool;
 
 use crate::{
     error::AppResult,
-    models::{CreateUserRequest, LoginRequest, UserResponse},
+    models::{ChangePasswordRequest, CreateUserRequest, LoginRequest, UserResponse},
     services::auth as auth_service,
 };
 
@@ -59,6 +59,14 @@ pub async fn refresh(
 
 pub async fn logout(pool: &PgPool, refresh_token: &str) -> AppResult<()> {
     auth_service::logout(pool, refresh_token).await
+}
+
+pub async fn change_password(
+    pool: &PgPool,
+    user_id: i64,
+    request: ChangePasswordRequest,
+) -> AppResult<()> {
+    auth_service::change_password(pool, user_id, request).await
 }
 
 pub async fn find_user(pool: &PgPool, id: i64) -> AppResult<UserResponse> {

@@ -10,52 +10,59 @@
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	type BreadcrumbItem = {
-		label: string;
+		label?: string;
+		labelKey?: string;
 		href?: string;
 	};
 
 	let { children } = $props();
 
-	const sectionLabelBySegment: Record<string, string> = {
-		dashboard: 'Dashboard',
-		pos: 'Point of Sale',
-		master: 'Master Data',
-		procurement: 'Procurement',
-		inventory: 'Inventory',
-		payroll: 'Payroll',
-		reports: 'Reports',
-		config: 'Config',
-		account: 'Account'
+	const sectionLabelKeyBySegment: Record<string, string> = {
+		dashboard: 'nav.dashboard',
+		pos: 'nav.pointOfSale',
+		master: 'nav.masterData',
+		procurement: 'nav.procurement',
+		inventory: 'nav.inventory',
+		payroll: 'nav.payroll',
+		reports: 'nav.reports',
+		config: 'nav.config',
+		account: 'nav.account'
 	};
 
-	const routeLabelByPath: Record<string, string> = {
-		'/dashboard': 'Summary',
-		'/pos/sales/new': 'New Transaction',
-		'/pos/sales': 'Sales History',
-		'/config/users': 'Users',
-		'/master/product-categories': 'Product Categories',
-		'/master/products': 'Products',
-		'/master/units': 'Units',
-		'/master/product-skus': 'Product SKUs',
-		'/master/suppliers': 'Suppliers',
-		'/master/employees': 'Employees',
-		'/procurement/purchase-orders': 'Purchase Orders',
-		'/procurement/goods-receipts': 'Goods Receipts',
-		'/inventory/stock-adjustments': 'Stock Adjustments',
-		'/inventory/stock-conversions': 'Stock Conversions',
-		'/inventory/stock-report': 'Stock Report',
-		'/inventory/stock-movements': 'Stock Movements',
-		'/payroll/slips': 'Payroll Slips',
-		'/payroll/report': 'Payroll Report',
-		'/reports/daily-sales': 'Daily Sales',
-		'/reports/monthly-sales': 'Monthly Sales',
-		'/reports/purchase-orders': 'Purchase Orders',
-		'/reports/goods-receipts': 'Goods Receipts',
-		'/reports/stock-adjustments': 'Stock Adjustments',
-		'/config/roles': 'Roles',
-		'/account/me': 'Current User'
+	const routeLabelKeyByPath: Record<string, string> = {
+		'/dashboard': 'nav.summary',
+		'/pos/register-session': 'nav.registerSession',
+		'/pos/sales/new': 'nav.newTransaction',
+		'/pos/sales': 'nav.salesHistory',
+		'/pos/sale-returns': 'nav.saleReturns',
+		'/pos/cash-drawer-movements': 'nav.cashMovements',
+		'/config/users': 'nav.users',
+		'/master/product-categories': 'nav.productCategories',
+		'/master/products': 'nav.products',
+		'/master/units': 'nav.units',
+		'/master/product-skus': 'nav.productSkus',
+		'/master/suppliers': 'nav.suppliers',
+		'/master/cash-registers': 'nav.cashRegisters',
+		'/master/employees': 'nav.employees',
+		'/procurement/purchase-orders': 'nav.purchaseOrders',
+		'/procurement/goods-receipts': 'nav.goodsReceipts',
+		'/inventory/stock-adjustments': 'nav.stockAdjustments',
+		'/inventory/stock-conversions': 'nav.stockConversions',
+		'/inventory/stock-report': 'nav.stockReport',
+		'/inventory/stock-movements': 'nav.stockMovements',
+		'/payroll/slips': 'nav.payrollSlips',
+		'/payroll/report': 'nav.payrollReport',
+		'/reports/daily-sales': 'nav.dailySales',
+		'/reports/monthly-sales': 'nav.monthlySales',
+		'/reports/purchase-orders': 'nav.purchaseOrders',
+		'/reports/goods-receipts': 'nav.goodsReceipts',
+		'/reports/stock-adjustments': 'nav.stockAdjustments',
+		'/config/roles': 'nav.roles',
+		'/config/audit-logs': 'nav.auditLogs',
+		'/account/me': 'nav.currentUser'
 	};
 
 	const breadcrumbItems = $derived(buildBreadcrumbItems(page.url.pathname));
@@ -91,27 +98,30 @@
 		const segments = normalizedPath.split('/').filter(Boolean);
 
 		if (segments.length === 0) {
-			return [{ label: 'Dashboard', href: '/dashboard' }];
+			return [{ labelKey: 'nav.dashboard', href: '/dashboard' }];
 		}
 
-		const sectionLabel = sectionLabelBySegment[segments[0]] ?? formatSegmentLabel(segments[0]);
-		const routeLabel = routeLabelByPath[normalizedPath];
+		const sectionLabelKey = sectionLabelKeyBySegment[segments[0]];
+		const routeLabelKey = routeLabelKeyByPath[normalizedPath];
 
-		if (routeLabel) {
-			return routeLabel === sectionLabel
-				? [{ label: sectionLabel }]
-				: [{ label: sectionLabel }, { label: routeLabel }];
+		if (routeLabelKey) {
+			const sectionItem = sectionLabelKey
+				? { labelKey: sectionLabelKey }
+				: { label: formatSegmentLabel(segments[0]) };
+
+			return routeLabelKey === sectionLabelKey
+				? [sectionItem]
+				: [sectionItem, { labelKey: routeLabelKey }];
 		}
 
 		return segments.map((segment, index) => {
 			const href = `/${segments.slice(0, index + 1).join('/')}`;
-			const label =
-				routeLabelByPath[href] ?? sectionLabelBySegment[segment] ?? formatSegmentLabel(segment);
+			const labelKey = routeLabelKeyByPath[href] ?? sectionLabelKeyBySegment[segment];
 			const isLast = index === segments.length - 1;
 
 			return {
-				label,
-				href: !isLast && routeLabelByPath[href] ? href : undefined
+				...(labelKey ? { labelKey } : { label: formatSegmentLabel(segment) }),
+				href: !isLast && routeLabelKeyByPath[href] ? href : undefined
 			};
 		});
 	}
@@ -128,6 +138,10 @@
 			.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
 			.join(' ');
 	}
+
+	function getBreadcrumbLabel(breadcrumb: BreadcrumbItem) {
+		return breadcrumb.labelKey ? t(breadcrumb.labelKey) : (breadcrumb.label ?? '');
+	}
 </script>
 
 {#if isSessionReady}
@@ -140,16 +154,18 @@
 					<Separator orientation="vertical" class="me-2 data-[orientation=vertical]:h-4" />
 					<Breadcrumb.Root>
 						<Breadcrumb.List>
-							{#each breadcrumbItems as breadcrumb, index (`${index}-${breadcrumb.label}`)}
+							{#each breadcrumbItems as breadcrumb, index (`${index}-${breadcrumb.labelKey ?? breadcrumb.label}`)}
 								<Breadcrumb.Item
 									class={index < breadcrumbItems.length - 1 ? 'hidden md:block' : undefined}
 								>
 									{#if index === breadcrumbItems.length - 1}
-										<Breadcrumb.Page>{breadcrumb.label}</Breadcrumb.Page>
+										<Breadcrumb.Page>{getBreadcrumbLabel(breadcrumb)}</Breadcrumb.Page>
 									{:else if breadcrumb.href}
-										<Breadcrumb.Link href={breadcrumb.href}>{breadcrumb.label}</Breadcrumb.Link>
+										<Breadcrumb.Link href={breadcrumb.href}>
+											{getBreadcrumbLabel(breadcrumb)}
+										</Breadcrumb.Link>
 									{:else}
-										<span>{breadcrumb.label}</span>
+										<span>{getBreadcrumbLabel(breadcrumb)}</span>
 									{/if}
 								</Breadcrumb.Item>
 								{#if index < breadcrumbItems.length - 1}
@@ -168,7 +184,7 @@
 {:else}
 	<SessionTransition
 		class="min-h-svh bg-muted p-6 md:p-10"
-		title={isRedirecting ? 'Opening sign in...' : 'Checking session...'}
-		description="Please wait a moment."
+		title={isRedirecting ? t('session.openingSignIn') : t('session.checkingSession')}
+		description={t('session.pleaseWait')}
 	/>
 {/if}

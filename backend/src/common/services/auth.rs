@@ -1,13 +1,14 @@
 use chrono::{Duration, Utc};
+use serde_json::json;
 use sqlx::{PgPool, Row};
 
 use crate::{
     error::{AppError, AppResult},
-    models::{CreateUserRequest, LoginRequest, LoginResponse, UserResponse},
+    models::{ChangePasswordRequest, CreateUserRequest, LoginRequest, LoginResponse, UserResponse},
     security,
 };
 
-use super::{rbac, validate_required, validate_status};
+use super::{audit, rbac, validate_required, validate_status};
 
 const USER_SELECT: &str = r#"
     SELECT
@@ -49,6 +50,7 @@ pub async fn login(
 ) -> AppResult<AuthSession> {
     validate_required(&request.email, "email")?;
     validate_required(&request.password, "password")?;
+    let login_email = request.email.trim().to_string();
 
     let row = sqlx::query(
         r#"
@@ -79,14 +81,29 @@ pub async fn login(
         .await?;
 
     let user = find_user(pool, user_id).await?;
-    create_session(
+    let session = create_session(
         pool,
         user,
         jwt_secret,
         access_token_ttl_seconds,
         refresh_token_ttl_seconds,
     )
-    .await
+    .await?;
+
+    audit::record_audit_log_best_effort(
+        pool,
+        audit::AuditLogRecord::success(
+            Some(session.response.user.id),
+            "auth.login",
+            "user",
+            Some(session.response.user.id),
+        )
+        .with_resource_label(session.response.user.email.clone())
+        .with_metadata(json!({ "email": login_email })),
+    )
+    .await;
+
+    Ok(session)
 }
 
 pub async fn bootstrap_admin(
@@ -131,14 +148,34 @@ pub async fn bootstrap_admin(
     .await?;
 
     let user = find_user(pool, user_id).await?;
-    create_session(
+    let session = create_session(
         pool,
         user,
         jwt_secret,
         access_token_ttl_seconds,
         refresh_token_ttl_seconds,
     )
-    .await
+    .await?;
+
+    audit::record_audit_log_best_effort(
+        pool,
+        audit::AuditLogRecord::success(
+            Some(session.response.user.id),
+            "auth.bootstrap_admin",
+            "user",
+            Some(session.response.user.id),
+        )
+        .with_resource_label(session.response.user.email.clone())
+        .with_after_data(json!({
+            "id": session.response.user.id,
+            "email": session.response.user.email.clone(),
+            "role": session.response.user.role.clone(),
+            "is_active": session.response.user.is_active
+        })),
+    )
+    .await;
+
+    Ok(session)
 }
 
 pub async fn refresh(
@@ -224,6 +261,17 @@ pub async fn refresh(
 
 pub async fn logout(pool: &PgPool, refresh_token: &str) -> AppResult<()> {
     let token_hash = security::hash_refresh_token(refresh_token);
+    let user_id = sqlx::query_scalar::<_, i64>(
+        r#"
+        SELECT user_id
+        FROM refresh_tokens
+        WHERE token_hash = $1
+            AND revoked_at IS NULL
+        "#,
+    )
+    .bind(&token_hash)
+    .fetch_optional(pool)
+    .await?;
 
     sqlx::query(
         r#"
@@ -236,6 +284,84 @@ pub async fn logout(pool: &PgPool, refresh_token: &str) -> AppResult<()> {
     .bind(token_hash)
     .execute(pool)
     .await?;
+
+    if let Some(user_id) = user_id {
+        audit::record_audit_log_best_effort(
+            pool,
+            audit::AuditLogRecord::success(Some(user_id), "auth.logout", "user", Some(user_id)),
+        )
+        .await;
+    }
+
+    Ok(())
+}
+
+pub async fn change_password(
+    pool: &PgPool,
+    user_id: i64,
+    request: ChangePasswordRequest,
+) -> AppResult<()> {
+    validate_required(&request.current_password, "current_password")?;
+    validate_required(&request.new_password, "new_password")?;
+
+    let mut tx = pool.begin().await?;
+    let password_hash = sqlx::query_scalar::<_, String>(
+        r#"
+        SELECT password_hash
+        FROM users
+        WHERE id = $1
+            AND deleted_at IS NULL
+            AND is_active = TRUE
+        FOR UPDATE
+        "#,
+    )
+    .bind(user_id)
+    .fetch_optional(&mut *tx)
+    .await?
+    .ok_or(AppError::Unauthorized)?;
+
+    if !security::verify_password(&request.current_password, &password_hash)? {
+        return Err(AppError::Unauthorized);
+    }
+
+    let new_password_hash = security::hash_password(&request.new_password)?;
+
+    sqlx::query(
+        r#"
+        UPDATE users
+        SET password_hash = $2
+        WHERE id = $1
+        "#,
+    )
+    .bind(user_id)
+    .bind(new_password_hash)
+    .execute(&mut *tx)
+    .await?;
+
+    sqlx::query(
+        r#"
+        UPDATE refresh_tokens
+        SET revoked_at = now()
+        WHERE user_id = $1
+            AND revoked_at IS NULL
+        "#,
+    )
+    .bind(user_id)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+
+    audit::record_audit_log_best_effort(
+        pool,
+        audit::AuditLogRecord::success(
+            Some(user_id),
+            "auth.change_password",
+            "user",
+            Some(user_id),
+        ),
+    )
+    .await;
 
     Ok(())
 }

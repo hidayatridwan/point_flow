@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "3f9ef2a2-53c5-4b6a-aed1-7e2d9f5c8b10",
     "name": "POS Backend API",
-    "description": "Postman collection for the POS backend REST API. Import this file, set `base_url`, run Bootstrap Admin or Login, then reuse `access_token` for protected endpoints. API responses use a standard envelope: `data`, `meta`, `error`, and `request_id`. Refresh tokens are stored as backend-generated HttpOnly cookies.",
+    "description": "Postman collection for the POS backend REST API. Import this file, set `base_url`, run Bootstrap Admin or Login, then reuse `access_token` for protected endpoints. API responses use a standard envelope: `data`, `meta`, `error`, and `request_id`. Refresh tokens are stored as backend-generated HttpOnly cookies. Includes current auth, RBAC, cash register sessions, cash drawer movements, sales, sale returns, audit logs, inventory, procurement, payroll, and reports endpoints.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -51,6 +51,18 @@
     {
       "key": "permission_code",
       "value": "pos"
+    },
+    {
+      "key": "cash_register_id",
+      "value": "1"
+    },
+    {
+      "key": "cash_register_session_id",
+      "value": "1"
+    },
+    {
+      "key": "cash_drawer_movement_id",
+      "value": "1"
     },
     {
       "key": "category_id",
@@ -113,11 +125,27 @@
       "value": "1"
     },
     {
+      "key": "sale_item_id",
+      "value": "1"
+    },
+    {
+      "key": "sale_return_id",
+      "value": "1"
+    },
+    {
+      "key": "sale_return_item_id",
+      "value": "1"
+    },
+    {
       "key": "employee_id",
       "value": "1"
     },
     {
       "key": "payroll_slip_id",
+      "value": "1"
+    },
+    {
+      "key": "audit_log_id",
       "value": "1"
     }
   ],
@@ -245,6 +273,46 @@
           "response": []
         },
         {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/me"
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  pm.collectionVariables.unset('access_token');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"password123\",\n  \"new_password\": \"password123\"\n}"
+            },
+            "url": "{{base_url}}/auth/change-password"
+          },
+          "response": []
+        },
+        {
           "name": "Logout",
           "event": [
             {
@@ -268,13 +336,344 @@
             "url": "{{base_url}}/auth/logout"
           },
           "response": []
-        },
+        }
+      ]
+    },
+    {
+      "name": "Audit Logs",
+      "item": [
         {
-          "name": "Me",
+          "name": "List Audit Logs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const body = pm.response.json();",
+                  "  const json = body.data || body;",
+                  "  if (json[0] && json[0].id) pm.collectionVariables.set('audit_log_id', json[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{base_url}}/auth/me"
+            "url": "{{base_url}}/audit-logs?search=&from=&to=&action=&resource_type=&outcome=success,failure&request_id=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Audit Log",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/audit-logs/{{audit_log_id}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cash Registers",
+      "item": [
+        {
+          "name": "List Cash Registers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/cash-registers?search=&status=active,inactive&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Cash Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const body = pm.response.json();",
+                  "  const json = body.data || body;",
+                  "  if (json.id) pm.collectionVariables.set('cash_register_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"REG-01\",\n  \"name\": \"Front Register\",\n  \"description\": \"Main cashier drawer\",\n  \"status\": \"active\"\n}"
+            },
+            "url": "{{base_url}}/cash-registers"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Cash Register",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"REG-01\",\n  \"name\": \"Front Register Updated\",\n  \"description\": \"Updated main cashier drawer\",\n  \"status\": \"active\"\n}"
+            },
+            "url": "{{base_url}}/cash-registers/{{cash_register_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Cash Register",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/cash-registers/{{cash_register_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "List Cash Register Sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/cash-register-sessions?search=&from=&to=&status=open,closed&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Open Cash Register Session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const body = pm.response.json();",
+                  "  const json = body.data || body;",
+                  "  if (json.id) pm.collectionVariables.set('cash_register_session_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cash_register_id\": {{cash_register_id}},\n  \"opening_cash\": 500000,\n  \"opening_notes\": \"Starting drawer cash\"\n}"
+            },
+            "url": "{{base_url}}/cash-register-sessions/open"
+          },
+          "response": []
+        },
+        {
+          "name": "List Cash Drawer Movements",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/cash-drawer-movements?search=&from=&to=&status=completed,cancelled&type=cash_in,cash_out,cash_drop,petty_cash&cash_register_session_id={{cash_register_session_id}}&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Cash Drawer Cash In",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const body = pm.response.json();",
+                  "  const json = body.data || body;",
+                  "  if (json.id) pm.collectionVariables.set('cash_drawer_movement_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cash_register_session_id\": {{cash_register_session_id}},\n  \"occurred_at\": \"2026-05-18T08:30:00Z\",\n  \"movement_type\": \"cash_in\",\n  \"amount\": 100000,\n  \"reason\": \"Additional drawer cash\",\n  \"notes\": \"Added from safe\"\n}"
+            },
+            "url": "{{base_url}}/cash-drawer-movements"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Cash Drawer Cash Drop",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const body = pm.response.json();",
+                  "  const json = body.data || body;",
+                  "  if (json.id) pm.collectionVariables.set('cash_drawer_movement_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cash_register_session_id\": {{cash_register_session_id}},\n  \"occurred_at\": \"2026-05-18T12:30:00Z\",\n  \"movement_type\": \"cash_drop\",\n  \"amount\": 50000,\n  \"reason\": \"Midday cash drop\",\n  \"notes\": \"Moved to back office safe\"\n}"
+            },
+            "url": "{{base_url}}/cash-drawer-movements"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Cash Drawer Cash Out",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const body = pm.response.json();",
+                  "  const json = body.data || body;",
+                  "  if (json.id) pm.collectionVariables.set('cash_drawer_movement_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cash_register_session_id\": {{cash_register_session_id}},\n  \"occurred_at\": \"2026-05-18T13:00:00Z\",\n  \"movement_type\": \"cash_out\",\n  \"amount\": 25000,\n  \"reason\": \"Cash removed from drawer\",\n  \"notes\": \"Manual cash out\"\n}"
+            },
+            "url": "{{base_url}}/cash-drawer-movements"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Cash Drawer Petty Cash",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const body = pm.response.json();",
+                  "  const json = body.data || body;",
+                  "  if (json.id) pm.collectionVariables.set('cash_drawer_movement_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cash_register_session_id\": {{cash_register_session_id}},\n  \"occurred_at\": \"2026-05-18T14:00:00Z\",\n  \"movement_type\": \"petty_cash\",\n  \"amount\": 15000,\n  \"reason\": \"Small operational expense\",\n  \"notes\": \"Parking fee\"\n}"
+            },
+            "url": "{{base_url}}/cash-drawer-movements"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Cash Drawer Movement",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/cash-drawer-movements/{{cash_drawer_movement_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Cash Drawer Movement",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Wrong cash movement input\"\n}"
+            },
+            "url": "{{base_url}}/cash-drawer-movements/{{cash_drawer_movement_id}}/cancel"
+          },
+          "response": []
+        },
+        {
+          "name": "Close Cash Register Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"closing_cash_counted\": 508000,\n  \"closing_notes\": \"Drawer counted at store closing\"\n}"
+            },
+            "url": "{{base_url}}/cash-register-sessions/{{cash_register_session_id}}/close"
           },
           "response": []
         }
@@ -1298,6 +1697,7 @@
                   "  const body = pm.response.json();",
                   "  const json = body.data || body;",
                   "  if (json.id) pm.collectionVariables.set('sale_id', json.id);",
+                  "  if (json.items && json.items[0] && json.items[0].id) pm.collectionVariables.set('sale_item_id', json.items[0].id);",
                   "}"
                 ]
               }
@@ -1313,7 +1713,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"sold_at\": \"2026-05-18T11:00:00Z\",\n  \"paid_amount\": 10000,\n  \"notes\": \"Cash sale\",\n  \"items\": [\n    {\n      \"product_sku_id\": {{product_sku_id}},\n      \"quantity\": 2\n    }\n  ]\n}"
+              "raw": "{\n  \"sold_at\": \"2026-05-18T11:00:00Z\",\n  \"cash_register_session_id\": {{cash_register_session_id}},\n  \"paid_amount\": 10000,\n  \"notes\": \"Cash sale\",\n  \"items\": [\n    {\n      \"product_sku_id\": {{product_sku_id}},\n      \"quantity\": 2\n    }\n  ]\n}"
             },
             "url": "{{base_url}}/sales"
           },
@@ -1343,6 +1743,139 @@
               "raw": "{\n  \"reason\": \"Wrong input\"\n}"
             },
             "url": "{{base_url}}/sales/{{sale_id}}/cancel"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sale Returns",
+      "item": [
+        {
+          "name": "List Sale Returns",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/sale-returns?search=&from=&to=&status=completed,cancelled&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Returnable Sale Items",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const body = pm.response.json();",
+                  "  const json = body.data || body;",
+                  "  if (json[0] && json[0].id) pm.collectionVariables.set('sale_item_id', json[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/sales/{{sale_id}}/returnable-items"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Sale Return Restock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const body = pm.response.json();",
+                  "  const json = body.data || body;",
+                  "  if (json.id) pm.collectionVariables.set('sale_return_id', json.id);",
+                  "  if (json.items && json.items[0] && json.items[0].id) pm.collectionVariables.set('sale_return_item_id', json.items[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sale_id\": {{sale_id}},\n  \"returned_at\": \"2026-05-18T12:00:00Z\",\n  \"cash_register_session_id\": {{cash_register_session_id}},\n  \"reason\": \"Customer return\",\n  \"notes\": \"Restocked item\",\n  \"items\": [\n    {\n      \"sale_item_id\": {{sale_item_id}},\n      \"quantity\": 1,\n      \"restock\": true,\n      \"reason\": \"Unopened item\"\n    }\n  ]\n}"
+            },
+            "url": "{{base_url}}/sale-returns"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Sale Return No Restock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const body = pm.response.json();",
+                  "  const json = body.data || body;",
+                  "  if (json.id) pm.collectionVariables.set('sale_return_id', json.id);",
+                  "  if (json.items && json.items[0] && json.items[0].id) pm.collectionVariables.set('sale_return_item_id', json.items[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sale_id\": {{sale_id}},\n  \"returned_at\": \"2026-05-18T12:10:00Z\",\n  \"cash_register_session_id\": {{cash_register_session_id}},\n  \"reason\": \"Damaged item\",\n  \"notes\": \"Do not restock\",\n  \"items\": [\n    {\n      \"sale_item_id\": {{sale_item_id}},\n      \"quantity\": 1,\n      \"restock\": false,\n      \"reason\": \"Damaged packaging\"\n    }\n  ]\n}"
+            },
+            "url": "{{base_url}}/sale-returns"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Sale Return",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/sale-returns/{{sale_return_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Sale Return",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Refund reversal\"\n}"
+            },
+            "url": "{{base_url}}/sale-returns/{{sale_return_id}}/cancel"
           },
           "response": []
         }
@@ -1531,7 +2064,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{base_url}}/reports/stock-movements?search=&from=&to=&type=purchase_receipt,adjustment,sale,conversion_in,conversion_out&product_sku_id=&limit=50&offset=0"
+            "url": "{{base_url}}/reports/stock-movements?search=&from=&to=&type=purchase_receipt,adjustment,sale,sale_return,conversion_in,conversion_out,correction&product_sku_id=&limit=50&offset=0"
           },
           "response": []
         },

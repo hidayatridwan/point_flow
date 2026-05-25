@@ -6,6 +6,11 @@ export type LoginCredentials = {
 	password: string;
 };
 
+export type ChangePasswordPayload = {
+	current_password: string;
+	new_password: string;
+};
+
 export type AuthUser = {
 	id: number;
 	name: string;
@@ -40,6 +45,10 @@ export async function login(credentials: LoginCredentials) {
 
 export function getCurrentUser() {
 	return apiGet<AuthUser>('/auth/me');
+}
+
+export function changePassword(payload: ChangePasswordPayload) {
+	return apiPost<MessageResponse, ChangePasswordPayload>('/auth/change-password', payload);
 }
 
 export async function logout() {

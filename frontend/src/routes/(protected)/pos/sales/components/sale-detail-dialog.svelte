@@ -79,6 +79,7 @@
 					</DetailField>
 					<DetailField label="Sold At" value={formatDateTime(sale.sold_at)} />
 					<DetailField label="Cashier" value={sale.cashier_name} />
+					<DetailField label="Register" value={sale.cash_register_code || '-'} />
 					<DetailField label="Total" value={formatIdr(sale.total_amount)} />
 					<DetailField label="Paid" value={formatIdr(sale.paid_amount)} />
 					<DetailField label="Change" value={formatIdr(sale.change_amount)} />

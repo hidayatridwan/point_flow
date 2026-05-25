@@ -19,13 +19,19 @@ Authorization: Bearer {{access_token}}
 Catatan:
 
 - Kolom Postman request memakai format `Folder > Request` di dalam file `pos-backend.postman_collection.json`.
-- Placeholder seperti `{{product_id}}`, `{{product_sku_id}}`, `{{unit_pcs_id}}`, `{{unit_dus_id}}`, `{{product_sku_from_id}}`, dan `{{product_sku_to_id}}` adalah variable Postman collection.
-- Response contoh dibuat ringkas agar mudah dibaca, tetapi tetap mengikuti field response backend.
+- Placeholder seperti `{{audit_log_id}}`, `{{cash_register_id}}`, `{{cash_register_session_id}}`, `{{cash_drawer_movement_id}}`, `{{product_id}}`, `{{product_sku_id}}`, `{{sale_id}}`, `{{sale_item_id}}`, `{{sale_return_id}}`, `{{unit_pcs_id}}`, `{{unit_dus_id}}`, `{{product_sku_from_id}}`, dan `{{product_sku_to_id}}` adalah variable Postman collection.
+- Response aktual selalu memakai envelope `data`, `meta`, `error`, dan `request_id`. Beberapa contoh response di dokumen ini menampilkan isi `data` saja agar alurnya lebih ringkas.
 - Response error umum berbentuk:
 
 ```json
 {
-  "error": "validation error: items must not be empty"
+  "data": null,
+  "meta": null,
+  "error": {
+    "code": "validation_error",
+    "message": "validation error: items must not be empty"
+  },
+  "request_id": "03ec5711-3f3e-44b5-a7e8-39cab4a6c867"
 }
 ```
 
@@ -47,7 +53,7 @@ Contoh response:
 }
 ```
 
-## 2. Bootstrap Admin, Login, Refresh, dan Logout
+## 2. Bootstrap Admin, Login, Refresh, Change Password, dan Logout
 
 Flow awal dimulai dari membuat admin pertama. Setelah user pertama ada, endpoint bootstrap tidak bisa dipakai lagi dan login normal dipakai untuk mengambil `access_token`. Backend juga membuat `refresh_token`, menyimpan hash-nya di `refresh_tokens`, dan mengirim cookie ke client.
 
@@ -57,7 +63,7 @@ Flow awal dimulai dari membuat admin pertama. Setelah user pertama ada, endpoint
 | --- | --- |
 | `Auth > Bootstrap Admin` | `POST {{base_url}}/auth/bootstrap-admin` |
 
-Relasi: membuat row pertama di `users` dengan role `admin`, mengembalikan `access_token`, membuat row di `refresh_tokens`, lalu mengirim refresh cookie lewat `Set-Cookie`.
+Relasi: membuat row pertama di `users` dengan `role_id` untuk role system `admin`, mengembalikan `access_token`, membuat row di `refresh_tokens`, lalu mengirim refresh cookie lewat `Set-Cookie`.
 
 Contoh request:
 
@@ -81,7 +87,20 @@ Contoh response:
     "id": 1,
     "name": "Admin",
     "email": "admin@example.com",
+    "role_id": 1,
+    "role_code": "admin",
+    "role_name": "Admin",
     "role": "admin",
+    "permissions": [
+      "dashboard",
+      "inventory",
+      "master_data",
+      "payroll",
+      "pos",
+      "procurement",
+      "reports",
+      "users"
+    ],
     "is_active": true,
     "last_login_at": null,
     "created_at": "2026-05-18T10:00:00Z",
@@ -125,7 +144,20 @@ Contoh response:
     "id": 1,
     "name": "Admin",
     "email": "admin@example.com",
+    "role_id": 1,
+    "role_code": "admin",
+    "role_name": "Admin",
     "role": "admin",
+    "permissions": [
+      "dashboard",
+      "inventory",
+      "master_data",
+      "payroll",
+      "pos",
+      "procurement",
+      "reports",
+      "users"
+    ],
     "is_active": true,
     "last_login_at": "2026-05-18T10:05:00Z",
     "created_at": "2026-05-18T10:00:00Z",
@@ -166,7 +198,20 @@ Contoh response:
     "id": 1,
     "name": "Admin",
     "email": "admin@example.com",
+    "role_id": 1,
+    "role_code": "admin",
+    "role_name": "Admin",
     "role": "admin",
+    "permissions": [
+      "dashboard",
+      "inventory",
+      "master_data",
+      "payroll",
+      "pos",
+      "procurement",
+      "reports",
+      "users"
+    ],
     "is_active": true,
     "last_login_at": "2026-05-18T10:05:00Z",
     "created_at": "2026-05-18T10:00:00Z",
@@ -197,7 +242,20 @@ Contoh response:
   "id": 1,
   "name": "Admin",
   "email": "admin@example.com",
+  "role_id": 1,
+  "role_code": "admin",
+  "role_name": "Admin",
   "role": "admin",
+  "permissions": [
+    "dashboard",
+    "inventory",
+    "master_data",
+    "payroll",
+    "pos",
+    "procurement",
+    "reports",
+    "users"
+  ],
   "is_active": true,
   "last_login_at": "2026-05-18T10:05:00Z",
   "created_at": "2026-05-18T10:00:00Z",
@@ -206,7 +264,42 @@ Contoh response:
 }
 ```
 
-### 2.5 Logout
+### 2.5 Change Password
+
+| Postman request | Endpoint |
+| --- | --- |
+| `Auth > Change Password` | `POST {{base_url}}/auth/change-password` |
+
+Relasi: membaca user dari `access_token`, memverifikasi `current_password` terhadap `users.password_hash`, menyimpan hash baru ke `users.password_hash`, mencabut semua refresh token user di `refresh_tokens`, lalu menghapus refresh cookie lewat `Set-Cookie`.
+
+Endpoint ini tidak membutuhkan permission `users`; cukup user sedang login. Setelah berhasil, client harus menghapus `access_token` dan login ulang.
+
+Contoh request:
+
+```json
+{
+  "current_password": "password123",
+  "new_password": "password123"
+}
+```
+
+Catatan: collection memakai nilai password yang sama agar contoh credential tidak berubah saat endpoint dites. Untuk pemakaian nyata, isi `new_password` dengan password baru minimal 8 karakter.
+
+Contoh response:
+
+```json
+{
+  "message": "password changed"
+}
+```
+
+Header response juga berisi cookie clearing:
+
+```text
+Set-Cookie: refresh_token=; Max-Age=0; Path=/api/v1/auth; HttpOnly; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure
+```
+
+### 2.6 Logout
 
 | Postman request | Endpoint |
 | --- | --- |
@@ -234,7 +327,271 @@ Header response juga berisi cookie clearing:
 Set-Cookie: refresh_token=; Max-Age=0; Path=/api/v1/auth; HttpOnly; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure
 ```
 
-## 3. User Management
+### 2.7 Audit Logs
+
+Audit log mencatat event penting seperti login, bootstrap admin, change password, logout, sale create/cancel, sale return create/cancel, cash register session open/close, dan cash drawer movement create/cancel. Endpoint audit log membutuhkan permission `users`.
+
+| Postman request | Endpoint |
+| --- | --- |
+| `Audit Logs > List Audit Logs` | `GET {{base_url}}/audit-logs?search=&from=&to=&action=&resource_type=&outcome=success,failure&request_id=&limit=50&offset=0` |
+| `Audit Logs > Get Audit Log` | `GET {{base_url}}/audit-logs/{{audit_log_id}}` |
+
+Filter tambahan `actor_id={{user_id}}` bisa ditambahkan saat ingin melihat audit log untuk user tertentu. Collection default tidak mengirim `actor_id=` kosong karena field itu bertipe integer.
+
+Contoh list response:
+
+```json
+[
+  {
+    "id": 1,
+    "request_id": "03ec5711-3f3e-44b5-a7e8-39cab4a6c867",
+    "actor_id": 1,
+    "actor_name": "Admin",
+    "actor_email": "admin@example.com",
+    "actor_role": "admin",
+    "action": "sale.create",
+    "resource_type": "sale",
+    "resource_id": 1,
+    "resource_label": null,
+    "outcome": "success",
+    "before_data": null,
+    "after_data": null,
+    "metadata": {
+      "cash_register_session_id": 1,
+      "total_amount": 8000
+    },
+    "ip_address": null,
+    "user_agent": null,
+    "occurred_at": "2026-05-18T11:00:00Z"
+  }
+]
+```
+
+Catatan: audit log bersifat append-only. Backend tidak menyimpan password, password hash, refresh token, access token, atau secret di audit payload.
+
+## 3. Cash Register dan Session Laci
+
+Cash register adalah master data device/laci fisik. Cash register session adalah sesi buka/tutup laci pada register tersebut. Transaksi sale baru wajib memakai `cash_register_session_id` dari session yang masih `open`.
+
+### 3.1 Master Cash Register
+
+| Postman request | Endpoint |
+| --- | --- |
+| `Cash Registers > List Cash Registers` | `GET {{base_url}}/cash-registers?search=&status=active,inactive&limit=50&offset=0` |
+| `Cash Registers > Create Cash Register` | `POST {{base_url}}/cash-registers` |
+| `Cash Registers > Update Cash Register` | `PUT {{base_url}}/cash-registers/{{cash_register_id}}` |
+| `Cash Registers > Delete Cash Register` | `DELETE {{base_url}}/cash-registers/{{cash_register_id}}` |
+
+Relasi: `cash_registers.id` dipakai oleh `cash_register_sessions.cash_register_id`. CRUD register membutuhkan permission `master_data`.
+
+Contoh create request:
+
+```json
+{
+  "code": "REG-01",
+  "name": "Front Register",
+  "description": "Main cashier drawer",
+  "status": "active"
+}
+```
+
+Contoh response:
+
+```json
+{
+  "id": 1,
+  "code": "REG-01",
+  "name": "Front Register",
+  "description": "Main cashier drawer",
+  "status": "active",
+  "created_at": "2026-05-18T07:50:00Z",
+  "updated_at": "2026-05-18T07:50:00Z",
+  "deleted_at": null
+}
+```
+
+### 3.2 Cash Register Session
+
+| Postman request | Endpoint |
+| --- | --- |
+| `Cash Registers > List Cash Register Sessions` | `GET {{base_url}}/cash-register-sessions?search=&from=&to=&status=open,closed&limit=50&offset=0` |
+| `Cash Registers > Open Cash Register Session` | `POST {{base_url}}/cash-register-sessions/open` |
+| `Cash Registers > Close Cash Register Session` | `POST {{base_url}}/cash-register-sessions/{{cash_register_session_id}}/close` |
+
+Relasi: session memakai `cash_register_id`, `opened_by`, dan `closed_by`. Satu register hanya boleh punya satu session `open`. Endpoint session membutuhkan permission `pos`.
+
+Contoh open request:
+
+```json
+{
+  "cash_register_id": 1,
+  "opening_cash": 500000,
+  "opening_notes": "Starting drawer cash"
+}
+```
+
+Contoh open response:
+
+```json
+{
+  "id": 1,
+  "session_no": "CRS-20260518-000001",
+  "cash_register_id": 1,
+  "cash_register_code": "REG-01",
+  "cash_register_name": "Front Register",
+  "opened_at": "2026-05-18T08:00:00Z",
+  "opened_by": 1,
+  "opened_by_name": "Admin",
+  "opening_cash": 500000,
+  "opening_notes": "Starting drawer cash",
+  "closed_at": null,
+  "closed_by": null,
+  "closed_by_name": null,
+  "closing_cash_counted": null,
+  "expected_cash": null,
+  "cash_difference": null,
+  "closing_notes": null,
+  "status": "open",
+  "created_at": "2026-05-18T08:00:00Z",
+  "updated_at": "2026-05-18T08:00:00Z"
+}
+```
+
+### 3.3 Cash Drawer Movement
+
+Cash drawer movement dipakai untuk mencatat uang kas manual di luar transaksi sale/refund: `cash_in`, `cash_out`, `cash_drop`, dan `petty_cash`. Backend menentukan `direction`: `cash_in` menjadi `in`, sedangkan `cash_out`, `cash_drop`, dan `petty_cash` menjadi `out`.
+
+| Postman request | Endpoint |
+| --- | --- |
+| `Cash Registers > List Cash Drawer Movements` | `GET {{base_url}}/cash-drawer-movements?search=&from=&to=&status=completed,cancelled&type=cash_in,cash_out,cash_drop,petty_cash&cash_register_session_id={{cash_register_session_id}}&limit=50&offset=0` |
+| `Cash Registers > Create Cash Drawer Cash In` | `POST {{base_url}}/cash-drawer-movements` |
+| `Cash Registers > Create Cash Drawer Cash Drop` | `POST {{base_url}}/cash-drawer-movements` |
+| `Cash Registers > Create Cash Drawer Cash Out` | `POST {{base_url}}/cash-drawer-movements` |
+| `Cash Registers > Create Cash Drawer Petty Cash` | `POST {{base_url}}/cash-drawer-movements` |
+| `Cash Registers > Get Cash Drawer Movement` | `GET {{base_url}}/cash-drawer-movements/{{cash_drawer_movement_id}}` |
+| `Cash Registers > Cancel Cash Drawer Movement` | `POST {{base_url}}/cash-drawer-movements/{{cash_drawer_movement_id}}/cancel` |
+
+Relasi: movement wajib memakai `cash_register_session_id` yang masih `open`. Movement `completed` ikut closing; movement `cancelled` tidak dihitung. Cancel movement hanya boleh selama session terkait masih `open`.
+
+Contoh create cash in request:
+
+```json
+{
+  "cash_register_session_id": 1,
+  "occurred_at": "2026-05-18T08:30:00Z",
+  "movement_type": "cash_in",
+  "amount": 100000,
+  "reason": "Additional drawer cash",
+  "notes": "Added from safe"
+}
+```
+
+Contoh create cash drop request:
+
+```json
+{
+  "cash_register_session_id": 1,
+  "occurred_at": "2026-05-18T12:30:00Z",
+  "movement_type": "cash_drop",
+  "amount": 50000,
+  "reason": "Midday cash drop",
+  "notes": "Moved to back office safe"
+}
+```
+
+Contoh create cash out request:
+
+```json
+{
+  "cash_register_session_id": 1,
+  "occurred_at": "2026-05-18T13:00:00Z",
+  "movement_type": "cash_out",
+  "amount": 25000,
+  "reason": "Cash removed from drawer",
+  "notes": "Manual cash out"
+}
+```
+
+Contoh create petty cash request:
+
+```json
+{
+  "cash_register_session_id": 1,
+  "occurred_at": "2026-05-18T14:00:00Z",
+  "movement_type": "petty_cash",
+  "amount": 15000,
+  "reason": "Small operational expense",
+  "notes": "Parking fee"
+}
+```
+
+Contoh response:
+
+```json
+{
+  "id": 1,
+  "movement_no": "CDM-20260518-000001",
+  "cash_register_session_id": 1,
+  "session_no": "CRS-20260518-000001",
+  "cash_register_id": 1,
+  "cash_register_code": "REG-01",
+  "cash_register_name": "Front Register",
+  "occurred_at": "2026-05-18T08:30:00Z",
+  "created_by": 1,
+  "created_by_name": "Admin",
+  "movement_type": "cash_in",
+  "direction": "in",
+  "amount": 100000,
+  "reason": "Additional drawer cash",
+  "notes": "Added from safe",
+  "status": "completed",
+  "cancelled_at": null,
+  "cancelled_by": null,
+  "cancelled_by_name": null,
+  "cancel_reason": null,
+  "created_at": "2026-05-18T08:30:00Z",
+  "updated_at": "2026-05-18T08:30:00Z"
+}
+```
+
+Contoh close request:
+
+```json
+{
+  "closing_cash_counted": 508000,
+  "closing_notes": "Drawer counted at store closing"
+}
+```
+
+Saat closing, backend menghitung:
+
+```text
+expected_cash = opening_cash
+  + SUM(sales.total_amount completed dalam session)
+  - SUM(sale_returns.refund_amount completed dalam session)
+  + SUM(cash_drawer_movements.amount completed direction in dalam session)
+  - SUM(cash_drawer_movements.amount completed direction out dalam session)
+cash_difference = closing_cash_counted - expected_cash
+```
+
+Contoh close response:
+
+```json
+{
+  "id": 1,
+  "session_no": "CRS-20260518-000001",
+  "cash_register_id": 1,
+  "cash_register_code": "REG-01",
+  "cash_register_name": "Front Register",
+  "opening_cash": 500000,
+  "closing_cash_counted": 508000,
+  "expected_cash": 508000,
+  "cash_difference": 0,
+  "status": "closed"
+}
+```
+
+## 4. User Management
 
 Admin bisa membuat user cashier. Cashier dipakai di flow POS untuk transaksi penjualan.
 
@@ -246,7 +603,7 @@ Admin bisa membuat user cashier. Cashier dipakai di flow POS untuk transaksi pen
 | `Users > Update User` | `PUT {{base_url}}/users/{{user_id}}` |
 | `Users > Delete User` | `DELETE {{base_url}}/users/{{user_id}}` |
 
-Relasi: `users.role = admin` bisa mengelola master data dan dokumen. `users.role = cashier` dipakai sebagai `cashier_id` saat membuat `sales`.
+Relasi: `users.role_id` mengarah ke `roles.id`. Role `admin` bisa mengelola semua modul melalui permissions, sedangkan role `cashier` dipakai sebagai `cashier_id` saat membuat `sales`.
 
 Contoh create request:
 
@@ -255,6 +612,7 @@ Contoh create request:
   "name": "Cashier",
   "email": "cashier@example.com",
   "password": "password123",
+  "role_id": 2,
   "role": "cashier",
   "is_active": true
 }
@@ -267,7 +625,14 @@ Contoh create response:
   "id": 2,
   "name": "Cashier",
   "email": "cashier@example.com",
+  "role_id": 2,
+  "role_code": "cashier",
+  "role_name": "Cashier",
   "role": "cashier",
+  "permissions": [
+    "dashboard",
+    "pos"
+  ],
   "is_active": true,
   "last_login_at": null,
   "created_at": "2026-05-18T10:10:00Z",
@@ -284,7 +649,20 @@ Contoh list response:
     "id": 1,
     "name": "Admin",
     "email": "admin@example.com",
+    "role_id": 1,
+    "role_code": "admin",
+    "role_name": "Admin",
     "role": "admin",
+    "permissions": [
+      "dashboard",
+      "inventory",
+      "master_data",
+      "payroll",
+      "pos",
+      "procurement",
+      "reports",
+      "users"
+    ],
     "is_active": true,
     "last_login_at": "2026-05-18T10:05:00Z",
     "created_at": "2026-05-18T10:00:00Z",
@@ -300,6 +678,7 @@ Contoh update request:
 {
   "name": "Cashier Updated",
   "email": "cashier@example.com",
+  "role_id": 2,
   "role": "cashier",
   "is_active": true
 }
@@ -313,11 +692,89 @@ Contoh delete response:
 }
 ```
 
-## 4. Product Category dan Product Setup
+### 4.1 Roles dan Permissions
+
+Roles dan permissions mengatur akses user ke modul. Endpoint ini membutuhkan permission `users`. Backend menyediakan role system `admin` dan `cashier`; role system tidak bisa dihapus, dan code role system tidak bisa diubah.
+
+| Postman request | Endpoint |
+| --- | --- |
+| `Roles & Permissions > List Roles` | `GET {{base_url}}/roles?search=&limit=50&offset=0` |
+| `Roles & Permissions > Create Role` | `POST {{base_url}}/roles` |
+| `Roles & Permissions > Get Role` | `GET {{base_url}}/roles/{{role_id}}` |
+| `Roles & Permissions > Update Role` | `PUT {{base_url}}/roles/{{role_id}}` |
+| `Roles & Permissions > Replace Role Permissions` | `PUT {{base_url}}/roles/{{role_id}}/permissions` |
+| `Roles & Permissions > Delete Role` | `DELETE {{base_url}}/roles/{{role_id}}` |
+| `Roles & Permissions > List Permissions` | `GET {{base_url}}/permissions?search=&limit=50&offset=0` |
+
+Relasi: `roles.id` dipakai oleh `users.role_id`, `role_permissions.role_id`, dan `role_permissions.permission_id` menghubungkan role ke `permissions.id`. Permissions milik role dibaca dari `GET /roles/{{role_id}}` lewat field `permissions`.
+
+Contoh create role request:
+
+```json
+{
+  "code": "cashier_procurement",
+  "name": "Cashier Procurement",
+  "description": "Point of sale and procurement access.",
+  "permission_codes": [
+    "dashboard",
+    "pos",
+    "procurement"
+  ]
+}
+```
+
+Contoh role response:
+
+```json
+{
+  "id": 3,
+  "code": "cashier_procurement",
+  "name": "Cashier Procurement",
+  "description": "Point of sale and procurement access.",
+  "is_system": false,
+  "permissions": [
+    "dashboard",
+    "pos",
+    "procurement"
+  ],
+  "created_at": "2026-05-18T10:12:00Z",
+  "updated_at": "2026-05-18T10:12:00Z",
+  "deleted_at": null
+}
+```
+
+Contoh replace role permissions request:
+
+```json
+{
+  "permission_codes": [
+    "dashboard",
+    "pos",
+    "procurement"
+  ]
+}
+```
+
+Contoh permission response:
+
+```json
+[
+  {
+    "id": 1,
+    "code": "dashboard",
+    "name": "Dashboard",
+    "description": "Access dashboard summary.",
+    "created_at": "2026-05-18T10:00:00Z",
+    "updated_at": "2026-05-18T10:00:00Z"
+  }
+]
+```
+
+## 5. Product Category dan Product Setup
 
 Sebelum pembelian dan penjualan, siapkan kategori, satuan, produk induk, dan SKU/kemasan produk. Stok, harga, barcode, purchase order, goods receipt, stock adjustment, sales, dan stock report memakai `product_skus`.
 
-### 4.1 Product Categories
+### 5.1 Product Categories
 
 | Postman request | Endpoint |
 | --- | --- |
@@ -353,7 +810,7 @@ Contoh response:
 }
 ```
 
-### 4.2 Units
+### 5.2 Units
 
 | Request | Endpoint |
 | --- | --- |
@@ -388,7 +845,7 @@ Contoh create package unit request:
 }
 ```
 
-### 4.3 Products
+### 5.3 Products
 
 | Postman request | Endpoint |
 | --- | --- |
@@ -435,7 +892,7 @@ Contoh update request:
 }
 ```
 
-### 4.4 Product SKUs
+### 5.4 Product SKUs
 
 | Request | Endpoint |
 | --- | --- |
@@ -508,7 +965,7 @@ Contoh response:
 }
 ```
 
-## 5. Supplier Setup
+## 6. Supplier Setup
 
 Supplier harus dibuat sebelum membuat purchase order.
 
@@ -552,7 +1009,7 @@ Contoh response:
 }
 ```
 
-## 6. Purchase Order
+## 7. Purchase Order
 
 Purchase order mencatat rencana pembelian barang dari supplier. Dokumen dibuat sebagai `draft`, lalu dikirim dengan action `order`.
 
@@ -681,7 +1138,7 @@ Contoh cancel request:
 }
 ```
 
-## 7. Goods Receipt
+## 8. Goods Receipt
 
 Goods receipt dipakai untuk menerima barang dari purchase order. Stock baru bertambah ketika goods receipt diposting.
 
@@ -807,7 +1264,7 @@ Contoh cancel request:
 }
 ```
 
-## 8. Stock Adjustment
+## 9. Stock Adjustment
 
 Stock adjustment dipakai untuk koreksi stok fisik, barang rusak, barang hilang, atau koreksi input. Dokumen dibuat sebagai `draft`, lalu mengubah stok saat diposting.
 
@@ -929,7 +1386,7 @@ Contoh cancel request:
 }
 ```
 
-## 9. Stock Conversion
+## 10. Stock Conversion
 
 Stock conversion dipakai untuk memecah atau menggabungkan stok antar SKU/kemasan secara manual. Contoh: 1 SKU dus Mineral Water dikonversi menjadi 40 SKU eceran Mineral Water.
 
@@ -961,24 +1418,25 @@ Contoh create request:
 
 Saat diposting, backend mengurangi stok SKU sumber, menambah stok SKU tujuan, dan menulis `stock_movements` dengan `movement_type = conversion_out` dan `conversion_in`.
 
-## 10. Sales / Point of Sale
+## 11. Sales / Point of Sale
 
-Sales adalah transaksi kasir. Saat sale berhasil dibuat, backend langsung mengurangi stok SKU/kemasan dan menulis `stock_movements` dengan `movement_type = sale`.
+Sales adalah transaksi kasir. Saat sale berhasil dibuat, backend langsung mengurangi stok SKU/kemasan dan menulis `stock_movements` dengan `movement_type = sale`. Sale baru wajib memakai `cash_register_session_id` dari session laci yang masih `open`.
 
 | Postman request | Endpoint |
 | --- | --- |
-| `Sales > List Sales` | `GET {{base_url}}/sales?search=&from=&to=&limit=50&offset=0` |
+| `Sales > List Sales` | `GET {{base_url}}/sales?search=&from=&to=&status=completed,cancelled&limit=50&offset=0` |
 | `Sales > Create Sale` | `POST {{base_url}}/sales` |
 | `Sales > Get Sale` | `GET {{base_url}}/sales/{{sale_id}}` |
 | `Sales > Cancel Sale` | `POST {{base_url}}/sales/{{sale_id}}/cancel` |
 
-Relasi: item sale memakai `product_sku_id`. Backend mengambil snapshot `product_name`, `product_sku`, `unit`, dan `selling_price`. `cashier_id` diambil dari token user yang login. Cashier hanya bisa melihat sales miliknya, admin bisa melihat semua sales.
+Relasi: item sale memakai `product_sku_id`. Backend mengambil snapshot `product_name`, `product_sku`, `unit`, dan `selling_price`. `cashier_id` diambil dari token user yang login. `cash_register_session_id` mengikat transaksi ke laci/register yang sedang open. Cashier hanya bisa melihat sales miliknya, admin bisa melihat semua sales.
 
 Contoh create request:
 
 ```json
 {
   "sold_at": "2026-05-18T11:00:00Z",
+  "cash_register_session_id": {{cash_register_session_id}},
   "paid_amount": 10000,
   "notes": "Cash sale",
   "items": [
@@ -999,6 +1457,10 @@ Contoh create response:
   "sold_at": "2026-05-18T11:00:00Z",
   "cashier_id": 1,
   "cashier_name": "Admin",
+  "cash_register_session_id": 1,
+  "cash_register_id": 1,
+  "cash_register_code": "REG-01",
+  "cash_register_name": "Front Register",
   "subtotal_amount": 8000,
   "total_amount": 8000,
   "paid_amount": 10000,
@@ -1045,6 +1507,10 @@ Contoh cancel response:
   "sold_at": "2026-05-18T11:00:00Z",
   "cashier_id": 1,
   "cashier_name": "Admin",
+  "cash_register_session_id": 1,
+  "cash_register_id": 1,
+  "cash_register_code": "REG-01",
+  "cash_register_name": "Front Register",
   "subtotal_amount": 8000,
   "total_amount": 8000,
   "paid_amount": 10000,
@@ -1076,7 +1542,120 @@ Contoh cancel response:
 
 Catatan penting: cancel sale mengubah status sale menjadi `cancelled`. Dari implementasi saat ini, cancel sale tidak membuat stock movement balik dan tidak otomatis mengembalikan stock.
 
-## 11. Employee Management
+## 12. Sales Return / Refund
+
+Sales return adalah dokumen refund atas sale yang sudah `completed`. Return bisa partial atau full berdasarkan item sale. Jika `restock = true`, backend menambah stok SKU dan menulis `stock_movements` dengan `movement_type = sale_return`. Jika `restock = false`, refund tetap tercatat tetapi stok tidak berubah.
+
+| Postman request | Endpoint |
+| --- | --- |
+| `Sale Returns > List Sale Returns` | `GET {{base_url}}/sale-returns?search=&from=&to=&status=completed,cancelled&limit=50&offset=0` |
+| `Sale Returns > Get Returnable Sale Items` | `GET {{base_url}}/sales/{{sale_id}}/returnable-items` |
+| `Sale Returns > Create Sale Return Restock` | `POST {{base_url}}/sale-returns` |
+| `Sale Returns > Create Sale Return No Restock` | `POST {{base_url}}/sale-returns` |
+| `Sale Returns > Get Sale Return` | `GET {{base_url}}/sale-returns/{{sale_return_id}}` |
+| `Sale Returns > Cancel Sale Return` | `POST {{base_url}}/sale-returns/{{sale_return_id}}/cancel` |
+
+Relasi: `sale_returns.sale_id` mengarah ke sale asli, `sale_return_items.sale_item_id` mengarah ke item sale asli, dan `cash_register_session_id` mengikat refund cash ke sesi laci yang masih `open`. Cashier hanya melihat return yang dibuat olehnya, admin bisa melihat semua return.
+
+Contoh returnable items response:
+
+```json
+[
+  {
+    "id": 1,
+    "sale_id": 1,
+    "product_id": 1,
+    "product_sku_id": 1,
+    "product_name": "Mineral Water",
+    "product_sku": "WTR-001-PCS",
+    "unit": "pcs",
+    "quantity": 2,
+    "returned_quantity": 0,
+    "returnable_quantity": 2,
+    "unit_price": 4000,
+    "line_total": 8000,
+    "created_at": "2026-05-18T11:00:00Z"
+  }
+]
+```
+
+Contoh create return request:
+
+```json
+{
+  "sale_id": 1,
+  "returned_at": "2026-05-18T12:00:00Z",
+  "cash_register_session_id": 1,
+  "reason": "Customer return",
+  "notes": "Restocked item",
+  "items": [
+    {
+      "sale_item_id": 1,
+      "quantity": 1,
+      "restock": true,
+      "reason": "Unopened item"
+    }
+  ]
+}
+```
+
+Contoh create return response:
+
+```json
+{
+  "id": 1,
+  "return_no": "RET-20260518-000001",
+  "sale_id": 1,
+  "sale_transaction_no": "TRX-20260518-000001",
+  "returned_at": "2026-05-18T12:00:00Z",
+  "cashier_id": 1,
+  "cashier_name": "Admin",
+  "cash_register_session_id": 1,
+  "cash_register_id": 1,
+  "cash_register_code": "REG-01",
+  "cash_register_name": "Front Register",
+  "subtotal_amount": 4000,
+  "refund_amount": 4000,
+  "status": "completed",
+  "reason": "Customer return",
+  "notes": "Restocked item",
+  "cancelled_at": null,
+  "cancelled_by": null,
+  "cancel_reason": null,
+  "created_at": "2026-05-18T12:00:00Z",
+  "updated_at": "2026-05-18T12:00:00Z",
+  "items": [
+    {
+      "id": 1,
+      "sale_return_id": 1,
+      "sale_item_id": 1,
+      "product_id": 1,
+      "product_sku_id": 1,
+      "product_name": "Mineral Water",
+      "product_sku": "WTR-001-PCS",
+      "unit": "pcs",
+      "quantity": 1,
+      "unit_price": 4000,
+      "line_total": 4000,
+      "restock": true,
+      "reason": "Unopened item",
+      "created_at": "2026-05-18T12:00:00Z"
+    }
+  ]
+}
+```
+
+Contoh cancel return request:
+
+```json
+{
+  "reason": "Refund reversal"
+}
+```
+
+Catatan penting: quantity return tidak boleh melebihi sisa quantity item yang belum diretur. Cancel return hanya bisa dilakukan saat cash register session return masih `open`; jika item return sebelumnya `restock = true`, cancel akan mengurangi stok kembali dan menulis movement `correction`.
+
+## 13. Employee Management
 
 Employee dipakai untuk payroll slip. Data employee terpisah dari `users`, karena employee adalah data karyawan operasional, sedangkan user adalah akun login sistem.
 
@@ -1120,7 +1699,7 @@ Contoh response:
 }
 ```
 
-## 12. Payroll Slips
+## 14. Payroll Slips
 
 Payroll slip dibuat berdasarkan employee. Backend mengambil snapshot nama, posisi, dan base salary employee saat slip dibuat.
 
@@ -1165,7 +1744,7 @@ Contoh response:
 }
 ```
 
-## 13. Dashboard dan Reports
+## 15. Dashboard dan Reports
 
 Dashboard dan reports membaca agregasi data dari flow sebelumnya. Endpoint ini tidak mengubah data.
 
@@ -1175,6 +1754,7 @@ Dashboard dan reports membaca agregasi data dari flow sebelumnya. Endpoint ini t
 | `Reports > Daily Sales Report` | `GET {{base_url}}/reports/daily-sales?from=&to=&limit=50&offset=0` |
 | `Reports > Monthly Sales Report` | `GET {{base_url}}/reports/monthly-sales?from=&to=&limit=50&offset=0` |
 | `Reports > Stock Report` | `GET {{base_url}}/reports/stock?search=&limit=50&offset=0` |
+| `Reports > Stock Movement Report` | `GET {{base_url}}/reports/stock-movements?search=&from=&to=&type=purchase_receipt,adjustment,sale,sale_return,conversion_in,conversion_out,correction&product_sku_id=&limit=50&offset=0` |
 | `Reports > Purchase Order Report` | `GET {{base_url}}/reports/purchase-orders?search=&from=&to=&limit=50&offset=0` |
 | `Reports > Goods Receipt Report` | `GET {{base_url}}/reports/goods-receipts?search=&from=&to=&limit=50&offset=0` |
 | `Reports > Stock Adjustment Report` | `GET {{base_url}}/reports/stock-adjustments?search=&from=&to=&limit=50&offset=0` |
@@ -1185,6 +1765,7 @@ Relasi:
 - Dashboard membaca sales hari ini, low stock product, pending purchase order, draft stock adjustment, dan active employee.
 - Sales reports membaca transaksi `sales` yang statusnya `completed`.
 - Stock report membaca kondisi `product_skus.stock` dan quantity yang masih on order.
+- Stock movement report membaca semua pergerakan stok, termasuk `sale_return` dan `correction` dari cancel return.
 - Purchase order report membaca progress ordered vs received.
 - Goods receipt report membaca penerimaan barang.
 - Stock adjustment report membaca koreksi stok.
@@ -1332,7 +1913,7 @@ Contoh payroll report response:
 ]
 ```
 
-## 14. Urutan Uji End-to-End di Postman
+## 16. Urutan Uji End-to-End di Postman
 
 Urutan yang disarankan saat menjalankan collection:
 
@@ -1340,38 +1921,70 @@ Urutan yang disarankan saat menjalankan collection:
 2. `Auth > Bootstrap Admin` atau `Auth > Login`
 3. `Auth > Refresh Token` saat `access_token` kedaluwarsa
 4. `Auth > Me`
-5. `Users > Create User` jika perlu akun cashier
-6. `Product Categories > Create Product Category`
-7. `Units > Create Base Unit (PCS)`
-8. `Units > Create Package Unit (DUS)`
-9. `Products > Create Product`
-10. `Product SKUs > Create Retail Product SKU`
-11. `Product SKUs > Create Package Product SKU`
-12. `Suppliers > Create Supplier`
-13. `Purchase Orders > Create Purchase Order`
-14. `Purchase Orders > Order Purchase Order`
-15. `Goods Receipts > Create Goods Receipt`
-16. `Goods Receipts > Post Goods Receipt`
-17. `Stock Adjustments > Create Stock Adjustment` jika butuh koreksi stok
-18. `Stock Adjustments > Post Stock Adjustment`
-19. `Stock Conversions > Create Stock Conversion` jika butuh pecah/gabung kemasan
-20. `Stock Conversions > Post Stock Conversion`
-21. `Sales > Create Sale`
-22. `Employees > Create Employee`
-23. `Payroll Slips > Create Payroll Slip`
-24. Jalankan `Reports > Dashboard` dan report lain untuk memeriksa hasil agregasi.
-25. `Auth > Logout` untuk mencabut refresh token aktif.
+5. `Roles & Permissions > List Permissions` dan `Roles & Permissions > List Roles` jika perlu memeriksa RBAC.
+6. `Cash Registers > Create Cash Register`
+7. `Users > Create User` jika perlu akun cashier
+8. `Product Categories > Create Product Category`
+9. `Units > Create Base Unit (PCS)`
+10. `Units > Create Package Unit (DUS)`
+11. `Products > Create Product`
+12. `Product SKUs > Create Retail Product SKU`
+13. `Product SKUs > Create Package Product SKU`
+14. `Suppliers > Create Supplier`
+15. `Purchase Orders > Create Purchase Order`
+16. `Purchase Orders > Order Purchase Order`
+17. `Goods Receipts > Create Goods Receipt`
+18. `Goods Receipts > Post Goods Receipt`
+19. `Stock Adjustments > Create Stock Adjustment` jika butuh koreksi stok
+20. `Stock Adjustments > Post Stock Adjustment`
+21. `Stock Conversions > Create Stock Conversion` jika butuh pecah/gabung kemasan
+22. `Stock Conversions > Post Stock Conversion`
+23. `Cash Registers > Open Cash Register Session`
+24. `Cash Registers > Create Cash Drawer Cash In` jika perlu tambah modal laci
+25. `Sales > Create Sale`
+26. `Sale Returns > Get Returnable Sale Items` jika perlu refund
+27. `Sale Returns > Create Sale Return Restock` atau `Sale Returns > Create Sale Return No Restock`
+28. `Cash Registers > Create Cash Drawer Cash Drop`, `Create Cash Drawer Cash Out`, atau `Create Cash Drawer Petty Cash` jika ada uang keluar dari laci
+29. `Cash Registers > Close Cash Register Session` setelah transaksi/refund/movement selesai
+30. `Employees > Create Employee`
+31. `Payroll Slips > Create Payroll Slip`
+32. Jalankan `Reports > Dashboard` dan report lain untuk memeriksa hasil agregasi.
+33. `Audit Logs > List Audit Logs` untuk memeriksa event audit yang sudah tercatat.
+34. Opsional: `Auth > Change Password` untuk menguji ganti password akun aktif. Setelah berhasil, login ulang jika masih ingin menjalankan endpoint protected lain.
+35. `Auth > Logout` untuk mencabut refresh token aktif.
 
 Ringkasan relasi utama:
 
 ```text
+roles
+  -> users.role_id
+  -> role_permissions.role_id
+
+permissions
+  -> role_permissions.permission_id
+
 users
+  -> roles.id through users.role_id
   -> refresh_tokens.user_id
   -> sales.cashier_id
+  -> cash_register_sessions.opened_by / closed_by
+  -> audit_logs.actor_id
+
+audit_logs
+  -> generic resource_type/resource_id for audited actions
 
 refresh_tokens
   -> token_hash for refresh cookie validation
   -> revoked_at when rotated or logged out
+
+cash_registers
+  -> cash_register_sessions.cash_register_id
+
+cash_register_sessions
+  -> sales.cash_register_session_id
+  -> sale_returns.cash_register_session_id
+  -> cash_drawer_movements.cash_register_session_id
+  -> closing expected_cash from completed sales total_amount minus completed sale_returns refund_amount plus cash drawer movement in minus movement out
 
 product_categories
   -> products.category_id
@@ -1413,6 +2026,14 @@ stock_conversions posted
 sales completed
   -> product_skus.stock decreases
   -> stock_movements movement_type = sale
+
+sale_returns completed with restock
+  -> product_skus.stock increases
+  -> stock_movements movement_type = sale_return
+
+sale_returns cancelled after restock
+  -> product_skus.stock decreases
+  -> stock_movements movement_type = correction
 
 employees
   -> payroll_slips.employee_id

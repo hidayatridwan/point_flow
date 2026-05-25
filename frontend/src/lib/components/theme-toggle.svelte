@@ -4,6 +4,7 @@
 	import SunIcon from '@lucide/svelte/icons/sun';
 	import { onMount } from 'svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const THEME_STORAGE_KEY = 'theme';
 	const DARK_THEME = 'dark';
@@ -16,7 +17,7 @@
 	let mediaQuery: MediaQueryList | null = null;
 
 	const nextTheme = $derived<Theme>(isDark ? LIGHT_THEME : DARK_THEME);
-	const label = $derived(`Switch to ${nextTheme} mode`);
+	const label = $derived(isDark ? t('theme.switchToLight') : t('theme.switchToDark'));
 
 	onMount(() => {
 		mediaQuery = window.matchMedia(THEME_QUERY);
@@ -70,14 +71,7 @@
 	}
 </script>
 
-<Button
-	type="button"
-	variant="ghost"
-	size="icon-sm"
-	class="fixed top-4 right-4 z-50"
-	aria-label={label}
-	onclick={toggleTheme}
->
+<Button type="button" variant="ghost" size="icon-sm" aria-label={label} onclick={toggleTheme}>
 	{#if isDark}
 		<SunIcon aria-hidden="true" />
 	{:else}

@@ -1,6 +1,8 @@
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use sqlx::FromRow;
+use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
 pub struct ListQuery {
@@ -13,6 +15,61 @@ pub struct ListQuery {
 }
 
 impl ListQuery {
+    pub fn limit(&self) -> i64 {
+        self.limit.unwrap_or(50).clamp(1, 100)
+    }
+
+    pub fn offset(&self) -> i64 {
+        self.offset.unwrap_or(0).max(0)
+    }
+
+    pub fn search_pattern(&self) -> String {
+        format!("%{}%", self.search.as_deref().unwrap_or("").to_lowercase())
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CashDrawerMovementQuery {
+    pub search: Option<String>,
+    pub from: Option<NaiveDate>,
+    pub to: Option<NaiveDate>,
+    pub status: Option<String>,
+    #[serde(rename = "type")]
+    pub movement_type: Option<String>,
+    pub cash_register_session_id: Option<i64>,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+
+impl CashDrawerMovementQuery {
+    pub fn limit(&self) -> i64 {
+        self.limit.unwrap_or(50).clamp(1, 100)
+    }
+
+    pub fn offset(&self) -> i64 {
+        self.offset.unwrap_or(0).max(0)
+    }
+
+    pub fn search_pattern(&self) -> String {
+        format!("%{}%", self.search.as_deref().unwrap_or("").to_lowercase())
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AuditLogQuery {
+    pub search: Option<String>,
+    pub from: Option<NaiveDate>,
+    pub to: Option<NaiveDate>,
+    pub action: Option<String>,
+    pub resource_type: Option<String>,
+    pub outcome: Option<String>,
+    pub actor_id: Option<i64>,
+    pub request_id: Option<String>,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+
+impl AuditLogQuery {
     pub fn limit(&self) -> i64 {
         self.limit.unwrap_or(50).clamp(1, 100)
     }
@@ -145,6 +202,27 @@ pub struct MessageResponse {
     pub message: &'static str,
 }
 
+#[derive(Debug, Serialize, FromRow)]
+pub struct AuditLogResponse {
+    pub id: i64,
+    pub request_id: Option<Uuid>,
+    pub actor_id: Option<i64>,
+    pub actor_name: Option<String>,
+    pub actor_email: Option<String>,
+    pub actor_role: Option<String>,
+    pub action: String,
+    pub resource_type: String,
+    pub resource_id: Option<i64>,
+    pub resource_label: Option<String>,
+    pub outcome: String,
+    pub before_data: Option<Value>,
+    pub after_data: Option<Value>,
+    pub metadata: Option<Value>,
+    pub ip_address: Option<String>,
+    pub user_agent: Option<String>,
+    pub occurred_at: DateTime<Utc>,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct CancelRequest {
     pub reason: Option<String>,
@@ -154,6 +232,12 @@ pub struct CancelRequest {
 pub struct LoginRequest {
     pub email: String,
     pub password: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ChangePasswordRequest {
+    pub current_password: String,
+    pub new_password: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -405,6 +489,107 @@ pub struct UpdateSupplierRequest {
     pub email: Option<String>,
     pub address: Option<String>,
     pub is_active: Option<bool>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct CashRegisterResponse {
+    pub id: i64,
+    pub code: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub status: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub deleted_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateCashRegisterRequest {
+    pub code: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub status: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateCashRegisterRequest {
+    pub code: Option<String>,
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub status: Option<String>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct CashRegisterSessionResponse {
+    pub id: i64,
+    pub session_no: String,
+    pub cash_register_id: i64,
+    pub cash_register_code: String,
+    pub cash_register_name: String,
+    pub opened_at: DateTime<Utc>,
+    pub opened_by: i64,
+    pub opened_by_name: String,
+    pub opening_cash: f64,
+    pub opening_notes: Option<String>,
+    pub closed_at: Option<DateTime<Utc>>,
+    pub closed_by: Option<i64>,
+    pub closed_by_name: Option<String>,
+    pub closing_cash_counted: Option<f64>,
+    pub expected_cash: Option<f64>,
+    pub cash_difference: Option<f64>,
+    pub closing_notes: Option<String>,
+    pub status: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OpenCashRegisterSessionRequest {
+    pub cash_register_id: i64,
+    pub opening_cash: f64,
+    pub opening_notes: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CloseCashRegisterSessionRequest {
+    pub closing_cash_counted: f64,
+    pub closing_notes: Option<String>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct CashDrawerMovementResponse {
+    pub id: i64,
+    pub movement_no: String,
+    pub cash_register_session_id: i64,
+    pub session_no: String,
+    pub cash_register_id: i64,
+    pub cash_register_code: String,
+    pub cash_register_name: String,
+    pub occurred_at: DateTime<Utc>,
+    pub created_by: i64,
+    pub created_by_name: String,
+    pub movement_type: String,
+    pub direction: String,
+    pub amount: f64,
+    pub reason: Option<String>,
+    pub notes: Option<String>,
+    pub status: String,
+    pub cancelled_at: Option<DateTime<Utc>>,
+    pub cancelled_by: Option<i64>,
+    pub cancelled_by_name: Option<String>,
+    pub cancel_reason: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateCashDrawerMovementRequest {
+    pub cash_register_session_id: i64,
+    pub occurred_at: Option<DateTime<Utc>>,
+    pub movement_type: String,
+    pub amount: f64,
+    pub reason: Option<String>,
+    pub notes: Option<String>,
 }
 
 #[derive(Debug, Serialize, FromRow)]
@@ -689,6 +874,10 @@ pub struct SaleResponse {
     pub sold_at: DateTime<Utc>,
     pub cashier_id: i64,
     pub cashier_name: String,
+    pub cash_register_session_id: Option<i64>,
+    pub cash_register_id: Option<i64>,
+    pub cash_register_code: Option<String>,
+    pub cash_register_name: Option<String>,
     pub subtotal_amount: f64,
     pub total_amount: f64,
     pub paid_amount: f64,
@@ -724,9 +913,77 @@ pub struct SaleDetailResponse {
     pub items: Vec<SaleItemResponse>,
 }
 
+#[derive(Debug, Serialize, FromRow)]
+pub struct SaleReturnResponse {
+    pub id: i64,
+    pub return_no: String,
+    pub sale_id: i64,
+    pub sale_transaction_no: String,
+    pub returned_at: DateTime<Utc>,
+    pub cashier_id: i64,
+    pub cashier_name: String,
+    pub cash_register_session_id: i64,
+    pub cash_register_id: i64,
+    pub cash_register_code: String,
+    pub cash_register_name: String,
+    pub subtotal_amount: f64,
+    pub refund_amount: f64,
+    pub status: String,
+    pub reason: Option<String>,
+    pub notes: Option<String>,
+    pub cancelled_at: Option<DateTime<Utc>>,
+    pub cancelled_by: Option<i64>,
+    pub cancel_reason: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct SaleReturnItemResponse {
+    pub id: i64,
+    pub sale_return_id: i64,
+    pub sale_item_id: i64,
+    pub product_id: i64,
+    pub product_sku_id: i64,
+    pub product_name: String,
+    pub product_sku: String,
+    pub unit: String,
+    pub quantity: f64,
+    pub unit_price: f64,
+    pub line_total: f64,
+    pub restock: bool,
+    pub reason: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SaleReturnDetailResponse {
+    #[serde(flatten)]
+    pub sale_return: SaleReturnResponse,
+    pub items: Vec<SaleReturnItemResponse>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct ReturnableSaleItemResponse {
+    pub id: i64,
+    pub sale_id: i64,
+    pub product_id: i64,
+    pub product_sku_id: i64,
+    pub product_name: String,
+    pub product_sku: String,
+    pub unit: String,
+    pub quantity: f64,
+    pub returned_quantity: f64,
+    pub returnable_quantity: f64,
+    pub unit_price: f64,
+    pub line_total: f64,
+    pub created_at: DateTime<Utc>,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct CreateSaleRequest {
     pub sold_at: Option<DateTime<Utc>>,
+    pub cash_register_session_id: Option<i64>,
     pub paid_amount: f64,
     pub notes: Option<String>,
     pub items: Vec<SaleItemInput>,
@@ -736,6 +993,24 @@ pub struct CreateSaleRequest {
 pub struct SaleItemInput {
     pub product_sku_id: i64,
     pub quantity: f64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateSaleReturnRequest {
+    pub sale_id: i64,
+    pub returned_at: Option<DateTime<Utc>>,
+    pub cash_register_session_id: i64,
+    pub reason: Option<String>,
+    pub notes: Option<String>,
+    pub items: Vec<SaleReturnItemInput>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SaleReturnItemInput {
+    pub sale_item_id: i64,
+    pub quantity: f64,
+    pub restock: bool,
+    pub reason: Option<String>,
 }
 
 #[derive(Debug, Serialize, FromRow)]

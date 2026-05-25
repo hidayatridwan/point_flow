@@ -6,8 +6,15 @@
 	import SearchIcon from '@lucide/svelte/icons/search';
 	import ShoppingCartIcon from '@lucide/svelte/icons/shopping-cart';
 	import TrashIcon from '@lucide/svelte/icons/trash';
+	import {
+		clearStoredActiveCashRegisterSessionId,
+		getStoredActiveCashRegisterSessionId,
+		listCashRegisterSessions,
+		setStoredActiveCashRegisterSessionId,
+		type CashRegisterSession
+	} from '$lib/api/cash-registers.js';
 	import { listProductSkus, type ProductSku } from '$lib/api/product-skus.js';
-	import { createSale } from '$lib/api/sales.js';
+	import { createSale, type SaleDetail } from '$lib/api/sales.js';
 	import { ApiError } from '$lib/api/types.js';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -19,6 +26,7 @@
 	import { cn } from '$lib/utils.js';
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
+	import SaleReceiptDialog from '../components/sale-receipt-dialog.svelte';
 
 	type CartItem = {
 		client_id: string;
@@ -35,16 +43,22 @@
 
 	let productSkus = $state<ProductSku[]>([]);
 	let cartItems = $state<CartItem[]>([]);
+	let activeSession = $state<CashRegisterSession | null>(null);
 	let skuSearch = $state('');
 	let viewMode = $state<ProductViewMode>('grid');
 	let paidAmount = $state('');
 	let notes = $state('');
+	let completedSale = $state<SaleDetail | null>(null);
+	let isReceiptOpen = $state(false);
 	let isLoadingSkus = $state(true);
+	let isLoadingSession = $state(true);
 	let isSubmitting = $state(false);
 	let errorMessage = $state<string | null>(null);
 	let optionsErrorMessage = $state<string | null>(null);
+	let sessionErrorMessage = $state<string | null>(null);
 	let cartItemSequence = 0;
 	let latestOptionsRequestId = 0;
+	let latestSessionRequestId = 0;
 
 	const filteredProductSkus = $derived(
 		productSkus.filter((productSku) => matchesProductSkuSearch(productSku, skuSearch)).slice(0, 40)
@@ -53,10 +67,38 @@
 	const paidAmountValue = $derived(toNumber(paidAmount));
 	const changeAmount = $derived(paidAmountValue - subtotalAmount);
 	const isPaymentEnough = $derived(cartItems.length > 0 && paidAmountValue >= subtotalAmount);
+	const canTransact = $derived(Boolean(activeSession) && !isLoadingSession);
 
 	onMount(() => {
+		void loadActiveSession();
 		void loadProductSkus();
 	});
+
+	async function loadActiveSession() {
+		const requestId = ++latestSessionRequestId;
+		isLoadingSession = true;
+		sessionErrorMessage = null;
+
+		try {
+			const result = await listCashRegisterSessions({ limit: 100, status: ['open'] });
+			if (requestId !== latestSessionRequestId) return;
+			activeSession = resolveActiveSession(result.sessions);
+
+			if (activeSession) {
+				setStoredActiveCashRegisterSessionId(activeSession.id);
+			} else {
+				clearStoredActiveCashRegisterSessionId();
+			}
+		} catch (error) {
+			if (requestId !== latestSessionRequestId) return;
+			activeSession = null;
+			sessionErrorMessage = getErrorMessage(error, 'Failed to load register session.');
+		} finally {
+			if (requestId === latestSessionRequestId) {
+				isLoadingSession = false;
+			}
+		}
+	}
 
 	async function loadProductSkus() {
 		const requestId = ++latestOptionsRequestId;
@@ -93,6 +135,7 @@
 
 		try {
 			const sale = await createSale({
+				cash_register_session_id: activeSession?.id ?? 0,
 				paid_amount: paidAmountValue,
 				notes: emptyToNull(notes),
 				items: cartItems.map((item) => ({
@@ -103,6 +146,8 @@
 			toast.success('Sale completed.', {
 				description: `${sale.transaction_no} total ${formatIdr(sale.total_amount)}.`
 			});
+			completedSale = sale;
+			isReceiptOpen = true;
 			resetSale();
 			await loadProductSkus();
 		} catch (error) {
@@ -113,7 +158,7 @@
 	}
 
 	function addProductSku(productSku: ProductSku) {
-		if (isSubmitting || productSku.stock <= 0) return;
+		if (!canTransact || isSubmitting || productSku.stock <= 0) return;
 
 		const existingItem = cartItems.find((item) => item.product_sku_id === productSku.id);
 		if (existingItem) {
@@ -162,6 +207,7 @@
 
 	function getSaleValidationError() {
 		if (!cartItems.length) return 'Cart must contain at least one product SKU.';
+		if (!activeSession) return 'Open a register session before completing a sale.';
 		for (const item of cartItems) {
 			const itemError = getCartItemQuantityError(item);
 			if (itemError) return `${item.product_sku}: ${itemError}`;
@@ -173,6 +219,15 @@
 			return 'Paid amount must be greater than or equal to total amount.';
 		}
 		return null;
+	}
+
+	function resolveActiveSession(sessions: CashRegisterSession[]) {
+		const storedSessionId = getStoredActiveCashRegisterSessionId();
+		if (storedSessionId) {
+			const storedSession = sessions.find((session) => session.id === storedSessionId);
+			if (storedSession) return storedSession;
+		}
+		return sessions[0] ?? null;
 	}
 
 	function getCartItemQuantityError(item: CartItem) {
@@ -244,6 +299,40 @@
 	<title>New Transaction | POS System</title>
 </svelte:head>
 
+{#if isLoadingSession}
+	<div
+		class="mb-5 flex items-center gap-2 rounded-md border bg-muted/20 p-4 text-sm text-muted-foreground"
+	>
+		<Spinner />
+		Loading register session...
+	</div>
+{:else if sessionErrorMessage}
+	<div class="mb-5">
+		<ErrorAlert title="Failed to load register session." message={sessionErrorMessage} />
+	</div>
+{:else if !activeSession}
+	<div class="mb-5 rounded-md border bg-muted/20 p-5">
+		<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+			<div class="min-w-0">
+				<h2 class="text-base font-semibold">Register is not open</h2>
+				<p class="mt-1 text-sm text-muted-foreground">
+					Open a register session before starting cashier transactions.
+				</p>
+			</div>
+			<Button href="/pos/register-session" class="w-full sm:w-auto">
+				<BanknoteIcon />
+				Open Register
+			</Button>
+		</div>
+	</div>
+{:else}
+	<div class="mb-5 rounded-md border bg-muted/20 px-4 py-3 text-sm">
+		<span class="text-muted-foreground">Active register:</span>
+		<span class="font-medium">{activeSession.cash_register_code}</span>
+		<span class="text-muted-foreground">- {activeSession.session_no}</span>
+	</div>
+{/if}
+
 <form class="min-h-0" onsubmit={handleSubmit}>
 	<div class="grid min-h-0 gap-5 lg:grid-cols-[1fr_420px]">
 		<section
@@ -259,7 +348,7 @@
 						<Input
 							class="h-11 w-full rounded-2xl border-slate-200 pl-9 text-base shadow-none"
 							placeholder="Search product, SKU, or scan barcode..."
-							disabled={isLoadingSkus || isSubmitting}
+							disabled={isLoadingSkus || isSubmitting || !canTransact}
 							bind:value={skuSearch}
 						/>
 					</div>
@@ -332,7 +421,7 @@
 										type="button"
 										variant={isProductSkuInCart(productSku.id) ? 'secondary' : 'outline'}
 										class="h-9 rounded-xl sm:w-auto"
-										disabled={isSubmitting || productSku.stock <= 0}
+										disabled={!canTransact || isSubmitting || productSku.stock <= 0}
 										onclick={() => addProductSku(productSku)}
 									>
 										<PlusIcon />
@@ -373,7 +462,7 @@
 											type="button"
 											variant={isProductSkuInCart(productSku.id) ? 'secondary' : 'outline'}
 											class="h-9 rounded-xl"
-											disabled={isSubmitting || productSku.stock <= 0}
+											disabled={!canTransact || isSubmitting || productSku.stock <= 0}
 											onclick={() => addProductSku(productSku)}
 										>
 											<PlusIcon />
@@ -512,7 +601,7 @@
 						step="1"
 						placeholder="0"
 						class="h-10 rounded-xl bg-white dark:bg-slate-950"
-						disabled={isSubmitting}
+						disabled={isSubmitting || !canTransact}
 						bind:value={paidAmount}
 					/>
 				</div>
@@ -542,7 +631,7 @@
 						id="sale-notes"
 						placeholder="Optional transaction notes"
 						class="min-h-16 resize-none rounded-xl bg-white dark:bg-slate-950"
-						disabled={isSubmitting}
+						disabled={isSubmitting || !canTransact}
 						bind:value={notes}
 					/>
 				</div>
@@ -555,7 +644,7 @@
 					type="submit"
 					size="lg"
 					class="rounded-2xl"
-					disabled={isSubmitting || !isPaymentEnough}
+					disabled={isSubmitting || !isPaymentEnough || !canTransact}
 				>
 					{#if isSubmitting}
 						<Spinner />
@@ -568,3 +657,5 @@
 		</section>
 	</div>
 </form>
+
+<SaleReceiptDialog saleDetail={completedSale} bind:open={isReceiptOpen} />
