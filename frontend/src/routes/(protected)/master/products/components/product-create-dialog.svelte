@@ -14,6 +14,7 @@
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4, zod4Client } from 'sveltekit-superforms/adapters';
 	import { z } from 'zod';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const NO_CATEGORY_VALUE = 'none';
 
@@ -102,12 +103,12 @@
 				is_active: result.data.is_active === 'true'
 			});
 			await onCreated?.(createdProduct);
-			toast.success('Product created.', {
+			toast.success(t('master.products.createdToast'), {
 				description: `${createdProduct.name} is ready for SKU setup.`
 			});
 			open = false;
 		} catch (error) {
-			errorMessage = getErrorMessage(error, 'Failed to create product.');
+			errorMessage = getErrorMessage(error, t('master.products.errorCreate'));
 		} finally {
 			isSubmitting = false;
 		}
@@ -130,7 +131,7 @@
 	<Dialog.Content class="overflow-hidden p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Add Product</Dialog.Title>
+				<Dialog.Title>{t('master.products.addTitle')}</Dialog.Title>
 				<Dialog.Description>
 					Create a product master record before adding SKU, pricing, and stock data.
 				</Dialog.Description>
@@ -171,7 +172,7 @@
 									<Select.Value placeholder="Select category" />
 								</Select.Trigger>
 								<Select.Content>
-									<Select.Item value={NO_CATEGORY_VALUE} label="No category">
+									<Select.Item value={NO_CATEGORY_VALUE} label={t('master.products.noCategory')}>
 										No category
 									</Select.Item>
 									{#each categories as category (category.id)}
@@ -205,8 +206,8 @@
 									<Select.Value placeholder="Select status" />
 								</Select.Trigger>
 								<Select.Content>
-									<Select.Item value="true" label="Active">Active</Select.Item>
-									<Select.Item value="false" label="Inactive">Inactive</Select.Item>
+									<Select.Item value="true" label={t('status.active')}>{t('status.active')}</Select.Item>
+									<Select.Item value="false" label={t('status.inactive')}>{t('status.inactive')}</Select.Item>
 								</Select.Content>
 							</Select.Root>
 						{/snippet}
@@ -215,11 +216,11 @@
 				</Form.Field>
 
 				{#if categoryErrorMessage}
-					<ErrorAlert title="Failed to load categories." message={categoryErrorMessage} />
+					<ErrorAlert title={t('master.products.errorLoadOptions')} message={categoryErrorMessage} />
 				{/if}
 
 				{#if errorMessage}
-					<ErrorAlert title="Failed to create product." message={errorMessage} />
+					<ErrorAlert title={t('master.products.errorCreate')} message={errorMessage} />
 				{/if}
 			</div>
 
@@ -235,7 +236,7 @@
 					{#if isSubmitting}
 						<Spinner />
 					{/if}
-					{isSubmitting ? 'Creating...' : 'Create product'}
+					{isSubmitting ? t('master.products.creating') : t('master.products.createBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

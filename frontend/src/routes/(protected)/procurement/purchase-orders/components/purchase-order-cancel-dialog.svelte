@@ -9,6 +9,7 @@
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		purchaseOrder,
@@ -42,7 +43,7 @@
 				reason: emptyToNull(reason)
 			});
 			await onCancelled?.(cancelledPurchaseOrder);
-			toast.success('Purchase order cancelled.', {
+			toast.success(t('procurement.purchaseOrders.cancelledToast'), {
 				description: `${cancelledPurchaseOrder.po_no} was cancelled.`
 			});
 			open = false;
@@ -89,7 +90,7 @@
 				</div>
 
 				{#if errorMessage}
-					<ErrorAlert title="Cancel failed." message={errorMessage} />
+					<ErrorAlert title={t('procurement.purchaseOrders.cancelFailed')} message={errorMessage} />
 				{/if}
 			</div>
 
@@ -107,7 +108,7 @@
 					{:else}
 						<BanIcon />
 					{/if}
-					{isSubmitting ? 'Cancelling...' : 'Cancel purchase order'}
+					{isSubmitting ? t('procurement.purchaseOrders.cancelling') : t('procurement.purchaseOrders.cancelOrderBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

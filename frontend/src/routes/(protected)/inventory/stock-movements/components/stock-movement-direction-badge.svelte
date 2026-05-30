@@ -1,13 +1,14 @@
 <script lang="ts">
 	import type { StockMovementDirection } from '$lib/api/stock-movements.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let { direction }: { direction: StockMovementDirection } = $props();
 
-	const labels: Record<StockMovementDirection, string> = {
-		in: 'In',
-		out: 'Out'
-	};
+	const labels = $derived({
+		in: t('inventory.stockMovements.directionIn'),
+		out: t('inventory.stockMovements.directionOut')
+	} as Record<string, string>);
 
 	const classes: Record<StockMovementDirection, string> = {
 		in: 'border-emerald-600/20 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300',

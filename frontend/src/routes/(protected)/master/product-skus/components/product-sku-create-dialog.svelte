@@ -15,6 +15,7 @@
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4, zod4Client } from 'sveltekit-superforms/adapters';
 	import { z } from 'zod';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const normalizeStringInput = (value: unknown) => {
 		if (value === null || value === undefined) return '';
@@ -161,12 +162,12 @@
 				is_active: result.data.is_active === 'true'
 			});
 			await onCreated?.(createdProductSku);
-			toast.success('Product SKU created.', {
+			toast.success(t('master.productSkus.createdToast'), {
 				description: `${createdProductSku.sku} was added.`
 			});
 			open = false;
 		} catch (error) {
-			errorMessage = getErrorMessage(error, 'Failed to create product SKU.');
+			errorMessage = getErrorMessage(error, t('master.productSkus.errorCreate'));
 		} finally {
 			isSubmitting = false;
 		}
@@ -414,11 +415,11 @@
 
 				<div class="mt-5 grid gap-3">
 					{#if optionsErrorMessage}
-						<ErrorAlert title="Failed to load options." message={optionsErrorMessage} />
+						<ErrorAlert title={t('master.productSkus.errorLoadOptions')} message={optionsErrorMessage} />
 					{/if}
 
 					{#if errorMessage}
-						<ErrorAlert title="Failed to create product SKU." message={errorMessage} />
+						<ErrorAlert title={t('master.productSkus.errorCreate')} message={errorMessage} />
 					{/if}
 				</div>
 			</div>
@@ -435,7 +436,7 @@
 					{#if isSubmitting}
 						<Spinner />
 					{/if}
-					{isSubmitting ? 'Creating...' : 'Create product SKU'}
+					{isSubmitting ? t('master.productSkus.creating') : t('master.productSkus.createBtn')}
 				</Button>
 			</Drawer.Footer>
 		</form>

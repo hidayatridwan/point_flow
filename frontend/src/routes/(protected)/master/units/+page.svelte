@@ -18,6 +18,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import UnitCreateDialog from './components/unit-create-dialog.svelte';
 	import UnitsTable from './components/units-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: UnitPagination = {
@@ -163,7 +164,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load units.';
+		return t('master.units.errorLoad');
 	}
 </script>
 
@@ -173,37 +174,37 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Units"
-		description="Manage measurement units used by inventory, purchasing, and sales transactions."
+		title={t('master.units.title')}
+		description={t('master.units.subtitle')}
 	>
 		{#snippet actions()}
 			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
 				<PlusIcon />
-				Add Unit
+				{t('master.units.addBtn')}
 			</Button>
 		{/snippet}
 	</PageHeader>
 
 	<section class="flex flex-col gap-3" aria-labelledby="units-table-title">
-		<h2 id="units-table-title" class="sr-only">Unit records</h2>
+		<h2 id="units-table-title" class="sr-only">{t('master.units.srHeading')}</h2>
 
 		<SearchField
 			value={searchValue}
 			disabled={isLoading}
-			ariaLabel="Search units"
-			placeholder="Search units..."
+			ariaLabel={t('master.units.searchAriaLabel')}
+			placeholder={t('master.units.searchPlaceholder')}
 			onValueChange={updateSearchValue}
 		/>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load units." message={errorMessage} />
+			<ErrorAlert title={t('master.units.errorLoad')} message={errorMessage} />
 		{:else}
 			<UnitsTable
 				{units}
 				{isLoading}
 				onUnitDeleted={refreshUnitsAfterDelete}
 				onUnitUpdated={updateUnitInList}
-				emptyMessage={query.search ? 'No units match your search.' : 'No units yet.'}
+				emptyMessage={query.search ? t('master.units.emptySearch') : t('master.units.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

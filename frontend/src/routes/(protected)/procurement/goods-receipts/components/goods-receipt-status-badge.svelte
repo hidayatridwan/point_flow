@@ -1,14 +1,13 @@
 <script lang="ts">
 	import type { GoodsReceiptStatus } from '$lib/api/goods-receipts.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 
 	let { status }: { status: GoodsReceiptStatus } = $props();
 
-	const labels: Record<GoodsReceiptStatus, string> = {
-		draft: 'Draft',
-		posted: 'Posted',
-		cancelled: 'Cancelled'
-	};
+	const labels = $derived<Record<GoodsReceiptStatus, string>>({ draft: t('procurement.goodsReceipts.statusDraft'),
+		posted: t('procurement.goodsReceipts.statusPosted'),
+		cancelled: t('procurement.goodsReceipts.statusCancelled') });
 
 	const classes: Record<GoodsReceiptStatus, string> = {
 		draft: 'border-zinc-500/20 bg-zinc-50 text-zinc-600 dark:bg-zinc-950/30 dark:text-zinc-300',

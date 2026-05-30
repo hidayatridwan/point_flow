@@ -11,6 +11,7 @@
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
 	import SaleActions from './sale-actions.svelte';
 	import SaleStatusBadge from './sale-status-badge.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		sales,
@@ -29,40 +30,40 @@
 
 	const columns = [
 		columnHelper.accessor('transaction_no', {
-			header: 'Transaction No',
+			header: () => t('pos.sales.colTransactionNo'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('sold_at', {
-			header: 'Sold At',
+			header: () => t('pos.sales.colSoldAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.accessor('cashier_name', {
-			header: 'Cashier',
+			header: () => t('pos.sales.colCashier'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('cash_register_code', {
-			header: 'Register',
+			header: () => t('pos.sales.colRegister'),
 			cell: (info) => info.getValue() ?? '-'
 		}),
 		columnHelper.accessor('status', {
-			header: 'Status',
+			header: () => t('pos.sales.colStatus'),
 			cell: (info) => renderComponent(SaleStatusBadge, { status: info.getValue() })
 		}),
 		columnHelper.accessor('total_amount', {
-			header: 'Total',
+			header: () => t('pos.sales.colTotal'),
 			cell: (info) => formatIdr(info.getValue())
 		}),
 		columnHelper.accessor('paid_amount', {
-			header: 'Paid',
+			header: () => t('pos.sales.colPaid'),
 			cell: (info) => formatIdr(info.getValue())
 		}),
 		columnHelper.accessor('change_amount', {
-			header: 'Change',
+			header: () => t('pos.sales.colChange'),
 			cell: (info) => formatIdr(info.getValue())
 		}),
 		columnHelper.display({
 			id: 'actions',
-			header: () => 'Action',
+			header: () => t('pos.sales.colAction'),
 			cell: (info) =>
 				renderComponent(SaleActions, {
 					sale: info.row.original,

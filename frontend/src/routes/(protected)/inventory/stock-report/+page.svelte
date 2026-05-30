@@ -21,6 +21,7 @@
 	import PageHeader from '$lib/components/page-header.svelte';
 	import SearchField from '$lib/components/search-field.svelte';
 	import StockReportTable from './components/stock-report-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: StockReportPagination = {
@@ -176,7 +177,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load stock report.';
+		return t('inventory.stockReport.errorLoad');
 	}
 </script>
 
@@ -186,8 +187,8 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Stock Report"
-		description="Monitor current stock, minimum stock, and on-order quantities by product SKU."
+		title={t('inventory.stockReport.title')}
+		description={t('inventory.stockReport.subtitle')}
 	/>
 
 	<section class="flex flex-col gap-3" aria-labelledby="stock-report-table-title">
@@ -197,8 +198,8 @@
 			<SearchField
 				value={searchValue}
 				disabled={isLoading}
-				ariaLabel="Search stock report"
-				placeholder="Search stock report..."
+				ariaLabel={t('inventory.stockReport.searchAriaLabel')}
+				placeholder={t('inventory.stockReport.searchPlaceholder')}
 				class="sm:max-w-sm"
 				onValueChange={updateSearchValue}
 			/>
@@ -212,14 +213,14 @@
 		</div>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load stock report." message={errorMessage} />
+			<ErrorAlert title={t('inventory.stockReport.errorLoad')} message={errorMessage} />
 		{:else}
 			<StockReportTable
 				{items}
 				{isLoading}
 				emptyMessage={query.search || query.status.length
-					? 'No stock report items match your filters.'
-					: 'No stock report items yet.'}
+					? t('inventory.stockReport.emptySearch')
+					: t('inventory.stockReport.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

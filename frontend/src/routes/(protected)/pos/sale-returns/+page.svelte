@@ -30,6 +30,7 @@
 	import { formatDate } from '$lib/formatters.js';
 	import { cn } from '$lib/utils.js';
 	import SaleReturnsTable from './components/sale-returns-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: SaleReturnPagination = {
@@ -237,7 +238,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load sale returns.';
+		return t('pos.saleReturns.errorLoad');
 	}
 </script>
 
@@ -247,13 +248,13 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Sale Returns"
-		description="Review completed and cancelled return/refund transactions."
+		title={t('pos.saleReturns.title')}
+		description={t('pos.saleReturns.subtitle')}
 	>
 		{#snippet actions()}
 			<Button class="w-full sm:w-auto" href="/pos/sales">
 				<ShoppingCartIcon />
-				Sales History
+				{t('pos.saleReturns.salesHistoryBtn')}
 			</Button>
 		{/snippet}
 	</PageHeader>
@@ -266,8 +267,8 @@
 				<SearchField
 					value={searchValue}
 					disabled={isLoading}
-					ariaLabel="Search sale returns"
-					placeholder="Search returns..."
+					ariaLabel={t('pos.saleReturns.searchAriaLabel')}
+					placeholder={t('pos.saleReturns.searchPlaceholder')}
 					class="sm:max-w-sm"
 					onValueChange={updateSearchValue}
 				/>
@@ -312,15 +313,15 @@
 		</div>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load sale returns." message={errorMessage} />
+			<ErrorAlert title={t('pos.saleReturns.errorLoad')} message={errorMessage} />
 		{:else}
 			<SaleReturnsTable
 				{saleReturns}
 				{isLoading}
 				onSaleReturnChanged={refreshSaleReturnsAfterStatusChange}
 				emptyMessage={query.search || query.status.length || query.from || query.to
-					? 'No sale returns match your filters.'
-					: 'No sale returns yet.'}
+					? t('pos.saleReturns.emptySearch')
+					: t('pos.saleReturns.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

@@ -1,19 +1,20 @@
 <script lang="ts">
 	import type { StockMovementType } from '$lib/api/stock-movements.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let { type }: { type: StockMovementType } = $props();
 
-	const labels: Record<StockMovementType, string> = {
-		stock_in: 'Stock In',
-		stock_out: 'Stock Out',
-		sale: 'Sale',
-		purchase_receipt: 'Purchase Receipt',
-		adjustment: 'Adjustment',
-		conversion_in: 'Conversion In',
-		conversion_out: 'Conversion Out',
-		correction: 'Correction'
-	};
+	const labels = $derived({
+		stock_in: t('inventory.stockMovements.typeStockIn'),
+		stock_out: t('inventory.stockMovements.typeStockOut'),
+		sale: t('inventory.stockMovements.typeSale'),
+		purchase_receipt: t('inventory.stockMovements.typePurchaseReceipt'),
+		adjustment: t('inventory.stockMovements.typeAdjustment'),
+		conversion_in: t('inventory.stockMovements.typeConversionIn'),
+		conversion_out: t('inventory.stockMovements.typeConversionOut'),
+		correction: t('inventory.stockMovements.typeCorrection')
+	} as Record<string, string>);
 
 	const classes: Record<StockMovementType, string> = {
 		stock_in:

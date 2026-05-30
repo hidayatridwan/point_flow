@@ -32,6 +32,7 @@
 	import { formatDate } from '$lib/formatters.js';
 	import { cn } from '$lib/utils.js';
 	import StockAdjustmentReportTable from './components/stock-adjustment-report-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: ReportPagination = {

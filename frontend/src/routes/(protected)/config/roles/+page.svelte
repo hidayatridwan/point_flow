@@ -20,6 +20,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import RoleFormDialog from './components/role-form-dialog.svelte';
 	import RolesTable from './components/roles-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: RolePagination = {
@@ -170,7 +171,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load roles.';
+		return t('config.roles.errorLoad');
 	}
 </script>
 
@@ -179,11 +180,11 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader title="Roles" description="Manage access roles and permission assignments.">
+	<PageHeader title={t('config.roles.title')} description={t('config.roles.subtitle')}>
 		{#snippet actions()}
 			<Button class="w-full sm:w-auto" onclick={openCreateDialog} disabled={isLoading}>
 				<PlusIcon />
-				Add Role
+				{t('config.roles.addBtn')}
 			</Button>
 		{/snippet}
 	</PageHeader>
@@ -194,13 +195,13 @@
 		<SearchField
 			value={searchValue}
 			disabled={isLoading}
-			ariaLabel="Search roles"
-			placeholder="Search roles..."
+			ariaLabel={t('config.roles.searchAriaLabel')}
+			placeholder={t('config.roles.searchPlaceholder')}
 			onValueChange={updateSearchValue}
 		/>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load roles." message={errorMessage} />
+			<ErrorAlert title={t('config.roles.errorLoad')} message={errorMessage} />
 		{:else}
 			<RolesTable
 				{roles}
@@ -208,7 +209,7 @@
 				{isLoading}
 				onRoleDeleted={refreshRolesAfterDelete}
 				onRoleUpdated={updateRoleInList}
-				emptyMessage={query.search ? 'No roles match your search.' : 'No roles yet.'}
+				emptyMessage={query.search ? t('config.roles.emptySearch') : t('config.roles.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

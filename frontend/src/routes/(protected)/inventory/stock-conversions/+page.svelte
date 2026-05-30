@@ -32,6 +32,7 @@
 	import { cn } from '$lib/utils.js';
 	import StockConversionCreateDialog from './components/stock-conversion-create-dialog.svelte';
 	import StockConversionsTable from './components/stock-conversions-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: StockConversionPagination = {
@@ -254,7 +255,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load stock conversions.';
+		return t('inventory.stockConversions.errorLoad');
 	}
 </script>
 
@@ -264,13 +265,13 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Stock Conversions"
-		description="Convert stock between product SKUs, such as package units into retail units."
+		title={t('inventory.stockConversions.title')}
+		description={t('inventory.stockConversions.subtitle')}
 	>
 		{#snippet actions()}
 			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
 				<PlusIcon />
-				Add Stock Conversion
+				{t('inventory.stockConversions.addBtn')}
 			</Button>
 		{/snippet}
 	</PageHeader>
@@ -284,7 +285,7 @@
 					value={searchValue}
 					disabled={isLoading}
 					ariaLabel="Search stock conversions"
-					placeholder="Search stock conversions..."
+					placeholder={t('inventory.stockConversions.searchPlaceholder')}
 					class="sm:max-w-sm"
 					onValueChange={updateSearchValue}
 				/>
@@ -329,15 +330,15 @@
 		</div>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load stock conversions." message={errorMessage} />
+			<ErrorAlert title={t('inventory.stockConversions.errorLoad')} message={errorMessage} />
 		{:else}
 			<StockConversionsTable
 				{stockConversions}
 				{isLoading}
 				onStockConversionChanged={refreshStockConversionsAfterStatusChange}
 				emptyMessage={query.search || query.status.length || query.from || query.to
-					? 'No stock conversions match your filters.'
-					: 'No stock conversions yet.'}
+					? t('inventory.stockConversions.emptySearch')
+					: t('inventory.stockConversions.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

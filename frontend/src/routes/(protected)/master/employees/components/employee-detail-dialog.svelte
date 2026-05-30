@@ -7,6 +7,7 @@
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { formatDateTime, formatIdr } from '$lib/formatters.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		employeeId,
@@ -49,7 +50,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load employee details.';
+		return t('master.employees.errorLoadDetail');
 	}
 </script>
 

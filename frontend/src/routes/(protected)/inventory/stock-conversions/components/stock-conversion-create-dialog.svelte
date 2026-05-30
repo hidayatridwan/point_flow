@@ -20,6 +20,7 @@
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
 	import { z } from 'zod';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const normalizeStringInput = (value: unknown) => {
 		if (value === null || value === undefined) return '';
@@ -247,12 +248,12 @@
 				}))
 			});
 			await onCreated?.(createdStockConversion);
-			toast.success('Stock conversion created.', {
+			toast.success(t('inventory.stockConversions.createdToast'), {
 				description: `${createdStockConversion.conversion_no} was created as draft.`
 			});
 			open = false;
 		} catch (error) {
-			errorMessage = getErrorMessage(error, 'Failed to create stock conversion.');
+			errorMessage = getErrorMessage(error, t('inventory.stockConversions.errorCreate'));
 		} finally {
 			isSubmitting = false;
 		}
@@ -600,7 +601,7 @@
 						</div>
 
 						{#if getFieldError('items')}
-							<ErrorAlert title="Invalid line items." message={getFieldError('items') ?? ''} />
+							<ErrorAlert title={t('inventory.stockConversions.invalidItems')} message={getFieldError('items') ?? ''} />
 						{/if}
 
 						<div class="grid gap-3">
@@ -838,7 +839,7 @@
 					{#if isSubmitting}
 						<Spinner />
 					{/if}
-					{isSubmitting ? 'Creating...' : 'Create stock conversion'}
+					{isSubmitting ? t('inventory.stockConversions.creating') : t('inventory.stockConversions.createBtn')}
 				</Button>
 			</Drawer.Footer>
 		</form>

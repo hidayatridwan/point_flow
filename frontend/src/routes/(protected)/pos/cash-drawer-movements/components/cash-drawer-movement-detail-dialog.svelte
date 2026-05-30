@@ -8,6 +8,7 @@
 	import { formatDateTime, formatIdr } from '$lib/formatters.js';
 	import CashDrawerMovementStatusBadge from './cash-drawer-movement-status-badge.svelte';
 	import CashDrawerMovementTypeBadge from './cash-drawer-movement-type-badge.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		movementId,
@@ -48,7 +49,7 @@
 	}
 
 	function getDirectionLabel(direction: string) {
-		return direction === 'in' ? 'In' : 'Out';
+		return direction === 'in' ? t('inventory.stockMovements.directionIn') : t('inventory.stockMovements.directionOut');
 	}
 
 	function getErrorMessage(error: unknown) {
@@ -73,32 +74,32 @@
 				<Skeleton class="h-28 w-full" />
 			</div>
 		{:else if errorMessage}
-			<ErrorAlert title="Failed to load details." message={errorMessage} />
+			<ErrorAlert title={t('common.loadFailed')} message={errorMessage} />
 		{:else if movement}
 			<div class="grid gap-5">
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					<DetailField label="Movement No" value={movement.movement_no} />
-					<DetailField label="Status">
+					<DetailField label={t('common.movementNo')} value={movement.movement_no} />
+					<DetailField label={t('common.status')}>
 						<CashDrawerMovementStatusBadge status={movement.status} />
 					</DetailField>
-					<DetailField label="Type">
+					<DetailField label={t('common.direction')}>
 						<CashDrawerMovementTypeBadge type={movement.movement_type} />
 					</DetailField>
-					<DetailField label="Direction" value={getDirectionLabel(movement.direction)} />
-					<DetailField label="Amount" value={formatIdr(movement.amount)} />
-					<DetailField label="Occurred At" value={formatDateTime(movement.occurred_at)} />
-					<DetailField label="Session" value={movement.session_no} />
-					<DetailField label="Register" value={movement.cash_register_code} />
-					<DetailField label="Created By" value={movement.created_by_name} />
-					<DetailField label="Cancelled At" value={formatDateTime(movement.cancelled_at)} />
-					<DetailField label="Cancelled By" value={movement.cancelled_by_name || '-'} />
-					<DetailField label="Updated At" value={formatDateTime(movement.updated_at)} />
+					<DetailField label={t('common.direction')} value={getDirectionLabel(movement.direction)} />
+					<DetailField label={t('common.amount')} value={formatIdr(movement.amount)} />
+					<DetailField label={t('common.occurredAt')} value={formatDateTime(movement.occurred_at)} />
+					<DetailField label={t('common.session')} value={movement.session_no} />
+					<DetailField label={t('common.register')} value={movement.cash_register_code} />
+					<DetailField label={t('common.createdBy')} value={movement.created_by_name} />
+					<DetailField label={t('common.cancelledAt')} value={formatDateTime(movement.cancelled_at)} />
+					<DetailField label={t('common.cancelledBy')} value={movement.cancelled_by_name || '-'} />
+					<DetailField label={t('common.updatedAt')} value={formatDateTime(movement.updated_at)} />
 				</div>
 
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-					<DetailField label="Reason" value={movement.reason || '-'} />
-					<DetailField label="Notes" value={movement.notes || '-'} />
-					<DetailField label="Cancel Reason" value={movement.cancel_reason || '-'} />
+					<DetailField label={t('common.cancelReason')} value={movement.reason || '-'} />
+					<DetailField label={t('common.notes')} value={movement.notes || '-'} />
+					<DetailField label={t('common.cancelReason')} value={movement.cancel_reason || '-'} />
 				</div>
 			</div>
 		{/if}

@@ -34,6 +34,7 @@
 	import { cn } from '$lib/utils.js';
 	import PurchaseOrderCreateDialog from './components/purchase-order-create-dialog.svelte';
 	import PurchaseOrdersTable from './components/purchase-orders-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: PurchaseOrderPagination = {
@@ -43,11 +44,11 @@
 		totalPages: 0
 	};
 	const statusFilterOptions = [
-		{ value: 'draft', label: 'Draft', icon: CircleIcon },
-		{ value: 'ordered', label: 'Ordered', icon: SendIcon },
-		{ value: 'partially_received', label: 'Partially Received', icon: CircleDotIcon },
-		{ value: 'received', label: 'Received', icon: PackageCheckIcon },
-		{ value: 'cancelled', label: 'Cancelled', icon: CircleOffIcon }
+		{ value: 'draft', label: t('procurement.purchaseOrders.filterDraft'), icon: CircleIcon },
+		{ value: 'ordered', label: t('procurement.purchaseOrders.filterOrdered'), icon: SendIcon },
+		{ value: 'partially_received', label: t('procurement.purchaseOrders.filterPartiallyReceived'), icon: CircleDotIcon },
+		{ value: 'received', label: t('procurement.purchaseOrders.filterReceived'), icon: PackageCheckIcon },
+		{ value: 'cancelled', label: t('procurement.purchaseOrders.filterCancelled'), icon: CircleOffIcon }
 	];
 	const statusFilterValues = new Set(statusFilterOptions.map((option) => option.value));
 
@@ -259,7 +260,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load purchase orders.';
+		return t('procurement.purchaseOrders.errorLoad');
 	}
 </script>
 
@@ -269,13 +270,13 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Purchase Orders"
-		description="Create and track supplier purchase orders for procurement workflows."
+		title={t('procurement.purchaseOrders.title')}
+		description={t('procurement.purchaseOrders.subtitle')}
 	>
 		{#snippet actions()}
 			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
 				<PlusIcon />
-				Add Purchase Order
+				{t('procurement.purchaseOrders.addBtn')}
 			</Button>
 		{/snippet}
 	</PageHeader>
@@ -289,7 +290,7 @@
 					value={searchValue}
 					disabled={isLoading}
 					ariaLabel="Search purchase orders"
-					placeholder="Search purchase orders..."
+					placeholder={t('procurement.purchaseOrders.searchPlaceholder')}
 					class="sm:max-w-sm"
 					onValueChange={updateSearchValue}
 				/>
@@ -334,15 +335,15 @@
 		</div>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load purchase orders." message={errorMessage} />
+			<ErrorAlert title={t('procurement.purchaseOrders.errorLoad')} message={errorMessage} />
 		{:else}
 			<PurchaseOrdersTable
 				{purchaseOrders}
 				{isLoading}
 				onPurchaseOrderChanged={updatePurchaseOrderInList}
 				emptyMessage={query.search || query.status.length || query.from || query.to
-					? 'No purchase orders match your filters.'
-					: 'No purchase orders yet.'}
+					? t('procurement.purchaseOrders.emptySearch')
+					: t('procurement.purchaseOrders.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

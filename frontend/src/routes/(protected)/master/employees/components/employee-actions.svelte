@@ -9,6 +9,7 @@
 	import EmployeeDeleteAlertDialog from './employee-delete-alert-dialog.svelte';
 	import EmployeeDetailDialog from './employee-detail-dialog.svelte';
 	import EmployeeEditDialog from './employee-edit-dialog.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		employee,

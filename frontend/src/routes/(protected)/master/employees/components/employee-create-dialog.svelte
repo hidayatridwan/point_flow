@@ -11,6 +11,7 @@
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4, zod4Client } from 'sveltekit-superforms/adapters';
 	import { z } from 'zod';
@@ -106,8 +107,8 @@
 				is_active: result.data.is_active === 'true'
 			});
 			await onCreated?.(createdEmployee);
-			toast.success('Employee created.', {
-				description: `${createdEmployee.name} was added.`
+			toast.success(t('master.employees.createdToast'), {
+				description: `${createdEmployee.name} ${t('common.wasAdded')}`
 			});
 			open = false;
 		} catch (error) {
@@ -125,7 +126,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to create employee.';
+		return t('master.employees.errorCreate');
 	}
 </script>
 
@@ -133,17 +134,15 @@
 	<Dialog.Content class="overflow-hidden p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Add Employee</Dialog.Title>
-				<Dialog.Description
-					>Create an employee record for operations and payroll.</Dialog.Description
-				>
+				<Dialog.Title>{t('master.employees.addTitle')}</Dialog.Title>
+				<Dialog.Description>{t('master.employees.addDesc')}</Dialog.Description>
 			</Dialog.Header>
 
 			<div class="grid gap-4 px-6">
 				<Form.Field {form} name="name">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Name</Form.Label>
+							<Form.Label>{t('common.name')}</Form.Label>
 							<Input
 								{...props}
 								placeholder="Siti Aminah"
@@ -159,7 +158,7 @@
 					<Form.Field {form} name="position">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label>Position</Form.Label>
+								<Form.Label>{t('master.employees.position')}</Form.Label>
 								<Input
 									{...props}
 									placeholder="Cashier"
@@ -174,7 +173,7 @@
 					<Form.Field {form} name="phone">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label>Phone</Form.Label>
+								<Form.Label>{t('common.phone')}</Form.Label>
 								<Input
 									{...props}
 									placeholder="08123456780"
@@ -190,7 +189,7 @@
 				<Form.Field {form} name="base_salary">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Base Salary</Form.Label>
+							<Form.Label>{t('master.employees.baseSalary')}</Form.Label>
 							<Input
 								{...props}
 								type="number"
@@ -208,10 +207,10 @@
 				<Form.Field {form} name="address">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Address</Form.Label>
+							<Form.Label>{t("common.address")}</Form.Label>
 							<Textarea
 								{...props}
-								placeholder="Enter employee address"
+								placeholder={t("master.employees.addressPlaceholder")}
 								disabled={isSubmitting}
 								bind:value={$formData.address}
 							/>
@@ -223,7 +222,7 @@
 				<Form.Field {form} name="is_active">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Status</Form.Label>
+							<Form.Label>{t("common.status")}</Form.Label>
 							<Select.Root
 								allowDeselect={false}
 								type="single"
@@ -236,11 +235,11 @@
 								}}
 							>
 								<Select.Trigger {...props} class="w-full">
-									<Select.Value placeholder="Select status" />
+									<Select.Value placeholder={t("common.selectStatus")} />
 								</Select.Trigger>
 								<Select.Content>
-									<Select.Item value="true" label="Active">Active</Select.Item>
-									<Select.Item value="false" label="Inactive">Inactive</Select.Item>
+									<Select.Item value="true" label={t("status.active")}>{t("status.active")}</Select.Item>
+									<Select.Item value="false" label={t("status.inactive")}>{t("status.inactive")}</Select.Item>
 								</Select.Content>
 							</Select.Root>
 						{/snippet}
@@ -249,7 +248,7 @@
 				</Form.Field>
 
 				{#if errorMessage}
-					<ErrorAlert title="Failed to create employee." message={errorMessage} />
+					<ErrorAlert title={t("master.employees.errorCreate")} message={errorMessage} />
 				{/if}
 			</div>
 
@@ -259,13 +258,13 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
+					{t('common.cancel')}
 				</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting}>
 					{#if isSubmitting}
 						<Spinner />
 					{/if}
-					{isSubmitting ? 'Creating...' : 'Create employee'}
+					{isSubmitting ? t('master.employees.creating') : t('master.employees.createBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

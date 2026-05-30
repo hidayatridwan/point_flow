@@ -1,15 +1,14 @@
 <script lang="ts">
 	import type { CashDrawerMovementType } from '$lib/api/cash-registers.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let { type }: { type: CashDrawerMovementType } = $props();
 
-	const labels: Record<CashDrawerMovementType, string> = {
-		cash_in: 'Cash In',
-		cash_out: 'Cash Out',
-		cash_drop: 'Cash Drop',
-		petty_cash: 'Petty Cash'
-	};
+	const labels = $derived<Record<CashDrawerMovementType, string>>({ cash_in: t('pos.cashMovements.typeCashIn'),
+		cash_drop: t('pos.cashMovements.typeCashDrop'),
+		cash_out: t('pos.cashMovements.typeCashOut'),
+		petty_cash: t('pos.cashMovements.typePettyCash') });
 
 	const classes: Record<CashDrawerMovementType, string> = {
 		cash_in:

@@ -6,6 +6,7 @@
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import { toast } from 'svelte-sonner';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		goodsReceipt,
@@ -35,7 +36,7 @@
 		try {
 			const postedGoodsReceipt = await postGoodsReceipt(goodsReceipt.id);
 			await onPosted?.(postedGoodsReceipt);
-			toast.success('Goods receipt posted.', {
+			toast.success(t('procurement.goodsReceipts.post.postedToast'), {
 				description: `${postedGoodsReceipt.gr_no} updated stock successfully.`
 			});
 			open = false;
@@ -49,7 +50,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to post goods receipt.';
+		return t('procurement.goodsReceipts.post.postFailed');
 	}
 </script>
 
@@ -64,7 +65,7 @@
 		</AlertDialog.Header>
 
 		{#if errorMessage}
-			<ErrorAlert title="Post failed." message={errorMessage} />
+			<ErrorAlert title={t('common.postFailed')} message={errorMessage} />
 		{/if}
 
 		<AlertDialog.Footer>
@@ -75,7 +76,7 @@
 				{:else}
 					<CheckCircleIcon />
 				{/if}
-				{isSubmitting ? 'Posting...' : 'Post receipt'}
+				{isSubmitting ? t('procurement.goodsReceipts.post.posting') : t('procurement.goodsReceipts.post.postBtn')}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

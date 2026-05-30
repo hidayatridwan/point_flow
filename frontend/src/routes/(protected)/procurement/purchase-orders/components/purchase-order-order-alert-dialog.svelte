@@ -6,6 +6,7 @@
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import { toast } from 'svelte-sonner';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		purchaseOrder,
@@ -35,7 +36,7 @@
 		try {
 			const orderedPurchaseOrder = await orderPurchaseOrder(purchaseOrder.id);
 			await onOrdered?.(orderedPurchaseOrder);
-			toast.success('Purchase order marked as ordered.', {
+			toast.success(t('procurement.purchaseOrders.order.orderedToast'), {
 				description: `${orderedPurchaseOrder.po_no} is ready for goods receipt.`
 			});
 			open = false;
@@ -49,7 +50,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to order purchase order.';
+		return t('procurement.purchaseOrders.order.orderFailed');
 	}
 </script>
 
@@ -64,7 +65,7 @@
 		</AlertDialog.Header>
 
 		{#if errorMessage}
-			<ErrorAlert title="Order failed." message={errorMessage} />
+			<ErrorAlert title={t('procurement.purchaseOrders.order.orderFailed')} message={errorMessage} />
 		{/if}
 
 		<AlertDialog.Footer>
@@ -75,7 +76,7 @@
 				{:else}
 					<SendIcon />
 				{/if}
-				{isSubmitting ? 'Ordering...' : 'Mark as ordered'}
+				{isSubmitting ? t('procurement.purchaseOrders.order.ordering') : t('procurement.purchaseOrders.order.orderBtn')}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

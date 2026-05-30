@@ -13,6 +13,7 @@
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4, zod4Client } from 'sveltekit-superforms/adapters';
 	import { z } from 'zod';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const createUnitSchema = z.object({
 		code: z
@@ -80,7 +81,7 @@
 				is_active: result.data.is_active === 'true'
 			});
 			await onCreated?.(createdUnit);
-			toast.success('Unit created.', {
+			toast.success(t('master.units.createdToast'), {
 				description: `${createdUnit.name} is ready to use.`
 			});
 			open = false;
@@ -94,7 +95,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to create unit.';
+		return t('master.units.errorCreate');
 	}
 </script>
 
@@ -200,7 +201,7 @@
 				</div>
 
 				{#if errorMessage}
-					<ErrorAlert title="Failed to create unit." message={errorMessage} />
+					<ErrorAlert title={t('master.units.errorCreate')} message={errorMessage} />
 				{/if}
 			</div>
 
@@ -210,13 +211,13 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
-				</Dialog.Close>
+					{t('common.cancel')}
+					</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting}>
 					{#if isSubmitting}
 						<Spinner />
 					{/if}
-					{isSubmitting ? 'Creating...' : 'Create unit'}
+					{isSubmitting ? t('master.units.creating') : t('master.units.createBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

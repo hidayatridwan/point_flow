@@ -13,6 +13,7 @@
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
 	import UserActions from './user-actions.svelte';
 	import UserPermissions from './user-permissions.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		users,
@@ -35,36 +36,36 @@
 
 	const columns = [
 		columnHelper.accessor('name', {
-			header: 'Name',
+			header: () => t('config.users.colName'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('email', {
-			header: 'Email',
+			header: () => t('config.users.colEmail'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('role_name', {
-			header: 'Role',
+			header: () => t('config.users.colRole'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('permissions', {
-			header: 'Permissions',
+			header: () => t('config.users.colPermissions'),
 			cell: (info) => renderComponent(UserPermissions, { permissions: info.getValue() })
 		}),
 		columnHelper.accessor('is_active', {
-			header: 'Status',
+			header: () => t('config.users.colStatus'),
 			cell: (info) => renderComponent(StatusBadge, { active: info.getValue() })
 		}),
 		columnHelper.accessor('last_login_at', {
-			header: 'Last Login',
+			header: () => t('config.users.colLastLogin'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.accessor('updated_at', {
-			header: 'Updated At',
+			header: () => t('config.users.colUpdatedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.display({
 			id: 'actions',
-			header: () => 'Action',
+			header: () => t('config.users.colAction'),
 			cell: (info) =>
 				renderComponent(UserActions, {
 					user: info.row.original,

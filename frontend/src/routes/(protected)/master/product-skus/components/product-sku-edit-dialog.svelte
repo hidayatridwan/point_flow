@@ -24,6 +24,7 @@
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4, zod4Client } from 'sveltekit-superforms/adapters';
 	import { z } from 'zod';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const normalizeStringInput = (value: unknown) => {
 		if (value === null || value === undefined) return '';
@@ -135,7 +136,7 @@
 		} catch (error) {
 			if (requestId !== latestUnitsRequestId) return;
 			units = [];
-			unitsErrorMessage = getErrorMessage(error, 'Failed to load units.');
+			unitsErrorMessage = getErrorMessage(error, t('master.productSkus.errorLoadUnits'));
 		} finally {
 			if (requestId === latestUnitsRequestId) {
 				isLoadingUnits = false;
@@ -165,12 +166,12 @@
 				is_active: result.data.is_active === 'true'
 			});
 			onUpdated?.(updatedProductSku);
-			toast.success('Product SKU updated.', {
+			toast.success(t('master.productSkus.updatedToast'), {
 				description: `Changes for ${updatedProductSku.sku} have been saved.`
 			});
 			open = false;
 		} catch (error) {
-			errorMessage = getErrorMessage(error, 'Failed to save product SKU.');
+			errorMessage = getErrorMessage(error, t('master.productSkus.errorSave'));
 		} finally {
 			isSubmitting = false;
 		}
@@ -243,7 +244,7 @@
 									}}
 								>
 									<Select.Trigger {...props} class="w-full">
-										<Select.Value placeholder="Select unit" />
+										<Select.Value placeholder={t('master.productSkus.unit')} />
 									</Select.Trigger>
 									<Select.Content>
 										{#each units as unit (unit.id)}
@@ -355,11 +356,11 @@
 									}}
 								>
 									<Select.Trigger {...props} class="w-full">
-										<Select.Value placeholder="Select status" />
+										<Select.Value placeholder={t('common.selectStatus')} />
 									</Select.Trigger>
 									<Select.Content>
-										<Select.Item value="true" label="Active">Active</Select.Item>
-										<Select.Item value="false" label="Inactive">Inactive</Select.Item>
+										<Select.Item value="true" label="Active">{t('status.active')}</Select.Item>
+										<Select.Item value="false" label="Inactive">{t('status.inactive')}</Select.Item>
 									</Select.Content>
 								</Select.Root>
 							{/snippet}
@@ -404,11 +405,11 @@
 
 				<div class="mt-5 grid gap-3">
 					{#if unitsErrorMessage}
-						<ErrorAlert title="Failed to load units." message={unitsErrorMessage} />
+						<ErrorAlert title={t('master.productSkus.errorLoadUnits')} message={unitsErrorMessage} />
 					{/if}
 
 					{#if errorMessage}
-						<ErrorAlert title="Save failed." message={errorMessage} />
+						<ErrorAlert title={t('common.saveFailed')} message={errorMessage} />
 					{/if}
 				</div>
 			</div>
@@ -425,7 +426,7 @@
 					{#if isSubmitting}
 						<Spinner />
 					{/if}
-					{isSubmitting ? 'Saving...' : 'Save changes'}
+					{isSubmitting ? t('common.saving') : t('common.save')}
 				</Button>
 			</Drawer.Footer>
 		</form>

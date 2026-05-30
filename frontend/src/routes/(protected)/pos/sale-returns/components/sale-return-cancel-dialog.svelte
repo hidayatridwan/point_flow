@@ -9,6 +9,7 @@
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		saleReturn,
@@ -42,7 +43,7 @@
 				reason: emptyToNull(reason)
 			});
 			await onCancelled?.(cancelledSaleReturn);
-			toast.success('Return cancelled.', {
+			toast.success(t('pos.saleReturns.cancel.cancelledToast'), {
 				description: `${cancelledSaleReturn.return_no} was cancelled.`
 			});
 			open = false;
@@ -61,7 +62,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to cancel return.';
+		return t('pos.saleReturns.cancel.cancelFailed');
 	}
 </script>
 
@@ -83,14 +84,14 @@
 					</label>
 					<Textarea
 						id={`sale-return-cancel-reason-${saleReturn.id}`}
-						placeholder="Wrong return"
+						placeholder={t('pos.saleReturns.cancel.reasonPlaceholder')}
 						disabled={isSubmitting}
 						bind:value={reason}
 					/>
 				</div>
 
 				{#if errorMessage}
-					<ErrorAlert title="Cancel failed." message={errorMessage} />
+					<ErrorAlert title={t('pos.saleReturns.cancel.cancelFailed')} message={errorMessage} />
 				{/if}
 			</div>
 
@@ -108,7 +109,7 @@
 					{:else}
 						<BanIcon />
 					{/if}
-					{isSubmitting ? 'Cancelling...' : 'Cancel return'}
+					{isSubmitting ? t('pos.saleReturns.cancel.cancelling') : t('pos.saleReturns.cancel.cancelBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

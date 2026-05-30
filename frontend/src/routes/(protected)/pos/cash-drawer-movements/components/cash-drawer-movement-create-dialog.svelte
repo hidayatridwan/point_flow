@@ -19,6 +19,7 @@
 	import { formatIdr } from '$lib/formatters.js';
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	type MovementTypeOption = {
 		value: CashDrawerMovementType;
@@ -113,7 +114,7 @@
 				notes: emptyToNull(notes)
 			});
 			await onCreated?.(movement);
-			toast.success('Cash movement created.', {
+			toast.success(t('pos.cashMovements.createdToast'), {
 				description: `${movement.movement_no} ${formatIdr(movement.amount)}.`
 			});
 			open = false;
@@ -158,7 +159,7 @@
 	<Dialog.Content class="overflow-hidden p-0 sm:max-w-xl">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>New Cash Movement</Dialog.Title>
+				<Dialog.Title>{t('pos.cashMovements.addTitle')}</Dialog.Title>
 				<Dialog.Description>
 					Record manual drawer cash outside sale and refund transactions.
 				</Dialog.Description>
@@ -176,7 +177,7 @@
 					</div>
 				{:else}
 					<ErrorAlert
-						title="No active register session."
+						title={t('pos.cashMovements.noActiveRegisterAlert')}
 						message="Open a register session before recording cash movement."
 					/>
 				{/if}
@@ -247,7 +248,7 @@
 				</div>
 
 				{#if errorMessage}
-					<ErrorAlert title="Create failed." message={errorMessage} />
+					<ErrorAlert title={t('pos.cashMovements.errorCreate')} message={errorMessage} />
 				{/if}
 			</div>
 
@@ -257,15 +258,15 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
-				</Dialog.Close>
+					{t('common.cancel')}
+					</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting || !activeSession}>
 					{#if isSubmitting}
 						<Spinner />
 					{:else}
 						<BanknoteIcon />
 					{/if}
-					{isSubmitting ? 'Creating...' : 'Create movement'}
+					{isSubmitting ? t('pos.cashMovements.creating') : t('pos.cashMovements.createBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

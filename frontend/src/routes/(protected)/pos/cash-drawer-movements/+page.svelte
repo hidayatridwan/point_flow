@@ -47,6 +47,7 @@
 	import { cn } from '$lib/utils.js';
 	import CashDrawerMovementCreateDialog from './components/cash-drawer-movement-create-dialog.svelte';
 	import CashDrawerMovementsTable from './components/cash-drawer-movements-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	type MovementQuery = Required<Omit<CashDrawerMovementListParams, 'cash_register_session_id'>> & {
 		cash_register_session_id: number | null;
@@ -60,14 +61,14 @@
 		totalPages: 0
 	};
 	const statusFilterOptions = [
-		{ value: 'completed', label: 'Completed', icon: CircleCheckIcon },
-		{ value: 'cancelled', label: 'Cancelled', icon: CircleOffIcon }
+		{ value: 'completed', label: t('pos.cashMovements.statusCompleted'), icon: CircleCheckIcon },
+		{ value: 'cancelled', label: t('pos.cashMovements.statusCancelled'), icon: CircleOffIcon }
 	];
 	const typeFilterOptions = [
-		{ value: 'cash_in', label: 'Cash In', icon: BanknoteArrowDownIcon },
-		{ value: 'cash_drop', label: 'Cash Drop', icon: BanknoteArrowUpIcon },
-		{ value: 'cash_out', label: 'Cash Out', icon: WalletCardsIcon },
-		{ value: 'petty_cash', label: 'Petty Cash', icon: HandCoinsIcon }
+		{ value: 'cash_in', label: t('pos.cashMovements.typeCashIn'), icon: BanknoteArrowDownIcon },
+		{ value: 'cash_drop', label: t('pos.cashMovements.typeCashDrop'), icon: BanknoteArrowUpIcon },
+		{ value: 'cash_out', label: t('pos.cashMovements.typeCashOut'), icon: WalletCardsIcon },
+		{ value: 'petty_cash', label: t('pos.cashMovements.typePettyCash'), icon: HandCoinsIcon }
 	];
 	const statusFilterValues = new Set(statusFilterOptions.map((option) => option.value));
 	const typeFilterValues = new Set(typeFilterOptions.map((option) => option.value));
@@ -381,8 +382,8 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Cash Drawer Movements"
-		description="Record cash in, cash out, cash drop, and petty cash adjustments for register closing."
+		title={t('pos.cashMovements.title')}
+		description={t('pos.cashMovements.subtitle')}
 	>
 		{#snippet actions()}
 			<div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
@@ -393,11 +394,11 @@
 					onclick={refreshPageState}
 				>
 					<RefreshCwIcon />
-					Refresh
+					{t('common.refresh')}
 				</Button>
 				<Button class="w-full sm:w-auto" href="/pos/register-session">
 					<BanknoteIcon />
-					Register Session
+					{t('pos.cashMovements.registerSessionBtn')}
 				</Button>
 				<Button
 					type="button"
@@ -406,7 +407,7 @@
 					onclick={openCreateDialog}
 				>
 					<PlusIcon />
-					New Movement
+					{t('pos.cashMovements.newMovementBtn')}
 				</Button>
 			</div>
 		{/snippet}
@@ -414,25 +415,25 @@
 
 	<section class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_360px]">
 		<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-			<DetailField label="Active Session" value={activeSession?.session_no ?? '-'} />
+			<DetailField label={t('pos.cashMovements.activeSession')} value={activeSession?.session_no ?? '-'} />
 			<DetailField label="Register" value={activeSession?.cash_register_code ?? '-'} />
-			<DetailField label="Opened At" value={formatDateTime(activeSession?.opened_at)} />
-			<DetailField label="Opening Cash" value={formatIdr(activeSession?.opening_cash)} />
+			<DetailField label={t('pos.registerSession.openedAt')} value={formatDateTime(activeSession?.opened_at)} />
+			<DetailField label={t('pos.registerSession.openingCash')} value={formatIdr(activeSession?.opening_cash)} />
 		</div>
 
 		<div class="grid content-start gap-3 rounded-md border p-4">
 			<div class="flex items-center gap-2">
 				<BanknoteIcon class="size-5 text-muted-foreground" />
-				<h2 class="text-base font-semibold">Drawer Session</h2>
+				<h2 class="text-base font-semibold">{t('pos.cashMovements.drawerSession')}</h2>
 			</div>
 
 			{#if isSessionLoading}
 				<div class="flex h-9 items-center gap-2 text-sm text-muted-foreground">
 					<Spinner />
-					Loading open sessions...
+					{t('pos.cashMovements.loadingSessions')}
 				</div>
 			{:else if sessionErrorMessage}
-				<ErrorAlert title="Failed to load sessions." message={sessionErrorMessage} />
+				<ErrorAlert title={t('pos.cashMovements.errorLoadSessions')} message={sessionErrorMessage} />
 			{:else if openSessions.length > 0}
 				<Select.Root
 					allowDeselect={false}
@@ -441,7 +442,7 @@
 					onValueChange={chooseOpenSession}
 				>
 					<Select.Trigger class="w-full">
-						<Select.Value placeholder="Select open session" />
+						<Select.Value placeholder={t('pos.cashMovements.selectSession')} />
 					</Select.Trigger>
 					<Select.Content>
 						{#each openSessions as session (session.id)}
@@ -455,39 +456,39 @@
 					</Select.Content>
 				</Select.Root>
 				<p class="text-sm text-muted-foreground">
-					New movements use the selected open session.
+					{t('pos.cashMovements.newMovementsHint')}
 				</p>
 			{:else}
 				<ErrorAlert
-					title="No active register."
-					message="Open a register session before recording cash movement."
+					title={t('pos.cashMovements.noActiveRegister')}
+					message={t('pos.cashMovements.noActiveRegisterDesc')}
 				/>
 			{/if}
 		</div>
 	</section>
 
 	<section class="flex flex-col gap-3" aria-labelledby="cash-drawer-movements-table-title">
-		<h2 id="cash-drawer-movements-table-title" class="sr-only">Cash drawer movement records</h2>
+		<h2 id="cash-drawer-movements-table-title" class="sr-only">{t('pos.cashMovements.srHeading')}</h2>
 
 		<div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
 			<div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
 				<SearchField
 					value={searchValue}
 					disabled={isLoading}
-					ariaLabel="Search cash drawer movements"
-					placeholder="Search movements..."
+					ariaLabel={t('pos.cashMovements.searchAriaLabel')}
+					placeholder={t('pos.cashMovements.searchPlaceholder')}
 					class="sm:max-w-sm"
 					onValueChange={updateSearchValue}
 				/>
 				<DataTableFacetedFilter
-					title="Status"
+					title={t('pos.cashMovements.filterStatus')}
 					options={statusFilterOptions}
 					value={query.status}
 					disabled={isLoading}
 					onValueChange={updateStatusFilter}
 				/>
 				<DataTableFacetedFilter
-					title="Type"
+					title={t('pos.cashMovements.filterType')}
 					options={typeFilterOptions}
 					value={query.type}
 					disabled={isLoading}
@@ -502,7 +503,7 @@
 					onclick={toggleCurrentSessionFilter}
 				>
 					<BanknoteIcon />
-					Current Session
+					{t('pos.cashMovements.currentSession')}
 				</Button>
 			</div>
 
@@ -538,7 +539,7 @@
 		</div>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load cash drawer movements." message={errorMessage} />
+			<ErrorAlert title={t('pos.cashMovements.errorLoad')} message={errorMessage} />
 		{:else}
 			<CashDrawerMovementsTable
 				{movements}
@@ -550,8 +551,8 @@
 				query.from ||
 				query.to ||
 				query.cash_register_session_id
-					? 'No cash drawer movements match your filters.'
-					: 'No cash drawer movements yet.'}
+					? t('pos.cashMovements.emptySearch')
+					: t('pos.cashMovements.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

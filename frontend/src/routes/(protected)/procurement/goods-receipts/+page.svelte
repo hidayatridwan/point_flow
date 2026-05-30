@@ -32,6 +32,7 @@
 	import { cn } from '$lib/utils.js';
 	import GoodsReceiptCreateDialog from './components/goods-receipt-create-dialog.svelte';
 	import GoodsReceiptsTable from './components/goods-receipts-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: GoodsReceiptPagination = {
@@ -253,7 +254,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load goods receipts.';
+		return t('procurement.goodsReceipts.errorLoad');
 	}
 </script>
 
@@ -263,13 +264,13 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Goods Receipts"
-		description="Receive ordered purchase order items and post stock updates."
+		title={t('procurement.goodsReceipts.title')}
+		description={t('procurement.goodsReceipts.subtitle')}
 	>
 		{#snippet actions()}
 			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
 				<PlusIcon />
-				Add Goods Receipt
+				{t('procurement.goodsReceipts.addBtn')}
 			</Button>
 		{/snippet}
 	</PageHeader>
@@ -283,7 +284,7 @@
 					value={searchValue}
 					disabled={isLoading}
 					ariaLabel="Search goods receipts"
-					placeholder="Search goods receipts..."
+					placeholder={t('procurement.goodsReceipts.searchPlaceholder')}
 					class="sm:max-w-sm"
 					onValueChange={updateSearchValue}
 				/>
@@ -328,15 +329,15 @@
 		</div>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load goods receipts." message={errorMessage} />
+			<ErrorAlert title={t('procurement.goodsReceipts.errorLoad')} message={errorMessage} />
 		{:else}
 			<GoodsReceiptsTable
 				{goodsReceipts}
 				{isLoading}
 				onGoodsReceiptChanged={refreshGoodsReceiptsAfterStatusChange}
 				emptyMessage={query.search || query.status.length || query.from || query.to
-					? 'No goods receipts match your filters.'
-					: 'No goods receipts yet.'}
+					? t('procurement.goodsReceipts.emptySearch')
+					: t('procurement.goodsReceipts.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

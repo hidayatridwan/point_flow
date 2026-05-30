@@ -7,6 +7,7 @@
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { formatDateTime } from '$lib/formatters.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		supplierId,
@@ -49,7 +50,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load supplier details.';
+		return t('master.suppliers.errorLoadDetail2');
 	}
 </script>
 
@@ -68,7 +69,7 @@
 				<Skeleton class="h-5 w-32" />
 			</div>
 		{:else if errorMessage}
-			<ErrorAlert title="Failed to load details." message={errorMessage} />
+			<ErrorAlert title={t('common.loadFailed')} message={errorMessage} />
 		{:else if supplier}
 			<div class="grid gap-4">
 				<DetailField label="Name" value={supplier.name} />

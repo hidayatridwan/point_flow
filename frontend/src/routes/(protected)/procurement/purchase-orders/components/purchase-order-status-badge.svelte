@@ -1,16 +1,17 @@
 <script lang="ts">
 	import type { PurchaseOrderStatus } from '$lib/api/purchase-orders.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let { status }: { status: PurchaseOrderStatus } = $props();
 
-	const labels: Record<PurchaseOrderStatus, string> = {
-		draft: 'Draft',
-		ordered: 'Ordered',
-		partially_received: 'Partially Received',
-		received: 'Received',
-		cancelled: 'Cancelled'
-	};
+	const labels = $derived<Record<PurchaseOrderStatus, string>>({
+		draft: t('procurement.purchaseOrders.statusDraft'),
+		ordered: t('procurement.purchaseOrders.statusOrdered'),
+		partially_received: t('procurement.purchaseOrders.statusPartiallyReceived'),
+		received: t('procurement.purchaseOrders.statusReceived'),
+		cancelled: t('procurement.purchaseOrders.statusCancelled')
+	});
 
 	const classes: Record<PurchaseOrderStatus, string> = {
 		draft: 'border-zinc-500/20 bg-zinc-50 text-zinc-600 dark:bg-zinc-950/30 dark:text-zinc-300',

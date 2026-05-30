@@ -28,6 +28,7 @@
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { formatDateTime, formatIdr } from '$lib/formatters.js';
 	import { toast } from 'svelte-sonner';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let registers = $state<CashRegister[]>([]);
 	let openSessions = $state<CashRegisterSession[]>([]);
@@ -80,7 +81,7 @@
 			}
 		} catch (error) {
 			if (requestId !== latestRequestId) return;
-			errorMessage = getErrorMessage(error, 'Failed to load register session.');
+			errorMessage = getErrorMessage(error, t('pos.registerSession.errorLoad'));
 			registers = [];
 			openSessions = [];
 			activeSession = null;
@@ -113,7 +114,7 @@
 			closingCashCounted = '';
 			closingNotes = '';
 			setStoredActiveCashRegisterSessionId(session.id);
-			toast.success('Register opened.', {
+			toast.success(t('pos.registerSession.openedToast'), {
 				description: `${session.cash_register_code} is ready for transactions.`
 			});
 			await loadRegisterSessionState();
@@ -150,7 +151,7 @@
 			openingNotes = '';
 			closingCashCounted = '';
 			closingNotes = '';
-			toast.success('Register closed.', {
+			toast.success(t('pos.registerSession.closedToast'), {
 				description: `${session.session_no} difference ${formatIdr(session.cash_difference)}.`
 			});
 		} catch (error) {
@@ -179,16 +180,16 @@
 	}
 
 	function getOpenValidationError() {
-		if (!selectedCashRegisterId) return 'Select a cash register.';
+		if (!selectedCashRegisterId) return t('pos.registerSession.validNoRegister');
 		if (!Number.isFinite(toNumber(openingCash)) || toNumber(openingCash) < 0) {
-			return 'Opening cash must be a valid non-negative number.';
+			return t('pos.registerSession.validOpeningCash');
 		}
 		return null;
 	}
 
 	function getCloseValidationError() {
 		if (!Number.isFinite(toNumber(closingCashCounted)) || toNumber(closingCashCounted) < 0) {
-			return 'Closing cash counted must be a valid non-negative number.';
+			return t('pos.registerSession.validClosingCash');
 		}
 		return null;
 	}
@@ -216,8 +217,8 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Register Session"
-		description="Open and close the active cash drawer before and after cashier operations."
+		title={t('pos.registerSession.title')}
+		description={t('pos.registerSession.subtitle')}
 	>
 		{#snippet actions()}
 			<div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
@@ -256,7 +257,7 @@
 					onValueChange={chooseOpenSession}
 				>
 					<Select.Trigger class="w-full md:max-w-md">
-						<Select.Value placeholder="Select open register session" />
+						<Select.Value placeholder={t('pos.registerSession.selectSession')} />
 					</Select.Trigger>
 					<Select.Content>
 						{#each openSessions as session (session.id)}
@@ -290,12 +291,12 @@
 					</div>
 
 					<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-						<DetailField label="Session No" value={activeSession.session_no} />
-						<DetailField label="Register" value={activeSession.cash_register_code} />
-						<DetailField label="Opened By" value={activeSession.opened_by_name} />
-						<DetailField label="Opened At" value={formatDateTime(activeSession.opened_at)} />
-						<DetailField label="Opening Cash" value={formatIdr(activeSession.opening_cash)} />
-						<DetailField label="Opening Notes" value={activeSession.opening_notes ?? '-'} />
+						<DetailField label={t('pos.registerSession.sessionNo')} value={activeSession.session_no} />
+						<DetailField label={t('pos.registerSession.register')} value={activeSession.cash_register_code} />
+						<DetailField label={t('pos.registerSession.openedBy')} value={activeSession.opened_by_name} />
+						<DetailField label={t('pos.registerSession.openedAt')} value={formatDateTime(activeSession.opened_at)} />
+						<DetailField label={t('pos.registerSession.openingCash')} value={formatIdr(activeSession.opening_cash)} />
+						<DetailField label={t('pos.registerSession.openingNotes')} value={activeSession.opening_notes ?? '-'} />
 					</div>
 				</div>
 
@@ -352,7 +353,7 @@
 						{:else}
 							<LockIcon />
 						{/if}
-						{isClosing ? 'Closing...' : 'Close Register'}
+						{isClosing ? t('pos.registerSession.closing') : t('pos.registerSession.closeBtn')}
 					</Button>
 				</form>
 			</section>
@@ -368,20 +369,20 @@
 						<div class="min-w-0">
 							<h2 class="text-base font-semibold">No Active Register</h2>
 							<p class="text-sm text-muted-foreground">
-								Open a register session before starting cashier transactions.
+								{t('pos.registerSession.noActiveRegisterDesc')}
 							</p>
 						</div>
 					</div>
 
 					{#if closedSession}
 						<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-							<DetailField label="Closed Session" value={closedSession.session_no} />
-							<DetailField label="Expected Cash" value={formatIdr(closedSession.expected_cash)} />
+							<DetailField label={t('pos.registerSession.closedSession')} value={closedSession.session_no} />
+							<DetailField label={t('pos.registerSession.expectedCash')} value={formatIdr(closedSession.expected_cash)} />
 							<DetailField
-								label="Counted Cash"
+								label={t('pos.registerSession.countedCash')}
 								value={formatIdr(closedSession.closing_cash_counted)}
 							/>
-							<DetailField label="Difference" value={formatIdr(closedSession.cash_difference)} />
+							<DetailField label={t('pos.registerSession.difference')} value={formatIdr(closedSession.cash_difference)} />
 						</div>
 					{/if}
 				</div>
@@ -402,7 +403,7 @@
 							onValueChange={(value) => (selectedCashRegisterId = value)}
 						>
 							<Select.Trigger class="w-full">
-								<Select.Value placeholder="Select register" />
+								<Select.Value placeholder={t('pos.registerSession.selectRegister')} />
 							</Select.Trigger>
 							<Select.Content>
 								{#each activeRegisters as register (register.id)}
@@ -442,8 +443,8 @@
 
 					{#if activeRegisters.length === 0}
 						<ErrorAlert
-							title="No active register."
-							message="Create or activate a cash register in Master Data first."
+							title={t('pos.registerSession.noActiveRegisterError')}
+							message={t('pos.registerSession.noRegisterSetup')}
 						/>
 					{/if}
 					{#if openErrorMessage}
@@ -456,7 +457,7 @@
 						{:else}
 							<UnlockIcon />
 						{/if}
-						{isOpening ? 'Opening...' : 'Open Register'}
+						{isOpening ? t('pos.registerSession.opening') : t('pos.registerSession.openBtn')}
 					</Button>
 				</form>
 			</section>

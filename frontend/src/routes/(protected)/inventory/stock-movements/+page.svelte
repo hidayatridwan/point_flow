@@ -27,6 +27,7 @@
 	import { formatDate } from '$lib/formatters.js';
 	import { cn } from '$lib/utils.js';
 	import StockMovementsTable from './components/stock-movements-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: StockMovementPagination = {
@@ -238,7 +239,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load stock movements.';
+		return t('inventory.stockMovements.errorLoad');
 	}
 </script>
 
@@ -248,8 +249,8 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Stock Movements"
-		description="Review stock movement history with document references and before-after quantities."
+		title={t('inventory.stockMovements.title')}
+		description={t('inventory.stockMovements.subtitle')}
 	/>
 
 	<section class="flex flex-col gap-3" aria-labelledby="stock-movements-table-title">
@@ -260,8 +261,8 @@
 				<SearchField
 					value={searchValue}
 					disabled={isLoading}
-					ariaLabel="Search stock movements"
-					placeholder="Search stock movements..."
+					ariaLabel={t('inventory.stockMovements.searchAriaLabel')}
+					placeholder={t('inventory.stockMovements.searchPlaceholder')}
 					class="sm:max-w-sm"
 					onValueChange={updateSearchValue}
 				/>
@@ -306,14 +307,14 @@
 		</div>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load stock movements." message={errorMessage} />
+			<ErrorAlert title={t('inventory.stockMovements.errorLoad')} message={errorMessage} />
 		{:else}
 			<StockMovementsTable
 				{stockMovements}
 				{isLoading}
 				emptyMessage={query.search || query.movementType.length || query.from || query.to
-					? 'No stock movements match your filters.'
-					: 'No stock movements yet.'}
+					? t('inventory.stockMovements.emptySearch')
+					: t('inventory.stockMovements.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

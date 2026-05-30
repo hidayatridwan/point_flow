@@ -18,6 +18,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import ProductCategoryCreateDialog from './components/product-category-create-dialog.svelte';
 	import ProductCategoriesTable from './components/product-categories-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: ProductCategoryPagination = {
@@ -167,7 +168,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load product categories.';
+		return t('master.productCategories.errorLoad');
 	}
 </script>
 
@@ -177,8 +178,8 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Product Categories"
-		description="Manage product grouping so inventory records, item search, and sales reports stay easy to read."
+		title={t('master.productCategories.title')}
+		description={t('master.productCategories.subtitle')}
 	>
 		{#snippet actions()}
 			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
@@ -194,13 +195,13 @@
 		<SearchField
 			value={searchValue}
 			disabled={isLoading}
-			ariaLabel="Search product categories"
-			placeholder="Search product categories..."
+			ariaLabel={t('master.productCategories.searchAriaLabel')}
+			placeholder={t('master.productCategories.searchPlaceholder')}
 			onValueChange={updateSearchValue}
 		/>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load product categories." message={errorMessage} />
+			<ErrorAlert title={t('master.productCategories.errorLoad')} message={errorMessage} />
 		{:else}
 			<ProductCategoriesTable
 				{categories}
@@ -208,8 +209,8 @@
 				onCategoryDeleted={refreshCategoriesAfterDelete}
 				onCategoryUpdated={updateCategoryInList}
 				emptyMessage={query.search
-					? 'No product categories match your search.'
-					: 'No product categories yet.'}
+					? t('master.productCategories.emptySearch')
+					: t('master.productCategories.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

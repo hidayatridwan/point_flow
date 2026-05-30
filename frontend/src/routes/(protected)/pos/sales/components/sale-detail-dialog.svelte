@@ -8,6 +8,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDateTime, formatIdr, formatNumber } from '$lib/formatters.js';
 	import SaleStatusBadge from './sale-status-badge.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		saleId,
@@ -50,7 +51,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load sale details.';
+		return t('pos.sales.detail.loadFailed');
 	}
 </script>
 
@@ -69,27 +70,27 @@
 				<Skeleton class="h-32 w-full" />
 			</div>
 		{:else if errorMessage}
-			<ErrorAlert title="Failed to load details." message={errorMessage} />
+			<ErrorAlert title={t('common.loadFailed')} message={errorMessage} />
 		{:else if sale}
 			<div class="grid gap-5">
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					<DetailField label="Transaction No" value={sale.transaction_no} />
-					<DetailField label="Status">
+					<DetailField label={t('pos.sales.detail.transactionNo')} value={sale.transaction_no} />
+					<DetailField label={t('pos.sales.detail.status')}>
 						<SaleStatusBadge status={sale.status} />
 					</DetailField>
-					<DetailField label="Sold At" value={formatDateTime(sale.sold_at)} />
-					<DetailField label="Cashier" value={sale.cashier_name} />
-					<DetailField label="Register" value={sale.cash_register_code || '-'} />
-					<DetailField label="Total" value={formatIdr(sale.total_amount)} />
-					<DetailField label="Paid" value={formatIdr(sale.paid_amount)} />
-					<DetailField label="Change" value={formatIdr(sale.change_amount)} />
-					<DetailField label="Cancelled At" value={formatDateTime(sale.cancelled_at)} />
-					<DetailField label="Updated At" value={formatDateTime(sale.updated_at)} />
+					<DetailField label={t('pos.sales.detail.soldAt')} value={formatDateTime(sale.sold_at)} />
+					<DetailField label={t('pos.sales.detail.cashier')} value={sale.cashier_name} />
+					<DetailField label={t('pos.sales.detail.register')} value={sale.cash_register_code || '-'} />
+					<DetailField label={t('pos.sales.detail.total')} value={formatIdr(sale.total_amount)} />
+					<DetailField label={t('pos.sales.detail.paid')} value={formatIdr(sale.paid_amount)} />
+					<DetailField label={t('pos.sales.detail.change')} value={formatIdr(sale.change_amount)} />
+					<DetailField label={t('pos.sales.detail.cancelledAt')} value={formatDateTime(sale.cancelled_at)} />
+					<DetailField label={t('pos.sales.detail.updatedAt')} value={formatDateTime(sale.updated_at)} />
 				</div>
 
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailField label="Notes" value={sale.notes || '-'} />
-					<DetailField label="Cancel Reason" value={sale.cancel_reason || '-'} />
+					<DetailField label={t('pos.sales.detail.notes')} value={sale.notes || '-'} />
+					<DetailField label={t('pos.sales.detail.cancelReason')} value={sale.cancel_reason || '-'} />
 				</div>
 
 				<div class="overflow-hidden rounded-md border">

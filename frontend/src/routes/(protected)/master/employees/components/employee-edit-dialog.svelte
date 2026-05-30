@@ -23,6 +23,7 @@
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4, zod4Client } from 'sveltekit-superforms/adapters';
 	import { z } from 'zod';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const normalizeStringInput = (value: unknown) => {
 		if (value === null || value === undefined) return '';
@@ -118,7 +119,7 @@
 				is_active: result.data.is_active === 'true'
 			});
 			onUpdated?.(updatedEmployee);
-			toast.success('Employee updated.', {
+			toast.success(t('master.employees.updatedToast'), {
 				description: `Changes for ${updatedEmployee.name} have been saved.`
 			});
 			open = false;
@@ -148,7 +149,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to save employee.';
+		return t('master.employees.errorSave');
 	}
 </script>
 
@@ -156,8 +157,8 @@
 	<Dialog.Content class="overflow-hidden p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Edit Employee</Dialog.Title>
-				<Dialog.Description>Update employee details and save the changes.</Dialog.Description>
+				<Dialog.Title>{t('master.employees.editTitle')}</Dialog.Title>
+				<Dialog.Description>{t('master.employees.editDesc')}</Dialog.Description>
 			</Dialog.Header>
 
 			<div class="grid gap-4 px-6">
@@ -280,13 +281,13 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
-				</Dialog.Close>
+					{t('common.cancel')}
+					</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting}>
 					{#if isSubmitting}
 						<Spinner />
 					{/if}
-					{isSubmitting ? 'Saving...' : 'Save changes'}
+					{isSubmitting ? t('master.employees.saving') : t('master.employees.saveBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

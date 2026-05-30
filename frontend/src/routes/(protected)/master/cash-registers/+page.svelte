@@ -34,6 +34,7 @@
 	import { formatDateTime } from '$lib/formatters.js';
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	type CashRegisterForm = {
 		code: string;
@@ -106,7 +107,7 @@
 			pagination = result.pagination;
 		} catch (error) {
 			if (requestId !== latestRequestId) return;
-			errorMessage = getErrorMessage(error, 'Failed to load cash registers.');
+			errorMessage = getErrorMessage(error, t('master.cashRegisters.errorLoad'));
 			cashRegisters = [];
 		} finally {
 			if (requestId === latestRequestId) isLoading = false;
@@ -162,7 +163,7 @@
 				? await updateCashRegister(editingRegister.id, payload)
 				: await createCashRegister(payload);
 
-			toast.success(editingRegister ? 'Cash register updated.' : 'Cash register created.', {
+			toast.success(editingRegister ? t('master.cashRegisters.updatedToast') : t('master.cashRegisters.createdToast'), {
 				description: `${savedRegister.code} is ready to use.`
 			});
 			isFormOpen = false;
@@ -170,7 +171,7 @@
 			syncQueryUrl(query);
 			await loadCashRegisters(query);
 		} catch (error) {
-			formErrorMessage = getErrorMessage(error, 'Failed to save cash register.');
+			formErrorMessage = getErrorMessage(error, t('master.cashRegisters.errorSave'));
 		} finally {
 			isSubmitting = false;
 		}
@@ -185,13 +186,13 @@
 
 		try {
 			await deleteCashRegister(deletingRegister.id);
-			toast.success('Cash register deleted.', {
+			toast.success(t('master.cashRegisters.deletedToast'), {
 				description: `${deletingRegister.code} was removed.`
 			});
 			isDeleteOpen = false;
 			await loadCashRegisters(query);
 		} catch (error) {
-			deleteErrorMessage = getErrorMessage(error, 'Failed to delete cash register.');
+			deleteErrorMessage = getErrorMessage(error, t('master.cashRegisters.errorDelete'));
 		} finally {
 			isDeleting = false;
 		}
@@ -274,42 +275,42 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Cash Registers"
-		description="Manage physical cashier devices and drawers used for POS sessions."
+		title={t('master.cashRegisters.title')}
+		description={t('master.cashRegisters.subtitle')}
 	>
 		{#snippet actions()}
 			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
 				<PlusIcon />
-				Add Register
+				{t('master.cashRegisters.addBtn')}
 			</Button>
 		{/snippet}
 	</PageHeader>
 
 	<section class="flex flex-col gap-3" aria-labelledby="cash-register-table-title">
-		<h2 id="cash-register-table-title" class="sr-only">Cash register records</h2>
+		<h2 id="cash-register-table-title" class="sr-only">{t('master.cashRegisters.srHeading')}</h2>
 
 		<SearchField
 			value={searchValue}
 			disabled={isLoading}
-			ariaLabel="Search cash registers"
-			placeholder="Search registers..."
+			ariaLabel={t('master.cashRegisters.searchAriaLabel')}
+			placeholder={t('master.cashRegisters.searchPlaceholder')}
 			onValueChange={updateSearchValue}
 		/>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load cash registers." message={errorMessage} />
+			<ErrorAlert title={t('master.cashRegisters.errorLoad')} message={errorMessage} />
 		{:else}
 			<div class="overflow-hidden rounded-md border">
 				<div class="overflow-x-auto">
 					<Table.Root>
 						<Table.Header>
 							<Table.Row>
-								<Table.Head>Code</Table.Head>
-								<Table.Head>Name</Table.Head>
-								<Table.Head>Description</Table.Head>
-								<Table.Head>Status</Table.Head>
-								<Table.Head>Created At</Table.Head>
-								<Table.Head class="w-28 text-center">Action</Table.Head>
+								<Table.Head>{t('master.cashRegisters.colCode')}</Table.Head>
+								<Table.Head>{t('master.cashRegisters.colName')}</Table.Head>
+								<Table.Head>{t('master.cashRegisters.colDescription')}</Table.Head>
+								<Table.Head>{t('master.cashRegisters.colStatus')}</Table.Head>
+								<Table.Head>{t('master.cashRegisters.colCreatedAt')}</Table.Head>
+								<Table.Head class="w-28 text-center">{t('master.cashRegisters.colAction')}</Table.Head>
 							</Table.Row>
 						</Table.Header>
 						<Table.Body>
@@ -368,8 +369,8 @@
 								<Table.Row>
 									<Table.Cell colspan={6} class="h-24 text-center text-muted-foreground">
 										{query.search
-											? 'No cash registers match your search.'
-											: 'No cash registers yet.'}
+											? t('master.cashRegisters.emptySearch')
+											: t('master.cashRegisters.emptyDefault')}
 									</Table.Cell>
 								</Table.Row>
 							{/if}
@@ -394,7 +395,7 @@
 	<Dialog.Content class="overflow-hidden p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>{editingRegister ? 'Edit Cash Register' : 'Add Cash Register'}</Dialog.Title>
+				<Dialog.Title>{editingRegister ? t('master.cashRegisters.editTitle') : t('master.cashRegisters.addTitle')}</Dialog.Title>
 				<Dialog.Description>
 					Configure a physical cashier device or drawer for register sessions.
 				</Dialog.Description>
@@ -402,7 +403,7 @@
 
 			<div class="grid gap-4 px-6">
 				<div class="grid gap-2">
-					<Label for="cash-register-code">Code</Label>
+					<Label for="cash-register-code">{t('master.cashRegisters.code')}</Label>
 					<Input
 						id="cash-register-code"
 						placeholder="REG-01"
@@ -411,7 +412,7 @@
 					/>
 				</div>
 				<div class="grid gap-2">
-					<Label for="cash-register-name">Name</Label>
+					<Label for="cash-register-name">{t('common.name')}</Label>
 					<Input
 						id="cash-register-name"
 						placeholder="Front Register"
@@ -420,7 +421,7 @@
 					/>
 				</div>
 				<div class="grid gap-2">
-					<Label for="cash-register-description">Description</Label>
+					<Label for="cash-register-description">{t('common.description')}</Label>
 					<Textarea
 						id="cash-register-description"
 						placeholder="Optional description"
@@ -429,7 +430,7 @@
 					/>
 				</div>
 				<div class="grid gap-2">
-					<Label>Status</Label>
+					<Label>{t('common.status')}</Label>
 					<Select.Root
 						allowDeselect={false}
 						type="single"
@@ -440,17 +441,17 @@
 						}}
 					>
 						<Select.Trigger class="w-full">
-							<Select.Value placeholder="Select status" />
+							<Select.Value placeholder={t('common.selectStatus')} />
 						</Select.Trigger>
 						<Select.Content>
-							<Select.Item value="active" label="Active">Active</Select.Item>
-							<Select.Item value="inactive" label="Inactive">Inactive</Select.Item>
+							<Select.Item value="active" label="Active">{t('status.active')}</Select.Item>
+							<Select.Item value="inactive" label="Inactive">{t('status.inactive')}</Select.Item>
 						</Select.Content>
 					</Select.Root>
 				</div>
 
 				{#if formErrorMessage}
-					<ErrorAlert title="Save failed." message={formErrorMessage} />
+					<ErrorAlert title={t('common.saveFailed')} message={formErrorMessage} />
 				{/if}
 			</div>
 
@@ -460,10 +461,10 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
-				</Dialog.Close>
+					{t('master.cashRegisters.cancelInlineBtn')}
+					</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting}>
-					{isSubmitting ? 'Saving...' : 'Save Register'}
+					{isSubmitting ? t('master.cashRegisters.savingRegister') : t('master.cashRegisters.saveRegisterBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>
@@ -474,7 +475,7 @@
 	<AlertDialog.Root bind:open={isDeleteOpen}>
 		<AlertDialog.Content>
 			<AlertDialog.Header>
-				<AlertDialog.Title>Delete Cash Register?</AlertDialog.Title>
+				<AlertDialog.Title>{t('master.cashRegisters.deleteTitle')}</AlertDialog.Title>
 				<AlertDialog.Description>
 					This action will delete <span class="font-medium text-foreground"
 						>{deletingRegister.code}</span
@@ -484,14 +485,14 @@
 			</AlertDialog.Header>
 
 			{#if deleteErrorMessage}
-				<ErrorAlert title="Delete failed." message={deleteErrorMessage} />
+				<ErrorAlert title={t('master.cashRegisters.deleteFailed')} message={deleteErrorMessage} />
 			{/if}
 
 			<AlertDialog.Footer>
-				<AlertDialog.Cancel disabled={isDeleting}>Cancel</AlertDialog.Cancel>
+				<AlertDialog.Cancel disabled={isDeleting}>{t('common.cancel')}</AlertDialog.Cancel>
 				<AlertDialog.Action variant="destructive" disabled={isDeleting} onclick={handleDelete}>
 					<TrashIcon />
-					{isDeleting ? 'Deleting...' : 'Delete'}
+					{isDeleting ? t('common.deleting') : t('common.delete')}
 				</AlertDialog.Action>
 			</AlertDialog.Footer>
 		</AlertDialog.Content>

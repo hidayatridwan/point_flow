@@ -14,6 +14,7 @@
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4, zod4Client } from 'sveltekit-superforms/adapters';
 	import { z } from 'zod';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const createCategorySchema = z.object({
 		name: z
@@ -76,7 +77,7 @@
 				is_active: result.data.is_active === 'true'
 			});
 			await onCreated?.(createdCategory);
-			toast.success('Product category created.', {
+			toast.success(t('master.productCategories.createdToast'), {
 				description: `${createdCategory.name} is ready to use.`
 			});
 			open = false;
@@ -90,7 +91,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to create product category.';
+		return t('master.productCategories.errorCreate');
 	}
 </script>
 
@@ -164,7 +165,7 @@
 				</Form.Field>
 
 				{#if errorMessage}
-					<ErrorAlert title="Failed to create category." message={errorMessage} />
+					<ErrorAlert title={t('master.productCategories.errorCreate')} message={errorMessage} />
 				{/if}
 			</div>
 
@@ -174,13 +175,13 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
-				</Dialog.Close>
+					{t('common.cancel')}
+					</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting}>
 					{#if isSubmitting}
 						<Spinner />
 					{/if}
-					{isSubmitting ? 'Creating...' : 'Create category'}
+					{isSubmitting ? t('master.productCategories.creating') : t('master.productCategories.createBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

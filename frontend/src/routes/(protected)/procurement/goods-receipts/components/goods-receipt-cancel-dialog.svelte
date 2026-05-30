@@ -9,6 +9,7 @@
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		goodsReceipt,
@@ -42,7 +43,7 @@
 				reason: emptyToNull(reason)
 			});
 			await onCancelled?.(cancelledGoodsReceipt);
-			toast.success('Goods receipt cancelled.', {
+			toast.success(t('procurement.goodsReceipts.cancel.cancelledToast'), {
 				description: `${cancelledGoodsReceipt.gr_no} was cancelled.`
 			});
 			open = false;
@@ -61,7 +62,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to cancel goods receipt.';
+		return t('procurement.goodsReceipts.cancel.cancelFailed');
 	}
 </script>
 
@@ -82,14 +83,14 @@
 					</label>
 					<Textarea
 						id={`goods-receipt-cancel-reason-${goodsReceipt.id}`}
-						placeholder="Wrong input"
+						placeholder={t('procurement.goodsReceipts.cancel.reasonPlaceholder')}
 						disabled={isSubmitting}
 						bind:value={reason}
 					/>
 				</div>
 
 				{#if errorMessage}
-					<ErrorAlert title="Cancel failed." message={errorMessage} />
+					<ErrorAlert title={t('procurement.goodsReceipts.cancel.cancelFailed')} message={errorMessage} />
 				{/if}
 			</div>
 
@@ -107,7 +108,7 @@
 					{:else}
 						<BanIcon />
 					{/if}
-					{isSubmitting ? 'Cancelling...' : 'Cancel receipt'}
+					{isSubmitting ? t('procurement.goodsReceipts.cancel.cancelling') : t('procurement.goodsReceipts.cancel.cancelBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

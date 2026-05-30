@@ -35,6 +35,7 @@
 	import { formatDate } from '$lib/formatters.js';
 	import { cn } from '$lib/utils.js';
 	import AuditLogsTable from './components/audit-logs-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	type AuditQuery = Required<Omit<AuditLogListParams, 'actor_id'>> & {
 		actor_id: number | null;
@@ -48,29 +49,29 @@
 		totalPages: 0
 	};
 	const outcomeFilterOptions = [
-		{ value: 'success', label: 'Success', icon: CircleCheckIcon },
-		{ value: 'failure', label: 'Failure', icon: CircleOffIcon }
+		{ value: 'success', label: t('config.auditLogs.outcomeSuccess'), icon: CircleCheckIcon },
+		{ value: 'failure', label: t('config.auditLogs.outcomeFailure'), icon: CircleOffIcon }
 	];
 	const actionFilterOptions = [
-		{ value: 'auth.login', label: 'Login' },
-		{ value: 'auth.logout', label: 'Logout' },
-		{ value: 'auth.bootstrap_admin', label: 'Bootstrap Admin' },
-		{ value: 'auth.change_password', label: 'Change Password' },
-		{ value: 'cash_register_session.open', label: 'Open Register' },
-		{ value: 'cash_register_session.close', label: 'Close Register' },
-		{ value: 'cash_drawer_movement.create', label: 'Create Cash Movement' },
-		{ value: 'cash_drawer_movement.cancel', label: 'Cancel Cash Movement' },
-		{ value: 'sale.create', label: 'Create Sale' },
-		{ value: 'sale.cancel', label: 'Cancel Sale' },
-		{ value: 'sale_return.create', label: 'Create Return' },
-		{ value: 'sale_return.cancel', label: 'Cancel Return' }
+		{ value: 'auth.login', label: t('config.auditLogs.actionLogin') },
+		{ value: 'auth.logout', label: t('config.auditLogs.actionLogout') },
+		{ value: 'auth.bootstrap_admin', label: t('config.auditLogs.actionBootstrapAdmin') },
+		{ value: 'auth.change_password', label: t('config.auditLogs.actionChangePassword') },
+		{ value: 'cash_register_session.open', label: t('config.auditLogs.actionOpenRegister') },
+		{ value: 'cash_register_session.close', label: t('config.auditLogs.actionCloseRegister') },
+		{ value: 'cash_drawer_movement.create', label: t('config.auditLogs.actionCreateCashMovement') },
+		{ value: 'cash_drawer_movement.cancel', label: t('config.auditLogs.actionCancelCashMovement') },
+		{ value: 'sale.create', label: t('config.auditLogs.actionCreateSale') },
+		{ value: 'sale.cancel', label: t('config.auditLogs.actionCancelSale') },
+		{ value: 'sale_return.create', label: t('config.auditLogs.actionCreateReturn') },
+		{ value: 'sale_return.cancel', label: t('config.auditLogs.actionCancelReturn') }
 	];
 	const resourceFilterOptions = [
-		{ value: 'user', label: 'User' },
-		{ value: 'cash_register_session', label: 'Register Session' },
-		{ value: 'cash_drawer_movement', label: 'Cash Movement' },
-		{ value: 'sale', label: 'Sale' },
-		{ value: 'sale_return', label: 'Sale Return' }
+		{ value: 'user', label: t('config.auditLogs.resourceUser') },
+		{ value: 'cash_register_session', label: t('config.auditLogs.resourceRegisterSession') },
+		{ value: 'cash_drawer_movement', label: t('config.auditLogs.resourceCashMovement') },
+		{ value: 'sale', label: t('config.auditLogs.resourceSale') },
+		{ value: 'sale_return', label: t('config.auditLogs.resourceSaleReturn') }
 	];
 	const outcomeFilterValues = new Set(outcomeFilterOptions.map((option) => option.value));
 	const actionFilterValues = new Set(actionFilterOptions.map((option) => option.value));
@@ -346,7 +347,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load audit logs.';
+		return t('config.auditLogs.errorLoad');
 	}
 </script>
 
@@ -355,7 +356,7 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader title="Audit Logs" description="Review append-only security and operational events.">
+	<PageHeader title={t('config.auditLogs.title')} description={t('config.auditLogs.subtitle')}>
 		{#snippet actions()}
 			<Button
 				type="button"
@@ -365,7 +366,7 @@
 				onclick={refreshAuditLogs}
 			>
 				<RefreshCwIcon />
-				Refresh
+				{t('common.refresh')}
 			</Button>
 		{/snippet}
 	</PageHeader>
@@ -378,8 +379,8 @@
 				<SearchField
 					value={searchValue}
 					disabled={isLoading}
-					ariaLabel="Search audit logs"
-					placeholder="Search audit logs..."
+					ariaLabel={t('config.auditLogs.searchAriaLabel')}
+					placeholder={t('config.auditLogs.searchPlaceholder')}
 					class="sm:max-w-sm"
 					onValueChange={updateSearchValue}
 				/>
@@ -406,7 +407,7 @@
 				/>
 				<Input
 					value={requestIdValue}
-					placeholder="Request ID"
+					placeholder={t('config.auditLogs.requestIdPlaceholder')}
 					aria-label="Filter audit logs by request ID"
 					class="h-9 sm:w-64"
 					disabled={isLoading}
@@ -417,7 +418,7 @@
 					type="number"
 					min="1"
 					step="1"
-					placeholder="Actor ID"
+					placeholder={t('config.auditLogs.actorIdPlaceholder')}
 					aria-label="Filter audit logs by actor ID"
 					class="h-9 sm:w-32"
 					disabled={isLoading}
@@ -457,7 +458,7 @@
 		</div>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load audit logs." message={errorMessage} />
+			<ErrorAlert title={t('config.auditLogs.errorLoad')} message={errorMessage} />
 		{:else}
 			<AuditLogsTable
 				{auditLogs}
@@ -470,8 +471,8 @@
 				query.actor_id ||
 				query.from ||
 				query.to
-					? 'No audit logs match your filters.'
-					: 'No audit logs yet.'}
+					? t('config.auditLogs.emptySearch')
+					: t('config.auditLogs.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

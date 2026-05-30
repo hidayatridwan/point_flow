@@ -21,6 +21,7 @@
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
 	import { z } from 'zod';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const normalizeStringInput = (value: unknown) => {
 		if (value === null || value === undefined) return '';
@@ -224,12 +225,12 @@
 				}))
 			});
 			await onCreated?.(createdPurchaseOrder);
-			toast.success('Purchase order created.', {
+			toast.success(t('procurement.purchaseOrders.createdToast'), {
 				description: `${createdPurchaseOrder.po_no} was created as draft.`
 			});
 			open = false;
 		} catch (error) {
-			errorMessage = getErrorMessage(error, 'Failed to create purchase order.');
+			errorMessage = getErrorMessage(error, t('procurement.purchaseOrders.errorCreate'));
 		} finally {
 			isSubmitting = false;
 		}
@@ -514,7 +515,7 @@
 						</div>
 
 						{#if getFieldError('items')}
-							<ErrorAlert title="Invalid line items." message={getFieldError('items') ?? ''} />
+							<ErrorAlert title={t('procurement.purchaseOrders.invalidItems')} message={getFieldError('items') ?? ''} />
 						{/if}
 
 						<div class="grid gap-3">
@@ -665,7 +666,7 @@
 					{#if isSubmitting}
 						<Spinner />
 					{/if}
-					{isSubmitting ? 'Creating...' : 'Create purchase order'}
+					{isSubmitting ? t('procurement.purchaseOrders.creating') : t('procurement.purchaseOrders.createBtn')}
 				</Button>
 			</Drawer.Footer>
 		</form>

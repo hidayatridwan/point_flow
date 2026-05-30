@@ -19,6 +19,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import UserFormDialog from './components/user-form-dialog.svelte';
 	import UsersTable from './components/users-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: UserPagination = {
@@ -169,7 +170,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load users.';
+		return t('config.users.errorLoad');
 	}
 </script>
 
@@ -178,28 +179,28 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader title="Users" description="Manage user sign-in access, status, and role assignment.">
+	<PageHeader title={t('config.users.title')} description={t('config.users.subtitle')}>
 		{#snippet actions()}
 			<Button class="w-full sm:w-auto" onclick={openCreateDialog} disabled={isLoading}>
 				<PlusIcon />
-				Add User
+				{t('config.users.addBtn')}
 			</Button>
 		{/snippet}
 	</PageHeader>
 
 	<section class="flex flex-col gap-3" aria-labelledby="users-table-title">
-		<h2 id="users-table-title" class="sr-only">User records</h2>
+		<h2 id="users-table-title" class="sr-only">{t('config.users.srHeading')}</h2>
 
 		<SearchField
 			value={searchValue}
 			disabled={isLoading}
-			ariaLabel="Search users"
-			placeholder="Search users..."
+			ariaLabel={t('config.users.searchAriaLabel')}
+			placeholder={t('config.users.searchPlaceholder')}
 			onValueChange={updateSearchValue}
 		/>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load users." message={errorMessage} />
+			<ErrorAlert title={t('config.users.errorLoad')} message={errorMessage} />
 		{:else}
 			<UsersTable
 				{users}
@@ -207,7 +208,7 @@
 				{isLoading}
 				onUserDeleted={refreshUsersAfterDelete}
 				onUserUpdated={updateUserInList}
-				emptyMessage={query.search ? 'No users match your search.' : 'No users yet.'}
+				emptyMessage={query.search ? t('config.users.emptySearch') : t('config.users.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

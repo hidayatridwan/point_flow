@@ -5,6 +5,7 @@
 	import ErrorAlert from '$lib/components/error-alert.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { toast } from 'svelte-sonner';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		supplier,
@@ -34,7 +35,7 @@
 		try {
 			await deleteSupplier(supplier.id);
 			await onDeleted?.(supplier.id);
-			toast.success('Supplier deleted.', {
+			toast.success(t('master.suppliers.deletedToast'), {
 				description: `${supplier.name} was removed.`
 			});
 			open = false;
@@ -48,7 +49,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to delete supplier.';
+		return t('master.suppliers.errorDelete');
 	}
 </script>
 
@@ -63,14 +64,14 @@
 		</AlertDialog.Header>
 
 		{#if errorMessage}
-			<ErrorAlert title="Delete failed." message={errorMessage} />
+			<ErrorAlert title={t('common.deleteFailed')} message={errorMessage} />
 		{/if}
 
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel disabled={isDeleting}>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel disabled={isDeleting}>{t('common.cancel')}</AlertDialog.Cancel>
 			<AlertDialog.Action variant="destructive" disabled={isDeleting} onclick={handleDelete}>
 				<TrashIcon />
-				{isDeleting ? 'Deleting...' : 'Delete'}
+				{isDeleting ? t('common.deleting') : t('common.delete')}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

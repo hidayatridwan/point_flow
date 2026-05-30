@@ -23,6 +23,7 @@
 	import { formatDate } from '$lib/formatters.js';
 	import { cn } from '$lib/utils.js';
 	import MonthlySalesReportTable from './components/monthly-sales-report-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: ReportPagination = {
@@ -194,8 +195,8 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Monthly Sales"
-		description="Review completed sales totals grouped by calendar month."
+		title={t('reports.monthlySales.title')}
+		description={t('reports.monthlySales.subtitle')}
 	/>
 
 	<section class="flex flex-col gap-3" aria-labelledby="monthly-sales-report-table-title">
@@ -234,14 +235,14 @@
 		</div>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load monthly sales report." message={errorMessage} />
+			<ErrorAlert title={t('reports.monthlySales.errorLoad')} message={errorMessage} />
 		{:else}
 			<MonthlySalesReportTable
 				{reports}
 				{isLoading}
 				emptyMessage={query.from || query.to
-					? 'No monthly sales report rows match your filters.'
-					: 'No monthly sales report rows yet.'}
+					? t('reports.monthlySales.emptySearch')
+					: t('reports.monthlySales.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

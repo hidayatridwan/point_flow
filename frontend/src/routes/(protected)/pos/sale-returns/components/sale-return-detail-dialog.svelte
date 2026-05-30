@@ -8,6 +8,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDateTime, formatIdr, formatNumber } from '$lib/formatters.js';
 	import SaleReturnStatusBadge from './sale-return-status-badge.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		saleReturnId,
@@ -50,7 +51,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load return details.';
+		return t('pos.saleReturns.detail.loadFailed');
 	}
 </script>
 
@@ -69,28 +70,28 @@
 				<Skeleton class="h-32 w-full" />
 			</div>
 		{:else if errorMessage}
-			<ErrorAlert title="Failed to load details." message={errorMessage} />
+			<ErrorAlert title={t('common.loadFailed')} message={errorMessage} />
 		{:else if saleReturn}
 			<div class="grid gap-5">
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					<DetailField label="Return No" value={saleReturn.return_no} />
-					<DetailField label="Status">
+					<DetailField label={t('pos.saleReturns.detail.returnNo')} value={saleReturn.return_no} />
+					<DetailField label={t('pos.saleReturns.detail.status')}>
 						<SaleReturnStatusBadge status={saleReturn.status} />
 					</DetailField>
-					<DetailField label="Returned At" value={formatDateTime(saleReturn.returned_at)} />
-					<DetailField label="Sale Transaction" value={saleReturn.sale_transaction_no} />
-					<DetailField label="Cashier" value={saleReturn.cashier_name} />
-					<DetailField label="Register" value={saleReturn.cash_register_code || '-'} />
-					<DetailField label="Subtotal" value={formatIdr(saleReturn.subtotal_amount)} />
-					<DetailField label="Refund" value={formatIdr(saleReturn.refund_amount)} />
-					<DetailField label="Cancelled At" value={formatDateTime(saleReturn.cancelled_at)} />
-					<DetailField label="Updated At" value={formatDateTime(saleReturn.updated_at)} />
+					<DetailField label={t('pos.saleReturns.detail.returnedAt')} value={formatDateTime(saleReturn.returned_at)} />
+					<DetailField label={t('pos.saleReturns.detail.saleTx')} value={saleReturn.sale_transaction_no} />
+					<DetailField label={t('pos.saleReturns.detail.cashier')} value={saleReturn.cashier_name} />
+					<DetailField label={t('pos.saleReturns.detail.register')} value={saleReturn.cash_register_code || '-'} />
+					<DetailField label={t('pos.saleReturns.detail.subtotal')} value={formatIdr(saleReturn.subtotal_amount)} />
+					<DetailField label={t('pos.saleReturns.detail.refund')} value={formatIdr(saleReturn.refund_amount)} />
+					<DetailField label={t('pos.saleReturns.detail.cancelledAt')} value={formatDateTime(saleReturn.cancelled_at)} />
+					<DetailField label={t('pos.saleReturns.detail.updatedAt')} value={formatDateTime(saleReturn.updated_at)} />
 				</div>
 
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-					<DetailField label="Return Reason" value={saleReturn.reason || '-'} />
-					<DetailField label="Notes" value={saleReturn.notes || '-'} />
-					<DetailField label="Cancel Reason" value={saleReturn.cancel_reason || '-'} />
+					<DetailField label={t('pos.saleReturns.detail.returnReason')} value={saleReturn.reason || '-'} />
+					<DetailField label={t('pos.saleReturns.detail.notes')} value={saleReturn.notes || '-'} />
+					<DetailField label={t('pos.saleReturns.detail.cancelReason')} value={saleReturn.cancel_reason || '-'} />
 				</div>
 
 				<div class="overflow-hidden rounded-md border">
@@ -117,7 +118,7 @@
 										<Table.Cell>{formatNumber(item.quantity)}</Table.Cell>
 										<Table.Cell>{formatIdr(item.unit_price)}</Table.Cell>
 										<Table.Cell>{formatIdr(item.line_total)}</Table.Cell>
-										<Table.Cell>{item.restock ? 'Yes' : 'No'}</Table.Cell>
+										<Table.Cell>{item.restock ? t('pos.saleReturns.detail.yesLabel') : t('pos.saleReturns.detail.noLabel')}</Table.Cell>
 										<Table.Cell>{item.reason || '-'}</Table.Cell>
 									</Table.Row>
 								{/each}

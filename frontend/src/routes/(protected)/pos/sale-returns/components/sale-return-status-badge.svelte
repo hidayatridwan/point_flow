@@ -1,13 +1,12 @@
 <script lang="ts">
 	import type { SaleReturnStatus } from '$lib/api/sales.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let { status }: { status: SaleReturnStatus } = $props();
 
-	const labels: Record<SaleReturnStatus, string> = {
-		completed: 'Completed',
-		cancelled: 'Cancelled'
-	};
+	const labels = $derived<Record<SaleReturnStatus, string>>({ completed: t('pos.saleReturns.statusCompleted'),
+		cancelled: t('pos.saleReturns.statusCancelled') });
 
 	const classes: Record<SaleReturnStatus, string> = {
 		completed:

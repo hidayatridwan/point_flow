@@ -6,6 +6,7 @@
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { formatDate, formatDateTime, formatIdr } from '$lib/formatters.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		payrollSlipId,
@@ -48,7 +49,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load payroll slip details.';
+		return t('payroll.slips.detail.loadFailed');
 	}
 </script>
 
@@ -71,7 +72,7 @@
 				<Skeleton class="h-20 w-full" />
 			</div>
 		{:else if errorMessage}
-			<ErrorAlert title="Failed to load details." message={errorMessage} />
+			<ErrorAlert title={t('common.loadFailed')} message={errorMessage} />
 		{:else if payrollSlip}
 			<div class="grid gap-5">
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">

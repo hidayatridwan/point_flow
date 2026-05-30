@@ -23,6 +23,7 @@
 	import { formatDate } from '$lib/formatters.js';
 	import { cn } from '$lib/utils.js';
 	import DailySalesReportTable from './components/daily-sales-report-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: ReportPagination = {
@@ -194,8 +195,8 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Daily Sales"
-		description="Review completed sales totals grouped by transaction date."
+		title={t('reports.dailySales.title')}
+		description={t('reports.dailySales.subtitle')}
 	/>
 
 	<section class="flex flex-col gap-3" aria-labelledby="daily-sales-report-table-title">
@@ -234,14 +235,14 @@
 		</div>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load daily sales report." message={errorMessage} />
+			<ErrorAlert title={t('reports.dailySales.errorLoad')} message={errorMessage} />
 		{:else}
 			<DailySalesReportTable
 				{reports}
 				{isLoading}
 				emptyMessage={query.from || query.to
-					? 'No daily sales report rows match your filters.'
-					: 'No daily sales report rows yet.'}
+					? t('reports.dailySales.emptySearch')
+					: t('reports.dailySales.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

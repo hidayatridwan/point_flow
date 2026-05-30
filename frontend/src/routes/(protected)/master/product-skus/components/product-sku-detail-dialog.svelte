@@ -7,6 +7,7 @@
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { formatDateTime, formatIdr, formatNumber } from '$lib/formatters.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		productSkuId,
@@ -49,7 +50,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load product SKU details.';
+		return t('master.productSkus.errorLoadDetail2');
 	}
 </script>
 
@@ -68,7 +69,7 @@
 				<Skeleton class="h-5 w-32" />
 			</div>
 		{:else if errorMessage}
-			<ErrorAlert title="Failed to load details." message={errorMessage} />
+			<ErrorAlert title={t('common.loadFailed')} message={errorMessage} />
 		{:else if productSku}
 			<div class="grid gap-4">
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">

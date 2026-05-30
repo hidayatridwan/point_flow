@@ -11,6 +11,7 @@
 	import { formatDateTime, formatIdr } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
 	import EmployeeActions from './employee-actions.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		employees,
@@ -31,32 +32,32 @@
 
 	const columns = [
 		columnHelper.accessor('name', {
-			header: 'Name',
+			header: () => t('master.employees.colName'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('position', {
-			header: 'Position',
+			header: () => t('master.employees.colPosition'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('phone', {
-			header: 'Phone',
+			header: () => t('master.employees.colPhone'),
 			cell: (info) => info.getValue() || '-'
 		}),
 		columnHelper.accessor('base_salary', {
-			header: 'Base Salary',
+			header: () => t('master.employees.colBaseSalary'),
 			cell: (info) => formatIdr(info.getValue())
 		}),
 		columnHelper.accessor('is_active', {
-			header: 'Status',
+			header: () => t('master.employees.colStatus'),
 			cell: (info) => renderComponent(StatusBadge, { active: info.getValue() })
 		}),
 		columnHelper.accessor('updated_at', {
-			header: 'Updated At',
+			header: () => t('master.employees.colUpdatedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.display({
 			id: 'actions',
-			header: () => 'Action',
+			header: () => t('master.employees.colAction'),
 			cell: (info) =>
 				renderComponent(EmployeeActions, {
 					employee: info.row.original,

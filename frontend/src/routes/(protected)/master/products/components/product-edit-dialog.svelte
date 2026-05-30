@@ -23,6 +23,7 @@
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4, zod4Client } from 'sveltekit-superforms/adapters';
 	import { z } from 'zod';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const NO_CATEGORY_VALUE = 'none';
 
@@ -114,12 +115,12 @@
 				is_active: result.data.is_active === 'true'
 			});
 			onUpdated?.(updatedProduct);
-			toast.success('Product updated.', {
+			toast.success(t('master.products.updatedToast'), {
 				description: `Changes for ${updatedProduct.name} have been saved.`
 			});
 			open = false;
 		} catch (error) {
-			errorMessage = getErrorMessage(error, 'Failed to save product.');
+			errorMessage = getErrorMessage(error, t('master.products.errorSave'));
 		} finally {
 			isSubmitting = false;
 		}
@@ -225,8 +226,8 @@
 									<Select.Value placeholder="Select status" />
 								</Select.Trigger>
 								<Select.Content>
-									<Select.Item value="true" label="Active">Active</Select.Item>
-									<Select.Item value="false" label="Inactive">Inactive</Select.Item>
+									<Select.Item value="true" label="Active">{t('status.active')}</Select.Item>
+									<Select.Item value="false" label="Inactive">{t('status.inactive')}</Select.Item>
 								</Select.Content>
 							</Select.Root>
 						{/snippet}
@@ -235,11 +236,11 @@
 				</Form.Field>
 
 				{#if categoryErrorMessage}
-					<ErrorAlert title="Failed to load categories." message={categoryErrorMessage} />
+					<ErrorAlert title={t('master.products.errorLoadOptions')} message={categoryErrorMessage} />
 				{/if}
 
 				{#if errorMessage}
-					<ErrorAlert title="Save failed." message={errorMessage} />
+					<ErrorAlert title={t('common.saveFailed')} message={errorMessage} />
 				{/if}
 			</div>
 
@@ -255,7 +256,7 @@
 					{#if isSubmitting}
 						<Spinner />
 					{/if}
-					{isSubmitting ? 'Saving...' : 'Save changes'}
+					{isSubmitting ? t('common.saving') : t('common.save')}
 				</Button>
 			</Dialog.Footer>
 		</form>

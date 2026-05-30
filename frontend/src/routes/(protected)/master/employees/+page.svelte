@@ -18,6 +18,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import EmployeeCreateDialog from './components/employee-create-dialog.svelte';
 	import EmployeesTable from './components/employees-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: EmployeePagination = {
@@ -165,7 +166,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load employees.';
+		return t('master.employees.errorLoad');
 	}
 </script>
 
@@ -175,37 +176,37 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Employees"
-		description="Manage employee records used by cashier operations and payroll processing."
+		title={t('master.employees.title')}
+		description={t('master.employees.subtitle')}
 	>
 		{#snippet actions()}
 			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
 				<PlusIcon />
-				Add Employee
+				{t('master.employees.addBtn')}
 			</Button>
 		{/snippet}
 	</PageHeader>
 
 	<section class="flex flex-col gap-3" aria-labelledby="employees-table-title">
-		<h2 id="employees-table-title" class="sr-only">Employee records</h2>
+		<h2 id="employees-table-title" class="sr-only">{t('master.employees.srHeading')}</h2>
 
 		<SearchField
 			value={searchValue}
 			disabled={isLoading}
-			ariaLabel="Search employees"
-			placeholder="Search employees..."
+			ariaLabel={t('master.employees.searchAriaLabel')}
+			placeholder={t('master.employees.searchPlaceholder')}
 			onValueChange={updateSearchValue}
 		/>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load employees." message={errorMessage} />
+			<ErrorAlert title={t('master.employees.errorLoad')} message={errorMessage} />
 		{:else}
 			<EmployeesTable
 				{employees}
 				{isLoading}
 				onEmployeeDeleted={refreshEmployeesAfterDelete}
 				onEmployeeUpdated={updateEmployeeInList}
-				emptyMessage={query.search ? 'No employees match your search.' : 'No employees yet.'}
+				emptyMessage={query.search ? t('master.employees.emptySearch') : t('master.employees.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

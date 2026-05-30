@@ -27,6 +27,7 @@
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import SaleReceiptDialog from '../components/sale-receipt-dialog.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	type CartItem = {
 		client_id: string;
@@ -112,7 +113,7 @@
 		} catch (error) {
 			if (requestId !== latestOptionsRequestId) return;
 			productSkus = [];
-			optionsErrorMessage = getErrorMessage(error, 'Failed to load product SKU options.');
+			optionsErrorMessage = getErrorMessage(error, t('pos.newSale.errorLoadSkus'));
 		} finally {
 			if (requestId === latestOptionsRequestId) {
 				isLoadingSkus = false;
@@ -143,7 +144,7 @@
 					quantity: getCartItemQuantity(item)
 				}))
 			});
-			toast.success('Sale completed.', {
+			toast.success(t('pos.newSale.saleCompletedToast'), {
 				description: `${sale.transaction_no} total ${formatIdr(sale.total_amount)}.`
 			});
 			completedSale = sale;
@@ -151,7 +152,7 @@
 			resetSale();
 			await loadProductSkus();
 		} catch (error) {
-			errorMessage = getErrorMessage(error, 'Failed to create sale.');
+			errorMessage = getErrorMessage(error, t('pos.newSale.errorCreate'));
 		} finally {
 			isSubmitting = false;
 		}
@@ -206,17 +207,17 @@
 	}
 
 	function getSaleValidationError() {
-		if (!cartItems.length) return 'Cart must contain at least one product SKU.';
-		if (!activeSession) return 'Open a register session before completing a sale.';
+		if (!cartItems.length) return t('pos.newSale.validCartEmpty');
+		if (!activeSession) return t('pos.newSale.validNoRegister');
 		for (const item of cartItems) {
 			const itemError = getCartItemQuantityError(item);
 			if (itemError) return `${item.product_sku}: ${itemError}`;
 		}
 		if (!Number.isFinite(paidAmountValue) || paidAmountValue < 0) {
-			return 'Paid amount must be a valid non-negative number.';
+			return t('pos.newSale.validPaidInvalid');
 		}
 		if (paidAmountValue < subtotalAmount) {
-			return 'Paid amount must be greater than or equal to total amount.';
+			return t('pos.newSale.validPaidInsufficient');
 		}
 		return null;
 	}
@@ -232,8 +233,8 @@
 
 	function getCartItemQuantityError(item: CartItem) {
 		const quantity = getCartItemQuantity(item);
-		if (!Number.isFinite(quantity) || quantity <= 0) return 'Quantity must be greater than zero.';
-		if (quantity > item.stock) return 'Quantity must not exceed current stock.';
+		if (!Number.isFinite(quantity) || quantity <= 0) return t('pos.newSale.validQtyZero');
+		if (quantity > item.stock) return t('pos.newSale.validQtyExceedsStock');
 		return null;
 	}
 
@@ -296,7 +297,7 @@
 </script>
 
 <svelte:head>
-	<title>New Transaction | POS System</title>
+	<title>{t('pos.newSale.title')}</title>
 </svelte:head>
 
 {#if isLoadingSession}
@@ -304,30 +305,30 @@
 		class="mb-5 flex items-center gap-2 rounded-md border bg-muted/20 p-4 text-sm text-muted-foreground"
 	>
 		<Spinner />
-		Loading register session...
+		{t('pos.newSale.loadingSession')}
 	</div>
 {:else if sessionErrorMessage}
 	<div class="mb-5">
-		<ErrorAlert title="Failed to load register session." message={sessionErrorMessage} />
+		<ErrorAlert title={t('pos.newSale.errorLoadSession')} message={sessionErrorMessage} />
 	</div>
 {:else if !activeSession}
 	<div class="mb-5 rounded-md border bg-muted/20 p-5">
 		<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 			<div class="min-w-0">
-				<h2 class="text-base font-semibold">Register is not open</h2>
+				<h2 class="text-base font-semibold">{t('pos.newSale.registerNotOpen')}</h2>
 				<p class="mt-1 text-sm text-muted-foreground">
-					Open a register session before starting cashier transactions.
+					{t('pos.newSale.noActiveRegisterDesc')}
 				</p>
 			</div>
 			<Button href="/pos/register-session" class="w-full sm:w-auto">
 				<BanknoteIcon />
-				Open Register
+				{t('pos.newSale.openRegisterBtn')}
 			</Button>
 		</div>
 	</div>
 {:else}
 	<div class="mb-5 rounded-md border bg-muted/20 px-4 py-3 text-sm">
-		<span class="text-muted-foreground">Active register:</span>
+		<span class="text-muted-foreground">{t('pos.newSale.activeRegister')}</span>
 		<span class="font-medium">{activeSession.cash_register_code}</span>
 		<span class="text-muted-foreground">- {activeSession.session_no}</span>
 	</div>
@@ -347,7 +348,7 @@
 						/>
 						<Input
 							class="h-11 w-full rounded-2xl border-slate-200 pl-9 text-base shadow-none"
-							placeholder="Search product, SKU, or scan barcode..."
+							placeholder={t('pos.newSale.searchPlaceholder')}
 							disabled={isLoadingSkus || isSubmitting || !canTransact}
 							bind:value={skuSearch}
 						/>
@@ -365,7 +366,7 @@
 							onclick={() => (viewMode = 'list')}
 						>
 							<ListIcon />
-							List
+							{t('pos.newSale.viewList')}
 						</Button>
 						<Button
 							type="button"
@@ -376,13 +377,13 @@
 							onclick={() => (viewMode = 'grid')}
 						>
 							<LayoutGridIcon />
-							Grid
+							{t('pos.newSale.viewGrid')}
 						</Button>
 					</div>
 				</div>
 
 				{#if optionsErrorMessage}
-					<ErrorAlert title="Failed to load product SKUs." message={optionsErrorMessage} />
+					<ErrorAlert title={t('pos.newSale.errorLoadSkus')} message={optionsErrorMessage} />
 				{/if}
 			</div>
 
@@ -392,7 +393,7 @@
 						class="flex min-h-40 items-center justify-center gap-2 text-sm text-muted-foreground"
 					>
 						<Spinner />
-						Loading product SKUs...
+						{t('pos.newSale.loadingSkus')}
 					</div>
 				{:else if filteredProductSkus.length > 0}
 					{#if viewMode === 'list'}
@@ -413,7 +414,7 @@
 											</span>
 										</div>
 										<p class="mt-1 text-xs text-muted-foreground">
-											{productSku.unit_code} · Stock {formatNumber(productSku.stock)} ·
+											{productSku.unit_code} · {t('pos.newSale.stockLabel')} {formatNumber(productSku.stock)} ·
 											{formatIdr(productSku.selling_price)}
 										</p>
 									</div>
@@ -425,7 +426,7 @@
 										onclick={() => addProductSku(productSku)}
 									>
 										<PlusIcon />
-										{isProductSkuInCart(productSku.id) ? 'Add more' : 'Add'}
+										{isProductSkuInCart(productSku.id) ? t('pos.newSale.addMore') : t('pos.newSale.addOne')}
 									</Button>
 								</div>
 							{/each}
@@ -446,13 +447,13 @@
 									<div class="grid gap-3">
 										<div class="grid grid-cols-2 gap-2 text-xs">
 											<div class="rounded-xl bg-white p-2 dark:bg-slate-950">
-												<p class="text-muted-foreground">Stock</p>
+												<p class="text-muted-foreground">{t('pos.newSale.stockLabel')}</p>
 												<p class="font-medium text-slate-950 dark:text-slate-50">
 													{formatNumber(productSku.stock)}
 												</p>
 											</div>
 											<div class="rounded-xl bg-white p-2 dark:bg-slate-950">
-												<p class="text-muted-foreground">Price</p>
+												<p class="text-muted-foreground">{t('pos.newSale.priceLabel')}</p>
 												<p class="font-medium text-slate-950 dark:text-slate-50">
 													{formatIdr(productSku.selling_price)}
 												</p>
@@ -475,7 +476,7 @@
 					{/if}
 				{:else}
 					<div class="flex min-h-40 items-center justify-center text-sm text-muted-foreground">
-						No product SKUs match your search.
+						{t('pos.newSale.noSkusMatch')}
 					</div>
 				{/if}
 			</div>
@@ -490,9 +491,9 @@
 			>
 				<div>
 					<h2 id="cart-title" class="text-base font-semibold text-slate-950 dark:text-slate-50">
-						Cart
+						{t('pos.newSale.cart')}
 					</h2>
-					<p class="text-sm text-muted-foreground">{cartItems.length} item(s)</p>
+					<p class="text-sm text-muted-foreground">{cartItems.length} {t('pos.newSale.items')}</p>
 				</div>
 				<Button
 					type="button"
@@ -502,7 +503,7 @@
 					onclick={clearCart}
 				>
 					<TrashIcon />
-					Clear
+					{t('common.clear')}
 				</Button>
 			</div>
 
@@ -530,16 +531,16 @@
 										class="size-8 rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive"
 										disabled={isSubmitting}
 										onclick={() => removeCartItem(item.client_id)}
-										title="Remove item"
+										title={t('pos.newSale.removeItem')}
 									>
 										<TrashIcon />
-										<span class="sr-only">Remove item</span>
+										<span class="sr-only">{t('pos.newSale.removeItem')}</span>
 									</Button>
 								</div>
 
 								<div class="mt-3 flex items-end justify-between gap-3">
 									<div>
-										<Label class="text-xs text-muted-foreground">Qty</Label>
+										<Label class="text-xs text-muted-foreground">{t('pos.newSale.qty')}</Label>
 										<div class="mt-1 flex items-center gap-3">
 											<Input
 												type="number"
@@ -573,7 +574,7 @@
 					<div
 						class="flex h-full min-h-40 items-center justify-center text-sm text-muted-foreground"
 					>
-						Cart is empty.
+						{t('pos.newSale.emptyCart')}
 					</div>
 				{/if}
 			</div>
@@ -583,17 +584,17 @@
 			>
 				<div class="grid gap-2">
 					<div class="flex items-center justify-between gap-3 text-sm">
-						<span class="text-muted-foreground">Subtotal</span>
+						<span class="text-muted-foreground">{t('pos.newSale.subtotal')}</span>
 						<span class="font-medium">{formatIdr(subtotalAmount)}</span>
 					</div>
 					<div class="flex items-center justify-between gap-3 text-sm">
-						<span class="text-muted-foreground">Total</span>
+						<span class="text-muted-foreground">{t('pos.newSale.total')}</span>
 						<span class="text-lg font-semibold">{formatIdr(subtotalAmount)}</span>
 					</div>
 				</div>
 
 				<div class="space-y-2">
-					<Label for="sale-paid-amount" class="whitespace-nowrap">Paid Amount</Label>
+					<Label for="sale-paid-amount" class="whitespace-nowrap">{t('pos.newSale.paidAmount')}</Label>
 					<Input
 						id="sale-paid-amount"
 						type="number"
@@ -611,7 +612,7 @@
 				>
 					<div class="flex items-center gap-2 text-sm text-muted-foreground">
 						<BanknoteIcon class="size-4" />
-						Change
+						{t('pos.newSale.change')}
 					</div>
 					<p
 						class={cn(
@@ -626,10 +627,10 @@
 				</div>
 
 				<div class="space-y-2">
-					<Label for="sale-notes" class="whitespace-nowrap">Notes</Label>
+					<Label for="sale-notes" class="whitespace-nowrap">{t('common.notes')}</Label>
 					<Textarea
 						id="sale-notes"
-						placeholder="Optional transaction notes"
+						placeholder={t('pos.newSale.notesPlaceholder')}
 						class="min-h-16 resize-none rounded-xl bg-white dark:bg-slate-950"
 						disabled={isSubmitting || !canTransact}
 						bind:value={notes}
@@ -637,7 +638,7 @@
 				</div>
 
 				{#if errorMessage}
-					<ErrorAlert title="Sale failed." message={errorMessage} />
+					<ErrorAlert title={t('pos.newSale.saleFailed')} message={errorMessage} />
 				{/if}
 
 				<Button
@@ -651,7 +652,7 @@
 					{:else}
 						<ShoppingCartIcon />
 					{/if}
-					{isSubmitting ? 'Completing sale...' : 'Complete Sale'}
+					{isSubmitting ? t('pos.newSale.completing') : t('pos.newSale.completeBtn')}
 				</Button>
 			</div>
 		</section>

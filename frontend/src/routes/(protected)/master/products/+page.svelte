@@ -18,6 +18,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import ProductCreateDialog from './components/product-create-dialog.svelte';
 	import ProductsTable from './components/products-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: ProductPagination = {
@@ -165,7 +166,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load products.';
+		return t('master.products.errorLoad');
 	}
 </script>
 
@@ -175,37 +176,37 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Products"
-		description="Manage product master records before assigning SKUs, units, pricing, and stock."
+		title={t('master.products.title')}
+		description={t('master.products.subtitle')}
 	>
 		{#snippet actions()}
 			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
 				<PlusIcon />
-				Add Product
+				{t('master.products.addBtn')}
 			</Button>
 		{/snippet}
 	</PageHeader>
 
 	<section class="flex flex-col gap-3" aria-labelledby="products-table-title">
-		<h2 id="products-table-title" class="sr-only">Product records</h2>
+		<h2 id="products-table-title" class="sr-only">{t('master.products.srHeading')}</h2>
 
 		<SearchField
 			value={searchValue}
 			disabled={isLoading}
-			ariaLabel="Search products"
-			placeholder="Search products..."
+			ariaLabel={t('master.products.searchAriaLabel')}
+			placeholder={t('master.products.searchPlaceholder')}
 			onValueChange={updateSearchValue}
 		/>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load products." message={errorMessage} />
+			<ErrorAlert title={t('master.products.errorLoad')} message={errorMessage} />
 		{:else}
 			<ProductsTable
 				{products}
 				{isLoading}
 				onProductDeleted={refreshProductsAfterDelete}
 				onProductUpdated={updateProductInList}
-				emptyMessage={query.search ? 'No products match your search.' : 'No products yet.'}
+				emptyMessage={query.search ? t('master.products.emptySearch') : t('master.products.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

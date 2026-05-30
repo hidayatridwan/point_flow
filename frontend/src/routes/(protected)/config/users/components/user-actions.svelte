@@ -10,6 +10,7 @@
 	import UserDeleteAlertDialog from './user-delete-alert-dialog.svelte';
 	import UserDetailDialog from './user-detail-dialog.svelte';
 	import UserFormDialog from './user-form-dialog.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		user,

@@ -17,6 +17,7 @@
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
 	import { z } from 'zod';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	type PayrollSlipForm = {
 		employee_id: string;
@@ -205,12 +206,12 @@
 				deduction
 			});
 			await onCreated?.(createdPayrollSlip);
-			toast.success('Payroll slip created.', {
+			toast.success(t('payroll.slips.createdToast'), {
 				description: `${createdPayrollSlip.slip_no} was created.`
 			});
 			open = false;
 		} catch (error) {
-			errorMessage = getErrorMessage(error, 'Failed to create payroll slip.');
+			errorMessage = getErrorMessage(error, t('payroll.slips.errorCreate'));
 		} finally {
 			isSubmitting = false;
 		}
@@ -470,11 +471,11 @@
 
 					<div class="grid gap-3">
 						{#if optionsErrorMessage}
-							<ErrorAlert title="Failed to load options." message={optionsErrorMessage} />
+							<ErrorAlert title={t('payroll.slips.errorLoadOptions')} message={optionsErrorMessage} />
 						{/if}
 
 						{#if errorMessage}
-							<ErrorAlert title="Failed to create payroll slip." message={errorMessage} />
+							<ErrorAlert title={t('payroll.slips.errorCreate')} message={errorMessage} />
 						{/if}
 					</div>
 				</div>
@@ -486,13 +487,13 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
-				</Dialog.Close>
+					{t('common.cancel')}
+					</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting || isLoadingOptions}>
 					{#if isSubmitting}
 						<Spinner />
 					{/if}
-					{isSubmitting ? 'Creating...' : 'Create payroll slip'}
+					{isSubmitting ? t('payroll.slips.creating') : t('payroll.slips.createBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

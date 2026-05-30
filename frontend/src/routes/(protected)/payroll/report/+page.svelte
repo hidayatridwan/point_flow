@@ -23,6 +23,7 @@
 	import { formatDate } from '$lib/formatters.js';
 	import { cn } from '$lib/utils.js';
 	import PayrollReportTable from './components/payroll-report-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: PayrollPagination = {
@@ -184,7 +185,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load payroll report.';
+		return t('payroll.report.errorLoad');
 	}
 </script>
 
@@ -193,7 +194,7 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader title="Payroll Report" description="Review payroll totals by payroll slip period." />
+	<PageHeader title={t('payroll.report.title')} description={t('payroll.report.subtitle')} />
 
 	<section class="flex flex-col gap-3" aria-labelledby="payroll-report-table-title">
 		<h2 id="payroll-report-table-title" class="sr-only">Payroll report records</h2>
@@ -231,14 +232,14 @@
 		</div>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load payroll report." message={errorMessage} />
+			<ErrorAlert title={t('payroll.report.errorLoad')} message={errorMessage} />
 		{:else}
 			<PayrollReportTable
 				{reports}
 				{isLoading}
 				emptyMessage={query.from || query.to
-					? 'No payroll report rows match your filters.'
-					: 'No payroll report rows yet.'}
+					? t('payroll.report.emptySearch')
+					: t('payroll.report.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

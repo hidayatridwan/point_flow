@@ -14,6 +14,7 @@
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4, zod4Client } from 'sveltekit-superforms/adapters';
 	import { z } from 'zod';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const createSupplierSchema = z.object({
 		name: z
@@ -89,7 +90,7 @@
 				is_active: result.data.is_active === 'true'
 			});
 			await onCreated?.(createdSupplier);
-			toast.success('Supplier created.', {
+			toast.success(t('master.suppliers.createdToast'), {
 				description: `${createdSupplier.name} was added.`
 			});
 			open = false;
@@ -108,7 +109,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to create supplier.';
+		return t('master.suppliers.errorCreate');
 	}
 </script>
 
@@ -230,7 +231,7 @@
 				</Form.Field>
 
 				{#if errorMessage}
-					<ErrorAlert title="Failed to create supplier." message={errorMessage} />
+					<ErrorAlert title={t('master.suppliers.errorCreate')} message={errorMessage} />
 				{/if}
 			</div>
 
@@ -240,13 +241,13 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
-				</Dialog.Close>
+					{t('common.cancel')}
+					</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting}>
 					{#if isSubmitting}
 						<Spinner />
 					{/if}
-					{isSubmitting ? 'Creating...' : 'Create supplier'}
+					{isSubmitting ? t('master.suppliers.creating') : t('master.suppliers.createBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

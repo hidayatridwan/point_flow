@@ -8,6 +8,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDateTime, formatNumber } from '$lib/formatters.js';
 	import StockAdjustmentStatusBadge from './stock-adjustment-status-badge.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		stockAdjustmentId,
@@ -63,7 +64,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load stock adjustment details.';
+		return t('inventory.stockAdjustments.detail.loadFailed');
 	}
 </script>
 
@@ -82,7 +83,7 @@
 				<Skeleton class="h-32 w-full" />
 			</div>
 		{:else if errorMessage}
-			<ErrorAlert title="Failed to load details." message={errorMessage} />
+			<ErrorAlert title={t('common.loadFailed')} message={errorMessage} />
 		{:else if stockAdjustment}
 			<div class="grid gap-5">
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -98,7 +99,7 @@
 
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 					<DetailField label="Reason" value={stockAdjustment.reason} />
-					<DetailField label="Notes" value={stockAdjustment.notes || '-'} />
+					<DetailField label={t('inventory.stockAdjustments.detail.colNotes')} value={stockAdjustment.notes || '-'} />
 					<DetailField label="Cancel Reason" value={stockAdjustment.cancel_reason || '-'} />
 					<DetailField label="Created At" value={formatDateTime(stockAdjustment.created_at)} />
 				</div>

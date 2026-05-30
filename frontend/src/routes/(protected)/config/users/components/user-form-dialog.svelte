@@ -11,6 +11,7 @@
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	type UserFormData = {
 		name: string;
@@ -40,9 +41,9 @@
 	const isEditing = $derived(Boolean(user));
 	const isAdminUser = $derived(user?.role_code === 'admin');
 	const selectableRoles = $derived(getSelectableRoles(roles, user));
-	const dialogTitle = $derived(isEditing ? 'Edit User' : 'Add User');
-	const submitLabel = $derived(isEditing ? 'Save changes' : 'Create user');
-	const submittingLabel = $derived(isEditing ? 'Saving...' : 'Creating...');
+	const dialogTitle = $derived(isEditing ? t('config.users.editTitle') : t('config.users.addTitle'));
+	const submitLabel = $derived(isEditing ? t('config.users.saveBtn') : t('config.users.createBtn'));
+	const submittingLabel = $derived(isEditing ? t('config.users.saving') : t('config.users.creating'));
 
 	$effect(() => {
 		if (!open) return;
@@ -79,7 +80,7 @@
 					});
 
 			await onSaved?.(savedUser);
-			toast.success(isEditing ? 'User updated.' : 'User created.', {
+			toast.success(isEditing ? t('config.users.updatedToast') : t('config.users.createdToast'), {
 				description: `${savedUser.name} can use the assigned role.`
 			});
 			open = false;
@@ -138,7 +139,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return isEditing ? 'Failed to save user.' : 'Failed to create user.';
+		return isEditing ? t('config.users.errorSave') : t('config.users.errorCreate');
 	}
 </script>
 
@@ -147,13 +148,13 @@
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
 				<Dialog.Title>{dialogTitle}</Dialog.Title>
-				<Dialog.Description>Manage sign-in access and user role assignment.</Dialog.Description>
+				<Dialog.Description>{t('config.users.formDesc')}</Dialog.Description>
 			</Dialog.Header>
 
 			<div class="grid gap-5 px-6">
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div class="grid gap-2">
-						<Label for="user-name">Name</Label>
+						<Label for="user-name">{t('common.name')}</Label>
 						<Input
 							id="user-name"
 							placeholder="Cashier"
@@ -163,7 +164,7 @@
 					</div>
 
 					<div class="grid gap-2">
-						<Label for="user-email">Email</Label>
+						<Label for="user-email">{t('common.email')}</Label>
 						<Input
 							id="user-email"
 							type="email"
@@ -176,18 +177,18 @@
 
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div class="grid gap-2">
-						<Label for="user-password">{isEditing ? 'New Password' : 'Password'}</Label>
+						<Label for="user-password">{isEditing ? t('config.users.newPassword') : t('login.password')}</Label>
 						<Input
 							id="user-password"
 							type="password"
-							placeholder={isEditing ? 'Leave blank to keep current' : 'Minimum 8 characters'}
+							placeholder={isEditing ? t('config.users.passwordEditPlaceholder') : t('config.users.passwordPlaceholder')}
 							disabled={isSubmitting}
 							bind:value={formData.password}
 						/>
 					</div>
 
 					<div class="grid gap-2">
-						<Label for="user-role">Role</Label>
+						<Label for="user-role">{t('config.users.role')}</Label>
 						<Select.Root
 							allowDeselect={false}
 							type="single"
@@ -198,7 +199,7 @@
 							}}
 						>
 							<Select.Trigger id="user-role" class="w-full">
-								<Select.Value placeholder="Select role" />
+								<Select.Value placeholder={t('config.users.selectRole')} />
 							</Select.Trigger>
 							<Select.Content>
 								{#each selectableRoles as role (role.id)}
@@ -210,7 +211,7 @@
 				</div>
 
 				<div class="grid gap-2 sm:max-w-xs">
-					<Label for="user-status">Status</Label>
+					<Label for="user-status">{t('common.status')}</Label>
 					<Select.Root
 						allowDeselect={false}
 						type="single"
@@ -223,21 +224,21 @@
 						}}
 					>
 						<Select.Trigger id="user-status" class="w-full">
-							<Select.Value placeholder="Select status" />
+							<Select.Value placeholder={t('common.selectStatus')} />
 						</Select.Trigger>
 						<Select.Content>
-							<Select.Item value="true" label="Active">Active</Select.Item>
-							<Select.Item value="false" label="Inactive">Inactive</Select.Item>
+							<Select.Item value="true" label={t('status.active')}>{t('status.active')}</Select.Item>
+							<Select.Item value="false" label={t('status.inactive')}>{t('status.inactive')}</Select.Item>
 						</Select.Content>
 					</Select.Root>
 				</div>
 
 				{#if validationMessage}
-					<ErrorAlert title="Invalid user." message={validationMessage} />
+					<ErrorAlert title={t('config.users.invalidUser')} message={validationMessage} />
 				{/if}
 
 				{#if errorMessage}
-					<ErrorAlert title="Save failed." message={errorMessage} />
+					<ErrorAlert title={t('common.saveFailed')} message={errorMessage} />
 				{/if}
 			</div>
 
@@ -247,7 +248,7 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
+					{t('common.cancel')}
 				</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting || selectableRoles.length === 0}>
 					{#if isSubmitting}

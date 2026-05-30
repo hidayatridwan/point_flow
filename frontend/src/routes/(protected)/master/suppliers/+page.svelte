@@ -18,6 +18,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import SupplierCreateDialog from './components/supplier-create-dialog.svelte';
 	import SuppliersTable from './components/suppliers-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: SupplierPagination = {
@@ -165,7 +166,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load suppliers.';
+		return t('master.suppliers.errorLoad');
 	}
 </script>
 
@@ -175,37 +176,37 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Suppliers"
-		description="Manage supplier contacts used by procurement and goods receipt workflows."
+		title={t('master.suppliers.title')}
+		description={t('master.suppliers.subtitle')}
 	>
 		{#snippet actions()}
 			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
 				<PlusIcon />
-				Add Supplier
+				{t('master.suppliers.addBtn')}
 			</Button>
 		{/snippet}
 	</PageHeader>
 
 	<section class="flex flex-col gap-3" aria-labelledby="suppliers-table-title">
-		<h2 id="suppliers-table-title" class="sr-only">Supplier records</h2>
+		<h2 id="suppliers-table-title" class="sr-only">{t('master.suppliers.srHeading')}</h2>
 
 		<SearchField
 			value={searchValue}
 			disabled={isLoading}
-			ariaLabel="Search suppliers"
-			placeholder="Search suppliers..."
+			ariaLabel={t('master.suppliers.searchAriaLabel')}
+			placeholder={t('master.suppliers.searchPlaceholder')}
 			onValueChange={updateSearchValue}
 		/>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load suppliers." message={errorMessage} />
+			<ErrorAlert title={t('master.suppliers.errorLoad')} message={errorMessage} />
 		{:else}
 			<SuppliersTable
 				{suppliers}
 				{isLoading}
 				onSupplierDeleted={refreshSuppliersAfterDelete}
 				onSupplierUpdated={updateSupplierInList}
-				emptyMessage={query.search ? 'No suppliers match your search.' : 'No suppliers yet.'}
+				emptyMessage={query.search ? t('master.suppliers.emptySearch') : t('master.suppliers.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

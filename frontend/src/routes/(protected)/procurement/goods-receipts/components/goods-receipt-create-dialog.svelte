@@ -25,6 +25,7 @@
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
 	import { z } from 'zod';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const normalizeStringInput = (value: unknown) => {
 		if (value === null || value === undefined) return '';
@@ -256,12 +257,12 @@
 				}))
 			});
 			await onCreated?.(createdGoodsReceipt);
-			toast.success('Goods receipt created.', {
+			toast.success(t('procurement.goodsReceipts.createdToast'), {
 				description: `${createdGoodsReceipt.gr_no} was created as draft.`
 			});
 			open = false;
 		} catch (error) {
-			errorMessage = getErrorMessage(error, 'Failed to create goods receipt.');
+			errorMessage = getErrorMessage(error, t('procurement.goodsReceipts.errorCreate'));
 		} finally {
 			isSubmitting = false;
 		}
@@ -501,7 +502,7 @@
 						</div>
 
 						{#if getFieldError('items')}
-							<ErrorAlert title="Invalid line items." message={getFieldError('items') ?? ''} />
+							<ErrorAlert title={t('procurement.goodsReceipts.invalidItems')} message={getFieldError('items') ?? ''} />
 						{/if}
 
 						{#if isLoadingPurchaseOrder}
@@ -635,7 +636,7 @@
 					{#if isSubmitting}
 						<Spinner />
 					{/if}
-					{isSubmitting ? 'Creating...' : 'Create goods receipt'}
+					{isSubmitting ? t('procurement.goodsReceipts.creating') : t('procurement.goodsReceipts.createBtn')}
 				</Button>
 			</Drawer.Footer>
 		</form>

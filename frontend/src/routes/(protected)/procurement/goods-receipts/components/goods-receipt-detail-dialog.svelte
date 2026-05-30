@@ -8,6 +8,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDateTime, formatIdr, formatNumber } from '$lib/formatters.js';
 	import GoodsReceiptStatusBadge from './goods-receipt-status-badge.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		goodsReceiptId,
@@ -50,7 +51,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load goods receipt details.';
+		return t('procurement.goodsReceipts.detail.loadFailed');
 	}
 </script>
 
@@ -69,7 +70,7 @@
 				<Skeleton class="h-32 w-full" />
 			</div>
 		{:else if errorMessage}
-			<ErrorAlert title="Failed to load details." message={errorMessage} />
+			<ErrorAlert title={t('common.loadFailed')} message={errorMessage} />
 		{:else if goodsReceipt}
 			<div class="grid gap-5">
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

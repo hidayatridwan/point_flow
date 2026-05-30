@@ -23,6 +23,7 @@
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4, zod4Client } from 'sveltekit-superforms/adapters';
 	import { z } from 'zod';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const editSupplierSchema = z.object({
 		name: z
@@ -101,7 +102,7 @@
 				is_active: result.data.is_active === 'true'
 			});
 			onUpdated?.(updatedSupplier);
-			toast.success('Supplier updated.', {
+			toast.success(t('master.suppliers.updatedToast'), {
 				description: `Changes for ${updatedSupplier.name} have been saved.`
 			});
 			open = false;
@@ -131,7 +132,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to save supplier.';
+		return t('master.suppliers.errorSave');
 	}
 </script>
 
@@ -240,11 +241,11 @@
 								}}
 							>
 								<Select.Trigger {...props} class="w-full">
-									<Select.Value placeholder="Select status" />
+									<Select.Value placeholder={t('common.selectStatus')} />
 								</Select.Trigger>
 								<Select.Content>
-									<Select.Item value="true" label="Active">Active</Select.Item>
-									<Select.Item value="false" label="Inactive">Inactive</Select.Item>
+									<Select.Item value="true" label="Active">{t('status.active')}</Select.Item>
+									<Select.Item value="false" label="Inactive">{t('status.inactive')}</Select.Item>
 								</Select.Content>
 							</Select.Root>
 						{/snippet}
@@ -253,7 +254,7 @@
 				</Form.Field>
 
 				{#if errorMessage}
-					<ErrorAlert title="Save failed." message={errorMessage} />
+					<ErrorAlert title={t('common.saveFailed')} message={errorMessage} />
 				{/if}
 			</div>
 
@@ -269,7 +270,7 @@
 					{#if isSubmitting}
 						<Spinner />
 					{/if}
-					{isSubmitting ? 'Saving...' : 'Save changes'}
+					{isSubmitting ? t('common.saving') : t('common.save')}
 				</Button>
 			</Dialog.Footer>
 		</form>

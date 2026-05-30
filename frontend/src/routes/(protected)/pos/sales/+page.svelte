@@ -30,6 +30,7 @@
 	import { formatDate } from '$lib/formatters.js';
 	import { cn } from '$lib/utils.js';
 	import SalesTable from './components/sales-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: SalePagination = {
@@ -237,7 +238,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load sales.';
+		return t('pos.sales.errorLoad');
 	}
 </script>
 
@@ -247,13 +248,13 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Sales History"
-		description="Review completed and cancelled sales transactions."
+		title={t('pos.sales.title')}
+		description={t('pos.sales.subtitle')}
 	>
 		{#snippet actions()}
 			<Button class="w-full sm:w-auto" href="/pos/sales/new">
 				<PlusIcon />
-				New Transaction
+				{t('pos.sales.newTransactionBtn')}
 			</Button>
 		{/snippet}
 	</PageHeader>
@@ -266,8 +267,8 @@
 				<SearchField
 					value={searchValue}
 					disabled={isLoading}
-					ariaLabel="Search sales"
-					placeholder="Search sales..."
+					ariaLabel={t('pos.sales.searchAriaLabel')}
+					placeholder={t('pos.sales.searchPlaceholder')}
 					class="sm:max-w-sm"
 					onValueChange={updateSearchValue}
 				/>
@@ -312,15 +313,15 @@
 		</div>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load sales." message={errorMessage} />
+			<ErrorAlert title={t('pos.sales.errorLoad')} message={errorMessage} />
 		{:else}
 			<SalesTable
 				{sales}
 				{isLoading}
 				onSaleChanged={refreshSalesAfterStatusChange}
 				emptyMessage={query.search || query.status.length || query.from || query.to
-					? 'No sales match your filters.'
-					: 'No sales yet.'}
+					? t('pos.sales.emptySearch')
+					: t('pos.sales.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

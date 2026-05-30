@@ -18,6 +18,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import ProductSkuCreateDialog from './components/product-sku-create-dialog.svelte';
 	import ProductSkusTable from './components/product-skus-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: ProductSkuPagination = {
@@ -165,7 +166,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load product SKUs.';
+		return t('master.productSkus.errorLoad');
 	}
 </script>
 
@@ -175,37 +176,37 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Product SKUs"
-		description="Manage sellable product variants with unit, barcode, pricing, and stock rules."
+		title={t('master.productSkus.title')}
+		description={t('master.productSkus.subtitle')}
 	>
 		{#snippet actions()}
 			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
 				<PlusIcon />
-				Add Product SKU
+				{t('master.productSkus.addBtn')}
 			</Button>
 		{/snippet}
 	</PageHeader>
 
 	<section class="flex flex-col gap-3" aria-labelledby="product-skus-table-title">
-		<h2 id="product-skus-table-title" class="sr-only">Product SKU records</h2>
+		<h2 id="product-skus-table-title" class="sr-only">{t('master.productSkus.srHeading')}</h2>
 
 		<SearchField
 			value={searchValue}
 			disabled={isLoading}
-			ariaLabel="Search product SKUs"
-			placeholder="Search product SKUs..."
+			ariaLabel={t('master.productSkus.searchAriaLabel')}
+			placeholder={t('master.productSkus.searchPlaceholder')}
 			onValueChange={updateSearchValue}
 		/>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load product SKUs." message={errorMessage} />
+			<ErrorAlert title={t('master.productSkus.errorLoad')} message={errorMessage} />
 		{:else}
 			<ProductSkusTable
 				{productSkus}
 				{isLoading}
 				onProductSkuDeleted={refreshProductSkusAfterDelete}
 				onProductSkuUpdated={updateProductSkuInList}
-				emptyMessage={query.search ? 'No product SKUs match your search.' : 'No product SKUs yet.'}
+				emptyMessage={query.search ? t('master.productSkus.emptySearch') : t('master.productSkus.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

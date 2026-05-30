@@ -13,6 +13,7 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import CircleAlertIcon from '@lucide/svelte/icons/circle-alert';
 	import type { Component } from 'svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	type Metric = {
 		label: string;
@@ -49,44 +50,44 @@
 	function buildMetrics(data: DashboardSummary): Metric[] {
 		return [
 			{
-				label: 'Revenue Today',
+				label: t('dashboard.revenueToday'),
 				value: formatCurrency(data.revenueToday),
-				description: 'Total paid sales recorded today.',
+				description: t('dashboard.revenueDesc'),
 				icon: BanknoteIcon,
 				tone: 'border-emerald-200 bg-emerald-50 text-emerald-700'
 			},
 			{
-				label: 'Transactions Today',
+				label: t('dashboard.transactions'),
 				value: formatNumber(data.transactionCountToday),
-				description: 'Completed sales transactions.',
+				description: t('dashboard.transactionsDesc'),
 				icon: ReceiptTextIcon,
 				tone: 'border-sky-200 bg-sky-50 text-sky-700'
 			},
 			{
-				label: 'Low Stock Products',
+				label: t('dashboard.lowStock'),
 				value: formatNumber(data.lowStockProductCount),
-				description: 'SKUs at or below minimum stock.',
+				description: t('dashboard.lowStockDesc'),
 				icon: PackageSearchIcon,
 				tone: 'border-amber-200 bg-amber-50 text-amber-700'
 			},
 			{
-				label: 'Pending Purchase Orders',
+				label: t('dashboard.pendingPO'),
 				value: formatNumber(data.pendingPurchaseOrderCount),
-				description: 'Orders waiting for receiving.',
+				description: t('dashboard.pendingPODesc'),
 				icon: TruckIcon,
 				tone: 'border-violet-200 bg-violet-50 text-violet-700'
 			},
 			{
-				label: 'Draft Adjustments',
+				label: t('dashboard.draftAdj'),
 				value: formatNumber(data.draftStockAdjustmentCount),
-				description: 'Stock adjustments not posted yet.',
+				description: t('dashboard.draftAdjDesc'),
 				icon: ClipboardListIcon,
 				tone: 'border-rose-200 bg-rose-50 text-rose-700'
 			},
 			{
-				label: 'Active Employees',
+				label: t('dashboard.activeEmployees'),
 				value: formatNumber(data.activeEmployeeCount),
-				description: 'Employees available for operations.',
+				description: t('dashboard.activeEmployeesDesc'),
 				icon: UsersIcon,
 				tone: 'border-cyan-200 bg-cyan-50 text-cyan-700'
 			}
@@ -108,7 +109,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load dashboard summary.';
+		return t('dashboard.errorLoad');
 	}
 </script>
 
@@ -118,18 +119,18 @@
 
 <div class="flex flex-col gap-6">
 	<div class="flex flex-col gap-1">
-		<h1 class="text-xl font-semibold tracking-tight">Dashboard</h1>
+		<h1 class="text-xl font-semibold tracking-tight">{t('dashboard.title')}</h1>
 		<p class="max-w-2xl text-sm text-muted-foreground">
-			Store operations summary for sales, stock, procurement, and payroll.
+			{t('dashboard.subtitle')}
 		</p>
 	</div>
 
 	{#if isLoading}
-		<SessionTransition title="Loading dashboard..." description="Please wait a moment." />
+		<SessionTransition title={t('dashboard.loadingTitle')} description={t('session.pleaseWait')} />
 	{:else if errorMessage}
 		<Alert.Root variant="destructive">
 			<CircleAlertIcon />
-			<Alert.Title>Failed to load dashboard.</Alert.Title>
+			<Alert.Title>{t('dashboard.errorTitle')}</Alert.Title>
 			<Alert.Description>{errorMessage}</Alert.Description>
 		</Alert.Root>
 	{:else}

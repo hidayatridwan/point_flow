@@ -8,6 +8,7 @@
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import { cn } from '$lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	type LoginCredentials = {
 		email: string;
@@ -38,7 +39,7 @@
 
 		const normalizedEmail = email.trim();
 		if (!normalizedEmail || !password) {
-			validationMessage = 'Email and password are required.';
+			validationMessage = t('login.validationRequired');
 			return;
 		}
 
@@ -52,14 +53,14 @@
 <div class={cn('flex flex-col gap-6', className)} {...restProps}>
 	<Card.Root>
 		<Card.Header class="text-center">
-			<Card.Title class="text-xl">Sign in to POS</Card.Title>
-			<Card.Description>Use your registered admin or cashier account.</Card.Description>
+			<Card.Title class="text-xl">{t('login.title')}</Card.Title>
+			<Card.Description>{t('login.subtitle')}</Card.Description>
 		</Card.Header>
 		<Card.Content>
 			<form onsubmit={handleSubmit}>
 				<FieldGroup>
 					<Field>
-						<FieldLabel for="email-{id}">Email</FieldLabel>
+						<FieldLabel for="email-{id}">{t('login.email')}</FieldLabel>
 						<div class="relative">
 							<MailIcon
 								class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
@@ -77,12 +78,12 @@
 					</Field>
 					<Field>
 						<div class="flex items-center justify-between gap-3">
-							<FieldLabel for="password-{id}">Password</FieldLabel>
+							<FieldLabel for="password-{id}">{t('login.password')}</FieldLabel>
 							<a
 								href="mailto:support@example.com?subject=Password%20reset%20request"
 								class="text-sm font-medium text-primary underline-offset-4 hover:underline"
 							>
-								Forgot password?
+								{t('login.forgotPassword')}
 							</a>
 						</div>
 						<div class="relative">
@@ -111,7 +112,7 @@
 							{#if isSubmitting}
 								<Spinner />
 							{/if}
-							{isSubmitting ? 'Processing...' : 'Login'}
+							{isSubmitting ? t('login.submitting') : t('login.submit')}
 						</Button>
 					</Field>
 				</FieldGroup>

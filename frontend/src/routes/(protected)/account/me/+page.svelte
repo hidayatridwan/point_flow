@@ -18,6 +18,7 @@
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { formatDateTime } from '$lib/formatters.js';
 	import { toast } from 'svelte-sonner';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let currentUser = $state<AuthUser | null>(null);
 	let currentPassword = $state('');
@@ -65,8 +66,8 @@
 				new_password: newPassword
 			});
 			clearAccessToken();
-			toast.success('Password changed.', {
-				description: 'Please sign in again with your new password.'
+			toast.success(t('account.successChanged'), {
+				description: t('account.successChangedDesc')
 			});
 			await goto(resolve('/'), { invalidateAll: true, replaceState: true });
 		} catch (error) {
@@ -77,10 +78,10 @@
 	}
 
 	function getChangePasswordValidationError() {
-		if (!currentPassword.trim()) return 'Current password is required.';
-		if (!newPassword) return 'New password is required.';
-		if (newPassword.length < 8) return 'New password must contain at least 8 characters.';
-		if (newPassword !== confirmNewPassword) return 'Confirm password must match new password.';
+		if (!currentPassword.trim()) return t('account.validCurrentRequired');
+		if (!newPassword) return t('account.validNewRequired');
+		if (newPassword.length < 8) return t('account.validNewMinLength');
+		if (newPassword !== confirmNewPassword) return t('account.validConfirmMatch');
 		return null;
 	}
 
@@ -103,16 +104,16 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load current user.';
+		return t('account.errorLoad');
 	}
 
 	function getChangePasswordErrorMessage(error: unknown) {
 		if (error instanceof ApiError) {
-			if (error.status === 401) return 'Current password is incorrect.';
+			if (error.status === 401) return t('account.errorIncorrect');
 			return error.message;
 		}
 		if (error instanceof Error) return error.message;
-		return 'Failed to change password.';
+		return t('account.errorDefault');
 	}
 </script>
 
@@ -122,13 +123,13 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Current User"
-		description="View the account currently signed in to this session."
+		title={t('account.title')}
+		description={t('account.subtitle')}
 	>
 		{#snippet actions()}
 			<Button type="button" variant="outline" class="w-full sm:w-auto" onclick={loadCurrentUser}>
 				<RefreshCwIcon />
-				Refresh
+				{t('common.refresh')}
 			</Button>
 		{/snippet}
 	</PageHeader>
@@ -148,11 +149,11 @@
 		</div>
 	{:else if errorMessage}
 		<div class="grid gap-4">
-			<ErrorAlert title="Failed to load current user." message={errorMessage} />
+			<ErrorAlert title={t('account.errorLoadTitle')} message={errorMessage} />
 			<div>
 				<Button type="button" variant="outline" onclick={loadCurrentUser}>
 					<RefreshCwIcon />
-					Try again
+					{t('common.tryAgain')}
 				</Button>
 			</div>
 		</div>
@@ -182,21 +183,21 @@
 							? 'border-emerald-600/20 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300'
 							: 'border-rose-600/20 bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300'}
 					>
-						{currentUser.is_active ? 'Active' : 'Inactive'}
+						{currentUser.is_active ? t('status.active') : t('status.inactive')}
 					</Badge>
 				</div>
 			</section>
 
-			<section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="Current user details">
-				<DetailField label="User ID" value={currentUser.id} />
-				<DetailField label="Name" value={currentUser.name} />
-				<DetailField label="Email" value={currentUser.email} />
-				<DetailField label="Role" value={formatRole(currentUser.role)} />
-				<DetailField label="Status" value={currentUser.is_active ? 'Active' : 'Inactive'} />
-				<DetailField label="Last Login" value={formatDateTime(currentUser.last_login_at)} />
-				<DetailField label="Created At" value={formatDateTime(currentUser.created_at)} />
-				<DetailField label="Updated At" value={formatDateTime(currentUser.updated_at)} />
-				<DetailField label="Deleted At" value={formatDateTime(currentUser.deleted_at)} />
+			<section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label={t('account.title')}>
+				<DetailField label={t('account.userId')} value={currentUser.id} />
+				<DetailField label={t('common.name')} value={currentUser.name} />
+				<DetailField label={t('common.email')} value={currentUser.email} />
+				<DetailField label={t('account.role')} value={formatRole(currentUser.role)} />
+				<DetailField label={t('common.status')} value={currentUser.is_active ? t('status.active') : t('status.inactive')} />
+				<DetailField label={t('account.lastLogin')} value={formatDateTime(currentUser.last_login_at)} />
+				<DetailField label={t('common.createdAt')} value={formatDateTime(currentUser.created_at)} />
+				<DetailField label={t('common.updatedAt')} value={formatDateTime(currentUser.updated_at)} />
+				<DetailField label={t('common.deletedAt')} value={formatDateTime(currentUser.deleted_at)} />
 			</section>
 
 			<section
@@ -211,20 +212,20 @@
 							<KeyRoundIcon class="size-5" />
 						</div>
 						<div class="min-w-0">
-							<h2 class="text-base font-semibold">Change Password</h2>
+							<h2 class="text-base font-semibold">{t('account.changePassword')}</h2>
 							<p class="text-sm text-muted-foreground">
-								Update the password used to sign in to this account.
+								{t('account.changePasswordDesc')}
 							</p>
 						</div>
 					</div>
 
 					{#if passwordErrorMessage}
-						<ErrorAlert title="Failed to change password." message={passwordErrorMessage} />
+						<ErrorAlert title={t('account.errorChangeTitle')} message={passwordErrorMessage} />
 					{/if}
 
 					<div class="grid gap-4 md:grid-cols-3">
 						<div class="grid gap-2">
-							<Label for="current-password">Current Password</Label>
+							<Label for="current-password">{t('account.currentPassword')}</Label>
 							<Input
 								id="current-password"
 								type="password"
@@ -234,7 +235,7 @@
 							/>
 						</div>
 						<div class="grid gap-2">
-							<Label for="new-password">New Password</Label>
+							<Label for="new-password">{t('account.newPassword')}</Label>
 							<Input
 								id="new-password"
 								type="password"
@@ -244,7 +245,7 @@
 							/>
 						</div>
 						<div class="grid gap-2">
-							<Label for="confirm-new-password">Confirm New Password</Label>
+							<Label for="confirm-new-password">{t('account.confirmNewPassword')}</Label>
 							<Input
 								id="confirm-new-password"
 								type="password"
@@ -258,7 +259,7 @@
 					<div class="flex justify-end">
 						<Button type="submit" class="w-full sm:w-auto" disabled={isChangingPassword}>
 							<KeyRoundIcon />
-							{isChangingPassword ? 'Changing...' : 'Change Password'}
+							{isChangingPassword ? t('account.changing') : t('account.changeBtn')}
 						</Button>
 					</div>
 				</form>

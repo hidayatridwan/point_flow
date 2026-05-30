@@ -21,6 +21,7 @@
 	import { formatIdr, formatNumber } from '$lib/formatters.js';
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	type ReturnFormItem = {
 		item: ReturnableSaleItem;
@@ -123,12 +124,12 @@
 			});
 
 			await onReturned?.(saleReturn);
-			toast.success('Return created.', {
+			toast.success(t('pos.sales.return.createBtn'), {
 				description: `${saleReturn.return_no} refund ${formatIdr(saleReturn.refund_amount)}.`
 			});
 			open = false;
 		} catch (error) {
-			errorMessage = getErrorMessage(error, 'Failed to create return.');
+			errorMessage = getErrorMessage(error, t('pos.sales.return.returnFailed'));
 		} finally {
 			isSubmitting = false;
 		}
@@ -143,8 +144,8 @@
 	}
 
 	function getValidationError() {
-		if (!activeSessionId) return 'Open a register session before creating a refund.';
-		if (!selectedItemCount) return 'Enter a return quantity for at least one item.';
+		if (!activeSessionId) return t('pos.sales.return.validNoRegister');
+		if (!selectedItemCount) return t('pos.sales.return.validNoItems');
 
 		for (const item of formItems) {
 			const quantity = getQuantity(item);
@@ -182,24 +183,24 @@
 	<Dialog.Content class="max-h-[90vh] overflow-y-auto p-0 sm:max-w-5xl">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Return / Refund</Dialog.Title>
+				<Dialog.Title>{t('pos.sales.return.title')}</Dialog.Title>
 				<Dialog.Description>
-					Create a cash refund for {sale.transaction_no}.
+					{t('pos.sales.return.desc').replace('{txNo}', sale.transaction_no)}
 				</Dialog.Description>
 			</Dialog.Header>
 
 			<div class="grid gap-5 px-6">
 				<div class="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
 					<div>
-						<div class="text-muted-foreground">Transaction</div>
+						<div class="text-muted-foreground">{t('pos.sales.return.tx')}</div>
 						<div class="font-medium">{sale.transaction_no}</div>
 					</div>
 					<div>
-						<div class="text-muted-foreground">Register</div>
+						<div class="text-muted-foreground">{t('pos.sales.return.register')}</div>
 						<div class="font-medium">{sale.cash_register_code ?? '-'}</div>
 					</div>
 					<div>
-						<div class="text-muted-foreground">Refund total</div>
+						<div class="text-muted-foreground">{t('pos.sales.return.refundTotal')}</div>
 						<div class="font-semibold">{formatIdr(totalRefund)}</div>
 					</div>
 				</div>
@@ -208,7 +209,7 @@
 					<div class="rounded-md border border-destructive/30 bg-destructive/5 p-4">
 						<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 							<p class="text-sm text-destructive">
-								Open a register session before creating a refund.
+								{t('pos.sales.return.noRegister')}
 							</p>
 							<Button
 								type="button"
@@ -216,7 +217,7 @@
 								size="sm"
 								href="/pos/register-session"
 							>
-								Register Session
+								{t('pos.sales.return.goRegisterBtn')}
 							</Button>
 						</div>
 					</div>
@@ -225,7 +226,7 @@
 				{#if isLoading}
 					<div class="flex h-32 items-center justify-center gap-2 text-sm text-muted-foreground">
 						<Spinner />
-						Loading returnable items...
+						{t('pos.sales.return.loading')}
 					</div>
 				{:else if formItems.length}
 					<div class="overflow-hidden rounded-md border">
@@ -233,14 +234,14 @@
 							<Table.Root>
 								<Table.Header>
 									<Table.Row>
-										<Table.Head class="min-w-52">Product</Table.Head>
-										<Table.Head class="w-24">Sold</Table.Head>
-										<Table.Head class="w-28">Returned</Table.Head>
-										<Table.Head class="w-32">Available</Table.Head>
-										<Table.Head class="w-36">Return Qty</Table.Head>
-										<Table.Head class="w-28">Restock</Table.Head>
-										<Table.Head class="min-w-44">Item Reason</Table.Head>
-										<Table.Head class="w-32">Refund</Table.Head>
+										<Table.Head class="min-w-52">{t('pos.sales.return.colProduct')}</Table.Head>
+										<Table.Head class="w-24">{t('pos.sales.return.colSold')}</Table.Head>
+										<Table.Head class="w-28">{t('pos.sales.return.colReturned')}</Table.Head>
+										<Table.Head class="w-32">{t('pos.sales.return.colAvailable')}</Table.Head>
+										<Table.Head class="w-36">{t('pos.sales.return.colReturnQty')}</Table.Head>
+										<Table.Head class="w-28">{t('pos.sales.return.colRestock')}</Table.Head>
+										<Table.Head class="min-w-44">{t('pos.sales.return.colItemReason')}</Table.Head>
+										<Table.Head class="w-32">{t('pos.sales.return.colRefund')}</Table.Head>
 									</Table.Row>
 								</Table.Header>
 								<Table.Body>
@@ -284,13 +285,13 @@
 														disabled={isSubmitting || item.item.returnable_quantity <= 0}
 														bind:checked={item.restock}
 													/>
-													<span>Yes</span>
+													<span>{t('pos.sales.return.yesLabel')}</span>
 												</label>
 											</Table.Cell>
 											<Table.Cell>
 												<Input
 													class="h-9 min-w-40"
-													placeholder="Optional"
+													placeholder={t('pos.sales.return.optional')}
 													disabled={isSubmitting || item.item.returnable_quantity <= 0}
 													bind:value={item.reason}
 												/>
@@ -321,11 +322,11 @@
 
 					{#if !hasReturnableItems}
 						<p class="text-sm text-muted-foreground">
-							All items in this sale have already been returned.
+							{t('pos.sales.return.allReturned')}
 						</p>
 					{/if}
 				{:else}
-					<p class="text-sm text-muted-foreground">No returnable items found.</p>
+					<p class="text-sm text-muted-foreground">{t('pos.sales.return.noItems')}</p>
 				{/if}
 
 				<div class="grid gap-4 sm:grid-cols-2">
@@ -333,7 +334,7 @@
 						<Label for={`sale-return-reason-${sale.id}`}>Return Reason</Label>
 						<Input
 							id={`sale-return-reason-${sale.id}`}
-							placeholder="Customer return"
+							placeholder={t('pos.sales.return.reasonPlaceholder')}
 							disabled={isSubmitting}
 							bind:value={reason}
 						/>
@@ -342,7 +343,7 @@
 						<Label for={`sale-return-notes-${sale.id}`}>Notes</Label>
 						<Textarea
 							id={`sale-return-notes-${sale.id}`}
-							placeholder="Optional notes"
+							placeholder={t('pos.sales.return.notesPlaceholder')}
 							class="min-h-10"
 							disabled={isSubmitting}
 							bind:value={notes}
@@ -351,7 +352,7 @@
 				</div>
 
 				{#if errorMessage}
-					<ErrorAlert title="Return failed." message={errorMessage} />
+					<ErrorAlert title={t('pos.sales.return.returnFailed')} message={errorMessage} />
 				{/if}
 			</div>
 
@@ -361,15 +362,15 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
-				</Dialog.Close>
+					{t('pos.sales.return.cancelBtn')}
+					</Dialog.Close>
 				<Button type="submit" disabled={!canSubmit}>
 					{#if isSubmitting}
 						<Spinner />
 					{:else}
 						<Undo2Icon />
 					{/if}
-					{isSubmitting ? 'Creating...' : 'Create return'}
+					{isSubmitting ? t('pos.sales.return.creating') : t('pos.sales.return.createBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

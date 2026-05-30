@@ -6,6 +6,7 @@
 	import * as Alert from '$lib/components/ui/alert/index.js';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { toast } from 'svelte-sonner';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		product,
@@ -36,7 +37,7 @@
 		try {
 			await deleteProduct(product.id);
 			await onDeleted?.(product.id);
-			toast.success('Product deleted.', {
+			toast.success(t('master.products.deletedToast'), {
 				description: `${product.name} and related SKUs were removed.`
 			});
 			open = false;
@@ -50,7 +51,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to delete product.';
+		return t('master.products.errorDelete');
 	}
 </script>
 
@@ -73,10 +74,10 @@
 		{/if}
 
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel disabled={isDeleting}>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel disabled={isDeleting}>{t('common.cancel')}</AlertDialog.Cancel>
 			<AlertDialog.Action variant="destructive" disabled={isDeleting} onclick={handleDelete}>
 				<TrashIcon />
-				{isDeleting ? 'Deleting...' : 'Delete'}
+				{isDeleting ? t('common.deleting') : t('common.delete')}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

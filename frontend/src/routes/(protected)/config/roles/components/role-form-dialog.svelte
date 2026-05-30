@@ -16,6 +16,7 @@
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	type RoleFormData = {
 		code: string;
@@ -42,9 +43,9 @@
 	let formData = $state<RoleFormData>(getInitialFormData(null));
 
 	const isEditing = $derived(Boolean(role));
-	const dialogTitle = $derived(isEditing ? 'Edit Role' : 'Add Role');
-	const submitLabel = $derived(isEditing ? 'Save changes' : 'Create role');
-	const submittingLabel = $derived(isEditing ? 'Saving...' : 'Creating...');
+	const dialogTitle = $derived(isEditing ? t('config.roles.editTitle') : t('config.roles.addTitle'));
+	const submitLabel = $derived(isEditing ? t('config.roles.saveBtn') : t('config.roles.createBtn'));
+	const submittingLabel = $derived(isEditing ? t('config.roles.saving') : t('config.roles.creating'));
 
 	$effect(() => {
 		if (!open) return;
@@ -76,7 +77,7 @@
 					});
 
 			await onSaved?.(savedRole);
-			toast.success(isEditing ? 'Role updated.' : 'Role created.', {
+			toast.success(isEditing ? t('config.roles.updatedToast') : t('config.roles.createdToast'), {
 				description: `${savedRole.name} is ready.`
 			});
 			open = false;
@@ -141,7 +142,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return isEditing ? 'Failed to save role.' : 'Failed to create role.';
+		return isEditing ? t('config.roles.errorSave') : t('config.roles.errorCreate');
 	}
 </script>
 
@@ -150,7 +151,7 @@
 		<form class="grid max-h-[90vh] grid-rows-[auto_1fr_auto]" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
 				<Dialog.Title>{dialogTitle}</Dialog.Title>
-				<Dialog.Description>Manage role details and assigned permissions.</Dialog.Description>
+				<Dialog.Description>{t('config.roles.formDesc')}</Dialog.Description>
 			</Dialog.Header>
 
 			<div class="grid gap-5 overflow-y-auto px-6 py-5">
@@ -215,11 +216,11 @@
 				</div>
 
 				{#if validationMessage}
-					<ErrorAlert title="Invalid role." message={validationMessage} />
+					<ErrorAlert title={t('config.roles.invalidRole')} message={validationMessage} />
 				{/if}
 
 				{#if errorMessage}
-					<ErrorAlert title="Save failed." message={errorMessage} />
+					<ErrorAlert title={t('common.saveFailed')} message={errorMessage} />
 				{/if}
 			</div>
 
@@ -229,8 +230,8 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
-				</Dialog.Close>
+					{t('common.cancel')}
+					</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting}>
 					{#if isSubmitting}
 						<Spinner />

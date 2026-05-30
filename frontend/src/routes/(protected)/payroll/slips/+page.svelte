@@ -26,6 +26,7 @@
 	import { cn } from '$lib/utils.js';
 	import PayrollSlipCreateDialog from './components/payroll-slip-create-dialog.svelte';
 	import PayrollSlipsTable from './components/payroll-slips-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: PayrollPagination = {
@@ -218,7 +219,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load payroll slips.';
+		return t('payroll.slips.errorLoad');
 	}
 </script>
 
@@ -228,13 +229,13 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Payroll Slips"
-		description="Create and review employee payroll slips by period."
+		title={t('payroll.slips.title')}
+		description={t('payroll.slips.subtitle')}
 	>
 		{#snippet actions()}
 			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
 				<PlusIcon />
-				Add Payroll Slip
+				{t('payroll.slips.addBtn')}
 			</Button>
 		{/snippet}
 	</PageHeader>
@@ -246,8 +247,8 @@
 			<SearchField
 				value={searchValue}
 				disabled={isLoading}
-				ariaLabel="Search payroll slips"
-				placeholder="Search payroll slips..."
+				ariaLabel={t('payroll.slips.searchAriaLabel')}
+				placeholder={t('payroll.slips.searchPlaceholder')}
 				class="sm:max-w-sm"
 				onValueChange={updateSearchValue}
 			/>
@@ -284,14 +285,14 @@
 		</div>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load payroll slips." message={errorMessage} />
+			<ErrorAlert title={t('payroll.slips.errorLoad')} message={errorMessage} />
 		{:else}
 			<PayrollSlipsTable
 				{payrollSlips}
 				{isLoading}
 				emptyMessage={query.search || query.from || query.to
-					? 'No payroll slips match your filters.'
-					: 'No payroll slips yet.'}
+					? t('payroll.slips.emptySearch')
+					: t('payroll.slips.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination

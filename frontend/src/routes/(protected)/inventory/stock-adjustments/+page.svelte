@@ -32,6 +32,7 @@
 	import { cn } from '$lib/utils.js';
 	import StockAdjustmentCreateDialog from './components/stock-adjustment-create-dialog.svelte';
 	import StockAdjustmentsTable from './components/stock-adjustments-table.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: StockAdjustmentPagination = {
@@ -254,7 +255,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load stock adjustments.';
+		return t('inventory.stockAdjustments.errorLoad');
 	}
 </script>
 
@@ -264,13 +265,13 @@
 
 <div class="flex flex-col gap-6">
 	<PageHeader
-		title="Stock Adjustments"
-		description="Create and post stock corrections for inventory control."
+		title={t('inventory.stockAdjustments.title')}
+		description={t('inventory.stockAdjustments.subtitle')}
 	>
 		{#snippet actions()}
 			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
 				<PlusIcon />
-				Add Stock Adjustment
+				{t('inventory.stockAdjustments.addBtn')}
 			</Button>
 		{/snippet}
 	</PageHeader>
@@ -284,7 +285,7 @@
 					value={searchValue}
 					disabled={isLoading}
 					ariaLabel="Search stock adjustments"
-					placeholder="Search stock adjustments..."
+					placeholder={t('inventory.stockAdjustments.searchPlaceholder')}
 					class="sm:max-w-sm"
 					onValueChange={updateSearchValue}
 				/>
@@ -329,15 +330,15 @@
 		</div>
 
 		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load stock adjustments." message={errorMessage} />
+			<ErrorAlert title={t('inventory.stockAdjustments.errorLoad')} message={errorMessage} />
 		{:else}
 			<StockAdjustmentsTable
 				{stockAdjustments}
 				{isLoading}
 				onStockAdjustmentChanged={refreshStockAdjustmentsAfterStatusChange}
 				emptyMessage={query.search || query.status.length || query.from || query.to
-					? 'No stock adjustments match your filters.'
-					: 'No stock adjustments yet.'}
+					? t('inventory.stockAdjustments.emptySearch')
+					: t('inventory.stockAdjustments.emptyDefault')}
 			/>
 			{#if !isLoading}
 				<DataPagination
