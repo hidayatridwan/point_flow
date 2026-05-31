@@ -41,9 +41,13 @@
 	const isEditing = $derived(Boolean(user));
 	const isAdminUser = $derived(user?.role_code === 'admin');
 	const selectableRoles = $derived(getSelectableRoles(roles, user));
-	const dialogTitle = $derived(isEditing ? t('config.users.editTitle') : t('config.users.addTitle'));
+	const dialogTitle = $derived(
+		isEditing ? t('config.users.editTitle') : t('config.users.addTitle')
+	);
 	const submitLabel = $derived(isEditing ? t('config.users.saveBtn') : t('config.users.createBtn'));
-	const submittingLabel = $derived(isEditing ? t('config.users.saving') : t('config.users.creating'));
+	const submittingLabel = $derived(
+		isEditing ? t('config.users.saving') : t('config.users.creating')
+	);
 
 	$effect(() => {
 		if (!open) return;
@@ -177,11 +181,15 @@
 
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div class="grid gap-2">
-						<Label for="user-password">{isEditing ? t('config.users.newPassword') : t('login.password')}</Label>
+						<Label for="user-password"
+							>{isEditing ? t('config.users.newPassword') : t('login.password')}</Label
+						>
 						<Input
 							id="user-password"
 							type="password"
-							placeholder={isEditing ? t('config.users.passwordEditPlaceholder') : t('config.users.passwordPlaceholder')}
+							placeholder={isEditing
+								? t('config.users.passwordEditPlaceholder')
+								: t('config.users.passwordPlaceholder')}
 							disabled={isSubmitting}
 							bind:value={formData.password}
 						/>
@@ -227,8 +235,11 @@
 							<Select.Value placeholder={t('common.selectStatus')} />
 						</Select.Trigger>
 						<Select.Content>
-							<Select.Item value="true" label={t('status.active')}>{t('status.active')}</Select.Item>
-							<Select.Item value="false" label={t('status.inactive')}>{t('status.inactive')}</Select.Item>
+							<Select.Item value="true" label={t('status.active')}>{t('status.active')}</Select.Item
+							>
+							<Select.Item value="false" label={t('status.inactive')}
+								>{t('status.inactive')}</Select.Item
+							>
 						</Select.Content>
 					</Select.Root>
 				</div>

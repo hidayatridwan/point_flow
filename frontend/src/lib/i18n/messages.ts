@@ -199,7 +199,52 @@ export const messages = {
 			draftAdj: 'Penyesuaian Draf',
 			draftAdjDesc: 'Penyesuaian stok belum diposting.',
 			activeEmployees: 'Karyawan Aktif',
-			activeEmployeesDesc: 'Karyawan tersedia untuk operasional.'
+			activeEmployeesDesc: 'Karyawan tersedia untuk operasional.',
+			charts: {
+				rangeLabel: 'Rentang',
+				last7Days: '7 hari terakhir',
+				last30Days: '30 hari terakhir',
+				last90Days: '90 hari terakhir',
+				empty: 'Belum ada data untuk ditampilkan.',
+				revenue: 'Pendapatan',
+				transactions: 'Transaksi',
+				quantity: 'Jumlah',
+				salesTrendTitle: 'Tren Penjualan',
+				salesTrendDesc: 'Pendapatan harian dari penjualan lunas.',
+				hourlySalesTitle: 'Penjualan per Jam',
+				hourlySalesDesc: 'Distribusi pendapatan hari ini menurut jam.',
+				topProductsTitle: 'Produk Terlaris',
+				topProductsDesc: 'SKU dengan pendapatan tertinggi pada periode.',
+				categoryTitle: 'Penjualan per Kategori',
+				categoryDesc: 'Komposisi pendapatan menurut kategori produk.',
+				scatterTitle: 'Harga vs Volume',
+				scatterDesc:
+					'Harga jual terhadap jumlah terjual per SKU. Ukuran titik mengikuti pendapatan.',
+				scatterPrice: 'Harga Jual',
+				scatterQuantity: 'Jumlah Terjual',
+				cashierTitle: 'Kinerja Kasir',
+				cashierDesc: 'Pendapatan per kasir pada periode.',
+				funnelTitle: 'Alur Pengadaan',
+				funnelDesc: 'Jumlah dokumen menurut tahap dan status.',
+				funnelPo: 'Purchase Order',
+				funnelGr: 'Penerimaan Barang',
+				funnelSa: 'Penyesuaian Stok',
+				lowStockTitle: 'Produk Stok Rendah',
+				lowStockDesc: 'SKU pada atau di bawah stok minimum.',
+				lowStockEmpty: 'Tidak ada produk dengan stok rendah.',
+				colProduct: 'Produk',
+				colSku: 'SKU',
+				colCategory: 'Kategori',
+				colStock: 'Stok',
+				colMinimum: 'Minimum',
+				colOnOrder: 'Dipesan',
+				statusDraft: 'Draf',
+				statusOrdered: 'Dipesan',
+				statusPartial: 'Diterima Sebagian',
+				statusReceived: 'Diterima',
+				statusPosted: 'Diposting',
+				statusCancelled: 'Dibatalkan'
+			}
 		},
 		account: {
 			title: 'Pengguna Saat Ini',
@@ -259,7 +304,8 @@ export const messages = {
 				detailTitle: 'Detail Karyawan',
 				detailDesc: 'Informasi terbaru dari data karyawan.',
 				deleteTitle: 'Hapus Karyawan?',
-				deleteDesc: 'Tindakan ini akan menghapus {name}. Karyawan ini tidak akan muncul lagi dalam daftar.',
+				deleteDesc:
+					'Tindakan ini akan menghapus {name}. Karyawan ini tidak akan muncul lagi dalam daftar.',
 				createBtn: 'Buat karyawan',
 				creating: 'Membuat...',
 				saveBtn: 'Simpan perubahan',
@@ -324,7 +370,8 @@ export const messages = {
 			},
 			productCategories: {
 				title: 'Kategori Produk',
-				subtitle: 'Kelola pengelompokan produk agar catatan inventori, pencarian item, dan laporan penjualan mudah dibaca.',
+				subtitle:
+					'Kelola pengelompokan produk agar catatan inventori, pencarian item, dan laporan penjualan mudah dibaca.',
 				addBtn: 'Tambah Kategori',
 				searchPlaceholder: 'Cari kategori produk...',
 				searchAriaLabel: 'Cari kategori produk',
@@ -339,7 +386,8 @@ export const messages = {
 				detailTitle: 'Detail Kategori Produk',
 				detailDesc: 'Informasi terbaru dari data kategori.',
 				deleteTitle: 'Hapus Kategori Produk?',
-				deleteDesc: 'Tindakan ini akan menghapus {name}. Kategori ini tidak akan muncul lagi dalam daftar.',
+				deleteDesc:
+					'Tindakan ini akan menghapus {name}. Kategori ini tidak akan muncul lagi dalam daftar.',
 				namePlaceholder: 'Masukkan nama kategori',
 				descriptionPlaceholder: 'Masukkan deskripsi kategori',
 				createBtn: 'Buat kategori',
@@ -366,7 +414,8 @@ export const messages = {
 			},
 			productSkus: {
 				title: 'SKU Produk',
-				subtitle: 'Kelola varian produk yang dijual dengan satuan, barcode, harga, dan aturan stok.',
+				subtitle:
+					'Kelola varian produk yang dijual dengan satuan, barcode, harga, dan aturan stok.',
 				addBtn: 'Tambah SKU Produk',
 				searchPlaceholder: 'Cari SKU produk...',
 				searchAriaLabel: 'Cari SKU produk',
@@ -432,7 +481,8 @@ export const messages = {
 				detailTitle: 'Detail Supplier',
 				detailDesc: 'Informasi terbaru dari data supplier.',
 				deleteTitle: 'Hapus Supplier?',
-				deleteDesc: 'Tindakan ini akan menghapus {name}. Supplier ini tidak akan muncul lagi dalam daftar.',
+				deleteDesc:
+					'Tindakan ini akan menghapus {name}. Supplier ini tidak akan muncul lagi dalam daftar.',
 				createBtn: 'Buat supplier',
 				creating: 'Membuat...',
 				saveBtn: 'Simpan perubahan',
@@ -471,7 +521,8 @@ export const messages = {
 				detailTitle: 'Detail Satuan',
 				detailDesc: 'Informasi terbaru dari data satuan.',
 				deleteTitle: 'Hapus Satuan?',
-				deleteDesc: 'Tindakan ini akan menghapus {name}. Satuan ini tidak akan muncul lagi dalam daftar.',
+				deleteDesc:
+					'Tindakan ini akan menghapus {name}. Satuan ini tidak akan muncul lagi dalam daftar.',
 				createBtn: 'Buat satuan',
 				creating: 'Membuat...',
 				saveBtn: 'Simpan perubahan',
@@ -623,7 +674,8 @@ export const messages = {
 				purchaseOrder: 'Purchase Order',
 				receivedDate: 'Tanggal Terima',
 				receivedItems: 'Item Diterima',
-				receivedItemsDesc: 'Sesuaikan kuantitas untuk penerimaan parsial atau hapus item yang belum diterima.',
+				receivedItemsDesc:
+					'Sesuaikan kuantitas untuk penerimaan parsial atau hapus item yang belum diterima.',
 				receiveQty: 'Qty Terima',
 				unitCost: 'Biaya Satuan',
 				poNo: 'No. PO',
@@ -864,7 +916,8 @@ export const messages = {
 			},
 			stockMovements: {
 				title: 'Mutasi Stok',
-				subtitle: 'Tinjau riwayat mutasi stok dengan referensi dokumen dan kuantitas sebelum-sesudah.',
+				subtitle:
+					'Tinjau riwayat mutasi stok dengan referensi dokumen dan kuantitas sebelum-sesudah.',
 				searchPlaceholder: 'Cari mutasi stok...',
 				searchAriaLabel: 'Cari mutasi stok',
 				emptySearch: 'Tidak ada mutasi stok yang sesuai.',
@@ -1040,7 +1093,8 @@ export const messages = {
 				openingNotesPlaceholder: 'Catatan opsional',
 				cashRegister: 'Register Kas',
 				selectRegister: 'Pilih register',
-				expectedCashDesc: 'Kas yang diharapkan mencakup penjualan selesai, retur, dan pergerakan kas laci yang selesai.',
+				expectedCashDesc:
+					'Kas yang diharapkan mencakup penjualan selesai, retur, dan pergerakan kas laci yang selesai.',
 				closeBtn: 'Tutup Register',
 				closing: 'Menutup...',
 				openBtn: 'Buka Register',
@@ -1065,7 +1119,8 @@ export const messages = {
 			},
 			cashMovements: {
 				title: 'Pergerakan Kas Laci',
-				subtitle: 'Catat kas masuk, kas keluar, setor tunai, dan kas kecil untuk penutupan register.',
+				subtitle:
+					'Catat kas masuk, kas keluar, setor tunai, dan kas kecil untuk penutupan register.',
 				newMovementBtn: 'Gerakan Baru',
 				registerSessionBtn: 'Sesi Register',
 				searchPlaceholder: 'Cari gerakan...',
@@ -1174,7 +1229,8 @@ export const messages = {
 		reports: {
 			dailySales: {
 				title: 'Penjualan Harian',
-				subtitle: 'Tinjau total penjualan yang selesai dikelompokkan berdasarkan tanggal transaksi.',
+				subtitle:
+					'Tinjau total penjualan yang selesai dikelompokkan berdasarkan tanggal transaksi.',
 				emptySearch: 'Tidak ada baris laporan yang sesuai.',
 				emptyDefault: 'Belum ada baris laporan penjualan harian.',
 				errorLoad: 'Gagal memuat laporan penjualan harian.'
@@ -1508,7 +1564,51 @@ export const messages = {
 			draftAdj: 'Draft Adjustments',
 			draftAdjDesc: 'Stock adjustments not posted yet.',
 			activeEmployees: 'Active Employees',
-			activeEmployeesDesc: 'Employees available for operations.'
+			activeEmployeesDesc: 'Employees available for operations.',
+			charts: {
+				rangeLabel: 'Range',
+				last7Days: 'Last 7 days',
+				last30Days: 'Last 30 days',
+				last90Days: 'Last 90 days',
+				empty: 'No data to display yet.',
+				revenue: 'Revenue',
+				transactions: 'Transactions',
+				quantity: 'Quantity',
+				salesTrendTitle: 'Sales Trend',
+				salesTrendDesc: 'Daily revenue from completed sales.',
+				hourlySalesTitle: 'Hourly Sales',
+				hourlySalesDesc: "Today's revenue distribution by hour.",
+				topProductsTitle: 'Top Products',
+				topProductsDesc: 'SKUs with the highest revenue in the period.',
+				categoryTitle: 'Sales by Category',
+				categoryDesc: 'Revenue composition by product category.',
+				scatterTitle: 'Price vs Volume',
+				scatterDesc: 'Selling price against quantity sold per SKU. Point size follows revenue.',
+				scatterPrice: 'Selling Price',
+				scatterQuantity: 'Quantity Sold',
+				cashierTitle: 'Cashier Performance',
+				cashierDesc: 'Revenue per cashier in the period.',
+				funnelTitle: 'Procurement Funnel',
+				funnelDesc: 'Document counts by stage and status.',
+				funnelPo: 'Purchase Orders',
+				funnelGr: 'Goods Receipts',
+				funnelSa: 'Stock Adjustments',
+				lowStockTitle: 'Low Stock Products',
+				lowStockDesc: 'SKUs at or below minimum stock.',
+				lowStockEmpty: 'No products are low on stock.',
+				colProduct: 'Product',
+				colSku: 'SKU',
+				colCategory: 'Category',
+				colStock: 'Stock',
+				colMinimum: 'Minimum',
+				colOnOrder: 'On Order',
+				statusDraft: 'Draft',
+				statusOrdered: 'Ordered',
+				statusPartial: 'Partially Received',
+				statusReceived: 'Received',
+				statusPosted: 'Posted',
+				statusCancelled: 'Cancelled'
+			}
 		},
 		account: {
 			title: 'Current User',
@@ -1568,7 +1668,8 @@ export const messages = {
 				detailTitle: 'Employee Details',
 				detailDesc: 'Latest information from the employee record.',
 				deleteTitle: 'Delete Employee?',
-				deleteDesc: 'This action will delete {name}. This employee will no longer appear in the employee list.',
+				deleteDesc:
+					'This action will delete {name}. This employee will no longer appear in the employee list.',
 				createBtn: 'Create employee',
 				creating: 'Creating...',
 				saveBtn: 'Save changes',
@@ -1633,7 +1734,8 @@ export const messages = {
 			},
 			productCategories: {
 				title: 'Product Categories',
-				subtitle: 'Manage product grouping so inventory records, item search, and sales reports stay easy to read.',
+				subtitle:
+					'Manage product grouping so inventory records, item search, and sales reports stay easy to read.',
 				addBtn: 'Add Category',
 				searchPlaceholder: 'Search product categories...',
 				searchAriaLabel: 'Search product categories',
@@ -1648,7 +1750,8 @@ export const messages = {
 				detailTitle: 'Product Category Details',
 				detailDesc: 'Latest information from the category record.',
 				deleteTitle: 'Delete Product Category?',
-				deleteDesc: 'This action will delete {name}. This category will no longer appear in the product category list.',
+				deleteDesc:
+					'This action will delete {name}. This category will no longer appear in the product category list.',
 				namePlaceholder: 'Enter category name',
 				descriptionPlaceholder: 'Enter category description',
 				createBtn: 'Create category',
@@ -1741,7 +1844,8 @@ export const messages = {
 				detailTitle: 'Supplier Details',
 				detailDesc: 'Latest information from the supplier record.',
 				deleteTitle: 'Delete Supplier?',
-				deleteDesc: 'This action will delete {name}. This supplier will no longer appear in the supplier list.',
+				deleteDesc:
+					'This action will delete {name}. This supplier will no longer appear in the supplier list.',
 				createBtn: 'Create supplier',
 				creating: 'Creating...',
 				saveBtn: 'Save changes',
@@ -1780,7 +1884,8 @@ export const messages = {
 				detailTitle: 'Unit Details',
 				detailDesc: 'Latest information from the unit record.',
 				deleteTitle: 'Delete Unit?',
-				deleteDesc: 'This action will delete {name}. This unit will no longer appear in the unit list.',
+				deleteDesc:
+					'This action will delete {name}. This unit will no longer appear in the unit list.',
 				createBtn: 'Create unit',
 				creating: 'Creating...',
 				saveBtn: 'Save changes',
@@ -1932,7 +2037,8 @@ export const messages = {
 				purchaseOrder: 'Purchase Order',
 				receivedDate: 'Received Date',
 				receivedItems: 'Received Items',
-				receivedItemsDesc: 'Adjust quantities for partial receipt or remove items not received yet.',
+				receivedItemsDesc:
+					'Adjust quantities for partial receipt or remove items not received yet.',
 				receiveQty: 'Receive Qty',
 				unitCost: 'Unit Cost',
 				poNo: 'PO No',
@@ -2115,7 +2221,8 @@ export const messages = {
 			},
 			stockMovements: {
 				title: 'Stock Movements',
-				subtitle: 'Review stock movement history with document references and before-after quantities.',
+				subtitle:
+					'Review stock movement history with document references and before-after quantities.',
 				searchPlaceholder: 'Search stock movements...',
 				searchAriaLabel: 'Search stock movements',
 				emptySearch: 'No stock movements match your filters.',
@@ -2367,7 +2474,8 @@ export const messages = {
 				openingNotesPlaceholder: 'Optional notes',
 				cashRegister: 'Cash Register',
 				selectRegister: 'Select register',
-				expectedCashDesc: 'Expected cash includes completed sales, refunds, and completed cash drawer movements.',
+				expectedCashDesc:
+					'Expected cash includes completed sales, refunds, and completed cash drawer movements.',
 				closeBtn: 'Close Register',
 				closing: 'Closing...',
 				openBtn: 'Open Register',
@@ -2392,7 +2500,8 @@ export const messages = {
 			},
 			cashMovements: {
 				title: 'Cash Drawer Movements',
-				subtitle: 'Record cash in, cash out, cash drop, and petty cash adjustments for register closing.',
+				subtitle:
+					'Record cash in, cash out, cash drop, and petty cash adjustments for register closing.',
 				newMovementBtn: 'New Movement',
 				registerSessionBtn: 'Register Session',
 				searchPlaceholder: 'Search movements...',

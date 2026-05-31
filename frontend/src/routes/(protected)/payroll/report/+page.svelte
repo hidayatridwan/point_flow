@@ -16,7 +16,7 @@
 	import { ApiError } from '$lib/api/types.js';
 	import DataPagination from '$lib/components/data-pagination.svelte';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
-	import PageHeader from '$lib/components/page-header.svelte';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import RangeCalendar from '$lib/components/ui/range-calendar/range-calendar.svelte';
@@ -194,61 +194,68 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader title={t('payroll.report.title')} description={t('payroll.report.subtitle')} />
+	<Card.Root>
+		<Card.Header>
+			<div>
+				<Card.Title>{t('payroll.report.title')}</Card.Title>
+				<Card.Description>{t('payroll.report.subtitle')}</Card.Description>
+			</div>
+		</Card.Header>
 
-	<section class="flex flex-col gap-3" aria-labelledby="payroll-report-table-title">
-		<h2 id="payroll-report-table-title" class="sr-only">Payroll report records</h2>
+		<Card.Content class="flex flex-col gap-3">
+			<div class="flex justify-start sm:justify-end">
+				<Popover.Root bind:open={isDateRangeOpen}>
+					<Popover.Trigger
+						class={cn(
+							buttonVariants({ variant: 'outline' }),
+							'h-9 w-full justify-start gap-2 px-3 text-left font-normal sm:w-[280px]',
+							!query.from && !query.to && 'text-muted-foreground'
+						)}
+						disabled={isLoading}
+						aria-label="Filter payroll report by date range"
+					>
+						<CalendarIcon class="size-4" />
+						<span class="truncate">{getDateRangeLabel()}</span>
+					</Popover.Trigger>
+					<Popover.Content align="end" class="w-auto max-w-[calc(100vw-2rem)] overflow-x-auto p-0">
+						<RangeCalendar
+							bind:value={dateRangeValue}
+							class="rounded-md border-0 shadow-none"
+							numberOfMonths={2}
+						/>
+						{#if query.from || query.to}
+							<div class="flex justify-end border-t bg-popover p-2">
+								<Button type="button" variant="ghost" size="sm" onclick={clearDateRangeFilter}>
+									<XIcon />
+									Clear
+								</Button>
+							</div>
+						{/if}
+					</Popover.Content>
+				</Popover.Root>
+			</div>
 
-		<div class="flex justify-start sm:justify-end">
-			<Popover.Root bind:open={isDateRangeOpen}>
-				<Popover.Trigger
-					class={cn(
-						buttonVariants({ variant: 'outline' }),
-						'h-9 w-full justify-start gap-2 px-3 text-left font-normal sm:w-[280px]',
-						!query.from && !query.to && 'text-muted-foreground'
-					)}
-					disabled={isLoading}
-					aria-label="Filter payroll report by date range"
-				>
-					<CalendarIcon class="size-4" />
-					<span class="truncate">{getDateRangeLabel()}</span>
-				</Popover.Trigger>
-				<Popover.Content align="end" class="w-auto max-w-[calc(100vw-2rem)] overflow-x-auto p-0">
-					<RangeCalendar
-						bind:value={dateRangeValue}
-						class="rounded-md border-0 shadow-none"
-						numberOfMonths={2}
-					/>
-					{#if query.from || query.to}
-						<div class="flex justify-end border-t bg-popover p-2">
-							<Button type="button" variant="ghost" size="sm" onclick={clearDateRangeFilter}>
-								<XIcon />
-								Clear
-							</Button>
-						</div>
-					{/if}
-				</Popover.Content>
-			</Popover.Root>
-		</div>
-
-		{#if errorMessage && !isLoading}
-			<ErrorAlert title={t('payroll.report.errorLoad')} message={errorMessage} />
-		{:else}
-			<PayrollReportTable
-				{reports}
-				{isLoading}
-				emptyMessage={query.from || query.to
-					? t('payroll.report.emptySearch')
-					: t('payroll.report.emptyDefault')}
-			/>
-			{#if !isLoading}
+			{#if errorMessage && !isLoading}
+				<ErrorAlert title={t('payroll.report.errorLoad')} message={errorMessage} />
+			{:else}
+				<PayrollReportTable
+					{reports}
+					{isLoading}
+					emptyMessage={query.from || query.to
+						? t('payroll.report.emptySearch')
+						: t('payroll.report.emptyDefault')}
+				/>
+			{/if}
+		</Card.Content>
+		{#if !isLoading && !errorMessage}
+			<Card.Footer>
 				<DataPagination
 					{pagination}
 					{pageSizeOptions}
 					onPageChange={updatePage}
 					onPageSizeChange={updatePageSize}
 				/>
-			{/if}
+			</Card.Footer>
 		{/if}
-	</section>
+	</Card.Root>
 </div>

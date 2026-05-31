@@ -415,7 +415,10 @@
 
 				<div class="mt-5 grid gap-3">
 					{#if optionsErrorMessage}
-						<ErrorAlert title={t('master.productSkus.errorLoadOptions')} message={optionsErrorMessage} />
+						<ErrorAlert
+							title={t('master.productSkus.errorLoadOptions')}
+							message={optionsErrorMessage}
+						/>
 					{/if}
 
 					{#if errorMessage}

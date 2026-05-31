@@ -36,7 +36,7 @@
 	import DataPagination from '$lib/components/data-pagination.svelte';
 	import DetailField from '$lib/components/detail-field.svelte';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
-	import PageHeader from '$lib/components/page-header.svelte';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import SearchField from '$lib/components/search-field.svelte';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
@@ -366,7 +366,10 @@
 	}
 
 	function isTypeFilterValue(value: string): value is CashDrawerMovementType {
-		return typeFilterValues.has(value) && cashDrawerMovementTypes.includes(value as CashDrawerMovementType);
+		return (
+			typeFilterValues.has(value) &&
+			cashDrawerMovementTypes.includes(value as CashDrawerMovementType)
+		);
 	}
 
 	function getErrorMessage(error: unknown, fallback: string) {
@@ -381,189 +384,208 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader
-		title={t('pos.cashMovements.title')}
-		description={t('pos.cashMovements.subtitle')}
-	>
-		{#snippet actions()}
-			<div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-				<Button
-					type="button"
-					variant="outline"
-					class="w-full sm:w-auto"
-					onclick={refreshPageState}
-				>
-					<RefreshCwIcon />
-					{t('common.refresh')}
-				</Button>
-				<Button class="w-full sm:w-auto" href="/pos/register-session">
-					<BanknoteIcon />
-					{t('pos.cashMovements.registerSessionBtn')}
-				</Button>
-				<Button
-					type="button"
-					class="w-full sm:w-auto"
-					disabled={!activeSession || isSessionLoading}
-					onclick={openCreateDialog}
-				>
-					<PlusIcon />
-					{t('pos.cashMovements.newMovementBtn')}
-				</Button>
+	<Card.Root>
+		<Card.Header>
+			<div>
+				<Card.Title>{t('pos.cashMovements.title')}</Card.Title>
+				<Card.Description>{t('pos.cashMovements.subtitle')}</Card.Description>
 			</div>
-		{/snippet}
-	</PageHeader>
-
-	<section class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_360px]">
-		<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-			<DetailField label={t('pos.cashMovements.activeSession')} value={activeSession?.session_no ?? '-'} />
-			<DetailField label="Register" value={activeSession?.cash_register_code ?? '-'} />
-			<DetailField label={t('pos.registerSession.openedAt')} value={formatDateTime(activeSession?.opened_at)} />
-			<DetailField label={t('pos.registerSession.openingCash')} value={formatIdr(activeSession?.opening_cash)} />
-		</div>
-
-		<div class="grid content-start gap-3 rounded-md border p-4">
-			<div class="flex items-center gap-2">
-				<BanknoteIcon class="size-5 text-muted-foreground" />
-				<h2 class="text-base font-semibold">{t('pos.cashMovements.drawerSession')}</h2>
-			</div>
-
-			{#if isSessionLoading}
-				<div class="flex h-9 items-center gap-2 text-sm text-muted-foreground">
-					<Spinner />
-					{t('pos.cashMovements.loadingSessions')}
+			<Card.Action>
+				<div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+					<Button
+						type="button"
+						variant="outline"
+						class="w-full sm:w-auto"
+						onclick={refreshPageState}
+					>
+						<RefreshCwIcon />
+						{t('common.refresh')}
+					</Button>
+					<Button class="w-full sm:w-auto" href="/pos/register-session">
+						<BanknoteIcon />
+						{t('pos.cashMovements.registerSessionBtn')}
+					</Button>
+					<Button
+						type="button"
+						class="w-full sm:w-auto"
+						disabled={!activeSession || isSessionLoading}
+						onclick={openCreateDialog}
+					>
+						<PlusIcon />
+						{t('pos.cashMovements.newMovementBtn')}
+					</Button>
 				</div>
-			{:else if sessionErrorMessage}
-				<ErrorAlert title={t('pos.cashMovements.errorLoadSessions')} message={sessionErrorMessage} />
-			{:else if openSessions.length > 0}
-				<Select.Root
-					allowDeselect={false}
-					type="single"
-					value={activeSession ? String(activeSession.id) : ''}
-					onValueChange={chooseOpenSession}
-				>
-					<Select.Trigger class="w-full">
-						<Select.Value placeholder={t('pos.cashMovements.selectSession')} />
-					</Select.Trigger>
-					<Select.Content>
-						{#each openSessions as session (session.id)}
-							<Select.Item
-								value={String(session.id)}
-								label={`${session.cash_register_code} - ${session.session_no}`}
-							>
-								{session.cash_register_code} - {session.session_no}
-							</Select.Item>
-						{/each}
-					</Select.Content>
-				</Select.Root>
-				<p class="text-sm text-muted-foreground">
-					{t('pos.cashMovements.newMovementsHint')}
-				</p>
-			{:else}
-				<ErrorAlert
-					title={t('pos.cashMovements.noActiveRegister')}
-					message={t('pos.cashMovements.noActiveRegisterDesc')}
-				/>
-			{/if}
-		</div>
-	</section>
+			</Card.Action>
+		</Card.Header>
 
-	<section class="flex flex-col gap-3" aria-labelledby="cash-drawer-movements-table-title">
-		<h2 id="cash-drawer-movements-table-title" class="sr-only">{t('pos.cashMovements.srHeading')}</h2>
-
-		<div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
-			<div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-				<SearchField
-					value={searchValue}
-					disabled={isLoading}
-					ariaLabel={t('pos.cashMovements.searchAriaLabel')}
-					placeholder={t('pos.cashMovements.searchPlaceholder')}
-					class="sm:max-w-sm"
-					onValueChange={updateSearchValue}
-				/>
-				<DataTableFacetedFilter
-					title={t('pos.cashMovements.filterStatus')}
-					options={statusFilterOptions}
-					value={query.status}
-					disabled={isLoading}
-					onValueChange={updateStatusFilter}
-				/>
-				<DataTableFacetedFilter
-					title={t('pos.cashMovements.filterType')}
-					options={typeFilterOptions}
-					value={query.type}
-					disabled={isLoading}
-					onValueChange={updateTypeFilter}
-				/>
-				<Button
-					type="button"
-					variant={isCurrentSessionFilterActive ? 'secondary' : 'outline'}
-					size="sm"
-					class="h-9 justify-start"
-					disabled={!activeSession || isLoading}
-					onclick={toggleCurrentSessionFilter}
-				>
-					<BanknoteIcon />
-					{t('pos.cashMovements.currentSession')}
-				</Button>
-			</div>
-
-			<Popover.Root bind:open={isDateRangeOpen}>
-				<Popover.Trigger
-					class={cn(
-						buttonVariants({ variant: 'outline' }),
-						'h-9 w-full justify-start gap-2 px-3 text-left font-normal sm:w-[280px]',
-						!query.from && !query.to && 'text-muted-foreground'
-					)}
-					disabled={isLoading}
-					aria-label="Filter cash drawer movements by date range"
-				>
-					<CalendarIcon class="size-4" />
-					<span class="truncate">{getDateRangeLabel()}</span>
-				</Popover.Trigger>
-				<Popover.Content align="end" class="w-auto max-w-[calc(100vw-2rem)] overflow-x-auto p-0">
-					<RangeCalendar
-						bind:value={dateRangeValue}
-						class="rounded-md border-0 shadow-none"
-						numberOfMonths={2}
+		<Card.Content class="flex flex-col gap-4">
+			<div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_360px]">
+				<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+					<DetailField
+						label={t('pos.cashMovements.activeSession')}
+						value={activeSession?.session_no ?? '-'}
 					/>
-					{#if query.from || query.to}
-						<div class="flex justify-end border-t bg-popover p-2">
-							<Button type="button" variant="ghost" size="sm" onclick={clearDateRangeFilter}>
-								<XIcon />
-								Clear
-							</Button>
-						</div>
-					{/if}
-				</Popover.Content>
-			</Popover.Root>
-		</div>
+					<DetailField label="Register" value={activeSession?.cash_register_code ?? '-'} />
+					<DetailField
+						label={t('pos.registerSession.openedAt')}
+						value={formatDateTime(activeSession?.opened_at)}
+					/>
+					<DetailField
+						label={t('pos.registerSession.openingCash')}
+						value={formatIdr(activeSession?.opening_cash)}
+					/>
+				</div>
 
-		{#if errorMessage && !isLoading}
-			<ErrorAlert title={t('pos.cashMovements.errorLoad')} message={errorMessage} />
-		{:else}
-			<CashDrawerMovementsTable
-				{movements}
-				{isLoading}
-				onMovementChanged={refreshMovementsAfterChange}
-				emptyMessage={query.search ||
-				query.status.length ||
-				query.type.length ||
-				query.from ||
-				query.to ||
-				query.cash_register_session_id
-					? t('pos.cashMovements.emptySearch')
-					: t('pos.cashMovements.emptyDefault')}
-			/>
-			{#if !isLoading}
+				<div class="grid content-start gap-3 rounded-md border p-4">
+					<div class="flex items-center gap-2">
+						<BanknoteIcon class="size-5 text-muted-foreground" />
+						<h2 class="text-base font-semibold">{t('pos.cashMovements.drawerSession')}</h2>
+					</div>
+
+					{#if isSessionLoading}
+						<div class="flex h-9 items-center gap-2 text-sm text-muted-foreground">
+							<Spinner />
+							{t('pos.cashMovements.loadingSessions')}
+						</div>
+					{:else if sessionErrorMessage}
+						<ErrorAlert
+							title={t('pos.cashMovements.errorLoadSessions')}
+							message={sessionErrorMessage}
+						/>
+					{:else if openSessions.length > 0}
+						<Select.Root
+							allowDeselect={false}
+							type="single"
+							value={activeSession ? String(activeSession.id) : ''}
+							onValueChange={chooseOpenSession}
+						>
+							<Select.Trigger class="w-full">
+								<Select.Value placeholder={t('pos.cashMovements.selectSession')} />
+							</Select.Trigger>
+							<Select.Content>
+								{#each openSessions as session (session.id)}
+									<Select.Item
+										value={String(session.id)}
+										label={`${session.cash_register_code} - ${session.session_no}`}
+									>
+										{session.cash_register_code} - {session.session_no}
+									</Select.Item>
+								{/each}
+							</Select.Content>
+						</Select.Root>
+						<p class="text-sm text-muted-foreground">
+							{t('pos.cashMovements.newMovementsHint')}
+						</p>
+					{:else}
+						<ErrorAlert
+							title={t('pos.cashMovements.noActiveRegister')}
+							message={t('pos.cashMovements.noActiveRegisterDesc')}
+						/>
+					{/if}
+				</div>
+			</div>
+			<div class="flex flex-col gap-3">
+				<div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+					<div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+						<SearchField
+							value={searchValue}
+							disabled={isLoading}
+							ariaLabel={t('pos.cashMovements.searchAriaLabel')}
+							placeholder={t('pos.cashMovements.searchPlaceholder')}
+							class="sm:max-w-sm"
+							onValueChange={updateSearchValue}
+						/>
+						<DataTableFacetedFilter
+							title={t('pos.cashMovements.filterStatus')}
+							options={statusFilterOptions}
+							value={query.status}
+							disabled={isLoading}
+							onValueChange={updateStatusFilter}
+						/>
+						<DataTableFacetedFilter
+							title={t('pos.cashMovements.filterType')}
+							options={typeFilterOptions}
+							value={query.type}
+							disabled={isLoading}
+							onValueChange={updateTypeFilter}
+						/>
+						<Button
+							type="button"
+							variant={isCurrentSessionFilterActive ? 'secondary' : 'outline'}
+							size="sm"
+							class="h-9 justify-start"
+							disabled={!activeSession || isLoading}
+							onclick={toggleCurrentSessionFilter}
+						>
+							<BanknoteIcon />
+							{t('pos.cashMovements.currentSession')}
+						</Button>
+					</div>
+
+					<Popover.Root bind:open={isDateRangeOpen}>
+						<Popover.Trigger
+							class={cn(
+								buttonVariants({ variant: 'outline' }),
+								'h-9 w-full justify-start gap-2 px-3 text-left font-normal sm:w-[280px]',
+								!query.from && !query.to && 'text-muted-foreground'
+							)}
+							disabled={isLoading}
+							aria-label="Filter cash drawer movements by date range"
+						>
+							<CalendarIcon class="size-4" />
+							<span class="truncate">{getDateRangeLabel()}</span>
+						</Popover.Trigger>
+						<Popover.Content
+							align="end"
+							class="w-auto max-w-[calc(100vw-2rem)] overflow-x-auto p-0"
+						>
+							<RangeCalendar
+								bind:value={dateRangeValue}
+								class="rounded-md border-0 shadow-none"
+								numberOfMonths={2}
+							/>
+							{#if query.from || query.to}
+								<div class="flex justify-end border-t bg-popover p-2">
+									<Button type="button" variant="ghost" size="sm" onclick={clearDateRangeFilter}>
+										<XIcon />
+										Clear
+									</Button>
+								</div>
+							{/if}
+						</Popover.Content>
+					</Popover.Root>
+				</div>
+
+				{#if errorMessage && !isLoading}
+					<ErrorAlert title={t('pos.cashMovements.errorLoad')} message={errorMessage} />
+				{:else}
+					<CashDrawerMovementsTable
+						{movements}
+						{isLoading}
+						onMovementChanged={refreshMovementsAfterChange}
+						emptyMessage={query.search ||
+						query.status.length ||
+						query.type.length ||
+						query.from ||
+						query.to ||
+						query.cash_register_session_id
+							? t('pos.cashMovements.emptySearch')
+							: t('pos.cashMovements.emptyDefault')}
+					/>
+				{/if}
+			</div>
+		</Card.Content>
+		{#if !isLoading && !errorMessage}
+			<Card.Footer>
 				<DataPagination
 					{pagination}
 					{pageSizeOptions}
 					onPageChange={updatePage}
 					onPageSizeChange={updatePageSize}
 				/>
-			{/if}
+			</Card.Footer>
 		{/if}
-	</section>
+	</Card.Root>
 
 	<CashDrawerMovementCreateDialog
 		{activeSession}

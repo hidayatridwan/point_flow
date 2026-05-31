@@ -90,10 +90,6 @@
 
 	<SaleDetailDialog saleId={sale.id} bind:open={isDetailOpen} />
 	<SaleReceiptDialog saleId={sale.id} bind:open={isReceiptOpen} />
-	<SaleReturnDialog
-		{sale}
-		bind:open={isReturnOpen}
-		onReturned={() => onChanged?.(sale)}
-	/>
+	<SaleReturnDialog {sale} bind:open={isReturnOpen} onReturned={() => onChanged?.(sale)} />
 	<SaleCancelDialog {sale} bind:open={isCancelOpen} onCancelled={onChanged} />
 </div>

@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "3f9ef2a2-53c5-4b6a-aed1-7e2d9f5c8b10",
     "name": "POS Backend API",
-    "description": "Postman collection for the POS backend REST API. Import this file, set `base_url`, run Bootstrap Admin or Login, then reuse `access_token` for protected endpoints. API responses use a standard envelope: `data`, `meta`, `error`, and `request_id`. Refresh tokens are stored as backend-generated HttpOnly cookies. Includes current auth, RBAC, cash register sessions, cash drawer movements, sales, sale returns, audit logs, inventory, procurement, payroll, and reports endpoints.",
+    "description": "Postman collection for the POS backend REST API. Import this file, set `base_url`, run Bootstrap Admin or Login, then reuse `access_token` for protected endpoints. API responses use a standard envelope: `data`, `meta`, `error`, and `request_id`. Refresh tokens are stored as backend-generated HttpOnly cookies. Includes current auth, RBAC, cash register sessions, cash drawer movements, sales, sale returns, audit logs, inventory, procurement, payroll, reports, and dashboard analytics endpoints (sales trend, top products, hourly sales, low stock, sales by category, product scatter, cashier performance, procurement funnel).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -2029,6 +2029,78 @@
             "method": "GET",
             "header": [],
             "url": "{{base_url}}/dashboard"
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard Sales Trend",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/dashboard/sales-trend?days=30"
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard Top Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/dashboard/top-products?days=30&limit=10"
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard Hourly Sales",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/dashboard/hourly-sales?date="
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard Low Stock",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/dashboard/low-stock?limit=20"
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard Sales By Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/dashboard/sales-by-category?days=30"
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard Product Scatter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/dashboard/product-scatter?days=30&limit=50"
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard Cashier Performance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/dashboard/cashier-performance?days=30"
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard Procurement Funnel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/dashboard/procurement-funnel"
           },
           "response": []
         },

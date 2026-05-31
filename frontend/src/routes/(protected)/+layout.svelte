@@ -6,7 +6,9 @@
 	import { getAccessToken } from '$lib/api/auth.svelte.js';
 	import { refreshAccessToken } from '$lib/api/client.js';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
+	import LanguageToggle from '$lib/components/language-toggle.svelte';
 	import SessionTransition from '$lib/components/session-transition.svelte';
+	import ThemeToggle from '$lib/components/theme-toggle.svelte';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
@@ -148,8 +150,8 @@
 	<Sidebar.Provider>
 		<AppSidebar />
 		<Sidebar.Inset>
-			<header class="flex h-16 shrink-0 items-center gap-2">
-				<div class="flex items-center gap-2 px-4">
+			<header class="flex h-16 shrink-0 items-center justify-between gap-2 px-4">
+				<div class="flex items-center gap-2">
 					<Sidebar.Trigger class="-ms-1" />
 					<Separator orientation="vertical" class="me-2 data-[orientation=vertical]:h-4" />
 					<Breadcrumb.Root>
@@ -174,6 +176,10 @@
 							{/each}
 						</Breadcrumb.List>
 					</Breadcrumb.Root>
+				</div>
+				<div class="flex items-center gap-1">
+					<LanguageToggle />
+					<ThemeToggle />
 				</div>
 			</header>
 			<div class="flex flex-1 flex-col gap-4 p-4 pt-0">

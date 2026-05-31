@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { StockMovementDirection } from '$lib/api/stock-movements.js';
-	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { Badge, type BadgeVariant } from '$lib/components/ui/badge/index.js';
 	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let { direction }: { direction: StockMovementDirection } = $props();
@@ -10,10 +10,10 @@
 		out: t('inventory.stockMovements.directionOut')
 	} as Record<string, string>);
 
-	const classes: Record<StockMovementDirection, string> = {
-		in: 'border-emerald-600/20 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300',
-		out: 'border-rose-600/20 bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300'
+	const tones: Record<StockMovementDirection, BadgeVariant> = {
+		in: 'success',
+		out: 'destructive'
 	};
 </script>
 
-<Badge variant="outline" class={classes[direction]}>{labels[direction]}</Badge>
+<Badge variant={tones[direction]}>{labels[direction]}</Badge>

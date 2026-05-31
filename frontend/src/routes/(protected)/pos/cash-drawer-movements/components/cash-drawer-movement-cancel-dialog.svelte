@@ -1,9 +1,6 @@
 <script lang="ts">
 	import BanIcon from '@lucide/svelte/icons/ban';
-	import {
-		cancelCashDrawerMovement,
-		type CashDrawerMovement
-	} from '$lib/api/cash-registers.js';
+	import { cancelCashDrawerMovement, type CashDrawerMovement } from '$lib/api/cash-registers.js';
 	import { ApiError } from '$lib/api/types.js';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
@@ -75,8 +72,8 @@
 			<Dialog.Header class="px-6 pt-6">
 				<Dialog.Title>Cancel Cash Movement</Dialog.Title>
 				<Dialog.Description>
-					Cancel {movement.movement_no}. This is only allowed while the related register
-					session is still open.
+					Cancel {movement.movement_no}. This is only allowed while the related register session is
+					still open.
 				</Dialog.Description>
 			</Dialog.Header>
 
@@ -112,7 +109,9 @@
 					{:else}
 						<BanIcon />
 					{/if}
-					{isSubmitting ? t('pos.cashMovements.cancel.cancelling') : t('pos.cashMovements.cancel.cancelBtn')}
+					{isSubmitting
+						? t('pos.cashMovements.cancel.cancelling')
+						: t('pos.cashMovements.cancel.cancelBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

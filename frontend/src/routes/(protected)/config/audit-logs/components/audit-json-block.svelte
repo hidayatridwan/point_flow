@@ -19,6 +19,7 @@
 <section class="grid gap-2">
 	<h3 class="text-sm font-medium">{label}</h3>
 	<pre
-		class="max-h-72 overflow-auto rounded-md border bg-muted/30 p-3 text-xs leading-relaxed"
-	><code>{formattedValue}</code></pre>
+		class="max-h-72 overflow-auto rounded-md border bg-muted/30 p-3 text-xs leading-relaxed"><code
+			>{formattedValue}</code
+		></pre>
 </section>

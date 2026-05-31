@@ -49,7 +49,9 @@
 	}
 
 	function getDirectionLabel(direction: string) {
-		return direction === 'in' ? t('inventory.stockMovements.directionIn') : t('inventory.stockMovements.directionOut');
+		return direction === 'in'
+			? t('inventory.stockMovements.directionIn')
+			: t('inventory.stockMovements.directionOut');
 	}
 
 	function getErrorMessage(error: unknown) {
@@ -63,7 +65,9 @@
 	<Dialog.Content class="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
 		<Dialog.Header>
 			<Dialog.Title>Cash Movement Details</Dialog.Title>
-			<Dialog.Description>Manual cash drawer movement and cancellation information.</Dialog.Description>
+			<Dialog.Description
+				>Manual cash drawer movement and cancellation information.</Dialog.Description
+			>
 		</Dialog.Header>
 
 		{#if isLoading}
@@ -85,13 +89,22 @@
 					<DetailField label={t('common.direction')}>
 						<CashDrawerMovementTypeBadge type={movement.movement_type} />
 					</DetailField>
-					<DetailField label={t('common.direction')} value={getDirectionLabel(movement.direction)} />
+					<DetailField
+						label={t('common.direction')}
+						value={getDirectionLabel(movement.direction)}
+					/>
 					<DetailField label={t('common.amount')} value={formatIdr(movement.amount)} />
-					<DetailField label={t('common.occurredAt')} value={formatDateTime(movement.occurred_at)} />
+					<DetailField
+						label={t('common.occurredAt')}
+						value={formatDateTime(movement.occurred_at)}
+					/>
 					<DetailField label={t('common.session')} value={movement.session_no} />
 					<DetailField label={t('common.register')} value={movement.cash_register_code} />
 					<DetailField label={t('common.createdBy')} value={movement.created_by_name} />
-					<DetailField label={t('common.cancelledAt')} value={formatDateTime(movement.cancelled_at)} />
+					<DetailField
+						label={t('common.cancelledAt')}
+						value={formatDateTime(movement.cancelled_at)}
+					/>
 					<DetailField label={t('common.cancelledBy')} value={movement.cancelled_by_name || '-'} />
 					<DetailField label={t('common.updatedAt')} value={formatDateTime(movement.updated_at)} />
 				</div>

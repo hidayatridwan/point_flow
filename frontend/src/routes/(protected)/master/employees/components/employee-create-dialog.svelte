@@ -207,10 +207,10 @@
 				<Form.Field {form} name="address">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>{t("common.address")}</Form.Label>
+							<Form.Label>{t('common.address')}</Form.Label>
 							<Textarea
 								{...props}
-								placeholder={t("master.employees.addressPlaceholder")}
+								placeholder={t('master.employees.addressPlaceholder')}
 								disabled={isSubmitting}
 								bind:value={$formData.address}
 							/>
@@ -222,7 +222,7 @@
 				<Form.Field {form} name="is_active">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>{t("common.status")}</Form.Label>
+							<Form.Label>{t('common.status')}</Form.Label>
 							<Select.Root
 								allowDeselect={false}
 								type="single"
@@ -235,11 +235,15 @@
 								}}
 							>
 								<Select.Trigger {...props} class="w-full">
-									<Select.Value placeholder={t("common.selectStatus")} />
+									<Select.Value placeholder={t('common.selectStatus')} />
 								</Select.Trigger>
 								<Select.Content>
-									<Select.Item value="true" label={t("status.active")}>{t("status.active")}</Select.Item>
-									<Select.Item value="false" label={t("status.inactive")}>{t("status.inactive")}</Select.Item>
+									<Select.Item value="true" label={t('status.active')}
+										>{t('status.active')}</Select.Item
+									>
+									<Select.Item value="false" label={t('status.inactive')}
+										>{t('status.inactive')}</Select.Item
+									>
 								</Select.Content>
 							</Select.Root>
 						{/snippet}
@@ -248,7 +252,7 @@
 				</Form.Field>
 
 				{#if errorMessage}
-					<ErrorAlert title={t("master.employees.errorCreate")} message={errorMessage} />
+					<ErrorAlert title={t('master.employees.errorCreate')} message={errorMessage} />
 				{/if}
 			</div>
 

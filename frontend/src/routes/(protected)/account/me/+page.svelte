@@ -122,10 +122,7 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader
-		title={t('account.title')}
-		description={t('account.subtitle')}
-	>
+	<PageHeader title={t('account.title')} description={t('account.subtitle')}>
 		{#snippet actions()}
 			<Button type="button" variant="outline" class="w-full sm:w-auto" onclick={loadCurrentUser}>
 				<RefreshCwIcon />
@@ -177,12 +174,7 @@
 				</div>
 				<div class="flex flex-wrap justify-center gap-2">
 					<Badge variant="outline">{formatRole(currentUser.role)}</Badge>
-					<Badge
-						variant="outline"
-						class={currentUser.is_active
-							? 'border-emerald-600/20 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300'
-							: 'border-rose-600/20 bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300'}
-					>
+					<Badge variant={currentUser.is_active ? 'success' : 'destructive'}>
 						{currentUser.is_active ? t('status.active') : t('status.inactive')}
 					</Badge>
 				</div>
@@ -193,8 +185,14 @@
 				<DetailField label={t('common.name')} value={currentUser.name} />
 				<DetailField label={t('common.email')} value={currentUser.email} />
 				<DetailField label={t('account.role')} value={formatRole(currentUser.role)} />
-				<DetailField label={t('common.status')} value={currentUser.is_active ? t('status.active') : t('status.inactive')} />
-				<DetailField label={t('account.lastLogin')} value={formatDateTime(currentUser.last_login_at)} />
+				<DetailField
+					label={t('common.status')}
+					value={currentUser.is_active ? t('status.active') : t('status.inactive')}
+				/>
+				<DetailField
+					label={t('account.lastLogin')}
+					value={formatDateTime(currentUser.last_login_at)}
+				/>
 				<DetailField label={t('common.createdAt')} value={formatDateTime(currentUser.created_at)} />
 				<DetailField label={t('common.updatedAt')} value={formatDateTime(currentUser.updated_at)} />
 				<DetailField label={t('common.deletedAt')} value={formatDateTime(currentUser.deleted_at)} />

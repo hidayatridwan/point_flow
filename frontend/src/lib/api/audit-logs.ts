@@ -81,9 +81,7 @@ export type AuditLogListResult = {
 	requestId: string;
 };
 
-export async function listAuditLogs(
-	params: AuditLogListParams = {}
-): Promise<AuditLogListResult> {
+export async function listAuditLogs(params: AuditLogListParams = {}): Promise<AuditLogListResult> {
 	const limit = normalizeLimit(params.limit);
 	const page = normalizePage(params.page);
 	const search = params.search?.trim();

@@ -22,7 +22,7 @@
 	import DataTableFacetedFilter from '$lib/components/data-table-faceted-filter.svelte';
 	import DataPagination from '$lib/components/data-pagination.svelte';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
-	import PageHeader from '$lib/components/page-header.svelte';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import SearchField from '$lib/components/search-field.svelte';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
@@ -247,90 +247,93 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader
-		title={t('pos.saleReturns.title')}
-		description={t('pos.saleReturns.subtitle')}
-	>
-		{#snippet actions()}
-			<Button class="w-full sm:w-auto" href="/pos/sales">
-				<ShoppingCartIcon />
-				{t('pos.saleReturns.salesHistoryBtn')}
-			</Button>
-		{/snippet}
-	</PageHeader>
+	<Card.Root>
+		<Card.Header>
+			<div>
+				<Card.Title>{t('pos.saleReturns.title')}</Card.Title>
+				<Card.Description>{t('pos.saleReturns.subtitle')}</Card.Description>
+			</div>
+			<Card.Action>
+				<Button class="w-full sm:w-auto" href="/pos/sales">
+					<ShoppingCartIcon />
+					{t('pos.saleReturns.salesHistoryBtn')}
+				</Button>
+			</Card.Action>
+		</Card.Header>
 
-	<section class="flex flex-col gap-3" aria-labelledby="sale-returns-table-title">
-		<h2 id="sale-returns-table-title" class="sr-only">Sale return records</h2>
+		<Card.Content class="flex flex-col gap-3">
+			<div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+				<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+					<SearchField
+						value={searchValue}
+						disabled={isLoading}
+						ariaLabel={t('pos.saleReturns.searchAriaLabel')}
+						placeholder={t('pos.saleReturns.searchPlaceholder')}
+						class="sm:max-w-sm"
+						onValueChange={updateSearchValue}
+					/>
+					<DataTableFacetedFilter
+						title="Status"
+						options={statusFilterOptions}
+						value={query.status}
+						disabled={isLoading}
+						onValueChange={updateStatusFilter}
+					/>
+				</div>
 
-		<div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-			<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-				<SearchField
-					value={searchValue}
-					disabled={isLoading}
-					ariaLabel={t('pos.saleReturns.searchAriaLabel')}
-					placeholder={t('pos.saleReturns.searchPlaceholder')}
-					class="sm:max-w-sm"
-					onValueChange={updateSearchValue}
-				/>
-				<DataTableFacetedFilter
-					title="Status"
-					options={statusFilterOptions}
-					value={query.status}
-					disabled={isLoading}
-					onValueChange={updateStatusFilter}
-				/>
+				<Popover.Root bind:open={isDateRangeOpen}>
+					<Popover.Trigger
+						class={cn(
+							buttonVariants({ variant: 'outline' }),
+							'h-9 w-full justify-start gap-2 px-3 text-left font-normal sm:w-[280px]',
+							!query.from && !query.to && 'text-muted-foreground'
+						)}
+						disabled={isLoading}
+						aria-label="Filter sale returns by date range"
+					>
+						<CalendarIcon class="size-4" />
+						<span class="truncate">{getDateRangeLabel()}</span>
+					</Popover.Trigger>
+					<Popover.Content align="end" class="w-auto max-w-[calc(100vw-2rem)] overflow-x-auto p-0">
+						<RangeCalendar
+							bind:value={dateRangeValue}
+							class="rounded-md border-0 shadow-none"
+							numberOfMonths={2}
+						/>
+						{#if query.from || query.to}
+							<div class="flex justify-end border-t bg-popover p-2">
+								<Button type="button" variant="ghost" size="sm" onclick={clearDateRangeFilter}>
+									<XIcon />
+									Clear
+								</Button>
+							</div>
+						{/if}
+					</Popover.Content>
+				</Popover.Root>
 			</div>
 
-			<Popover.Root bind:open={isDateRangeOpen}>
-				<Popover.Trigger
-					class={cn(
-						buttonVariants({ variant: 'outline' }),
-						'h-9 w-full justify-start gap-2 px-3 text-left font-normal sm:w-[280px]',
-						!query.from && !query.to && 'text-muted-foreground'
-					)}
-					disabled={isLoading}
-					aria-label="Filter sale returns by date range"
-				>
-					<CalendarIcon class="size-4" />
-					<span class="truncate">{getDateRangeLabel()}</span>
-				</Popover.Trigger>
-				<Popover.Content align="end" class="w-auto max-w-[calc(100vw-2rem)] overflow-x-auto p-0">
-					<RangeCalendar
-						bind:value={dateRangeValue}
-						class="rounded-md border-0 shadow-none"
-						numberOfMonths={2}
-					/>
-					{#if query.from || query.to}
-						<div class="flex justify-end border-t bg-popover p-2">
-							<Button type="button" variant="ghost" size="sm" onclick={clearDateRangeFilter}>
-								<XIcon />
-								Clear
-							</Button>
-						</div>
-					{/if}
-				</Popover.Content>
-			</Popover.Root>
-		</div>
-
-		{#if errorMessage && !isLoading}
-			<ErrorAlert title={t('pos.saleReturns.errorLoad')} message={errorMessage} />
-		{:else}
-			<SaleReturnsTable
-				{saleReturns}
-				{isLoading}
-				onSaleReturnChanged={refreshSaleReturnsAfterStatusChange}
-				emptyMessage={query.search || query.status.length || query.from || query.to
-					? t('pos.saleReturns.emptySearch')
-					: t('pos.saleReturns.emptyDefault')}
-			/>
-			{#if !isLoading}
+			{#if errorMessage && !isLoading}
+				<ErrorAlert title={t('pos.saleReturns.errorLoad')} message={errorMessage} />
+			{:else}
+				<SaleReturnsTable
+					{saleReturns}
+					{isLoading}
+					onSaleReturnChanged={refreshSaleReturnsAfterStatusChange}
+					emptyMessage={query.search || query.status.length || query.from || query.to
+						? t('pos.saleReturns.emptySearch')
+						: t('pos.saleReturns.emptyDefault')}
+				/>
+			{/if}
+		</Card.Content>
+		{#if !isLoading && !errorMessage}
+			<Card.Footer>
 				<DataPagination
 					{pagination}
 					{pageSizeOptions}
 					onPageChange={updatePage}
 					onPageSizeChange={updatePageSize}
 				/>
-			{/if}
+			</Card.Footer>
 		{/if}
-	</section>
+	</Card.Root>
 </div>

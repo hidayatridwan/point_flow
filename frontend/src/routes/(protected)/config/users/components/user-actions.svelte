@@ -38,8 +38,8 @@
 					variant="ghost"
 					size="icon-sm"
 					class="size-8"
-					aria-label={`Open actions for ${user.name}`}
-					title="Actions"
+					aria-label={`${t('common.action')}: ${user.name}`}
+					title={t('common.action')}
 				>
 					<EllipsisIcon />
 				</Button>
@@ -48,20 +48,20 @@
 		<DropdownMenu.Content align="end" class="min-w-36">
 			<DropdownMenu.Item onSelect={() => (isDetailOpen = true)}>
 				<EyeIcon />
-				Detail
+				{t('common.detail')}
 			</DropdownMenu.Item>
 			<DropdownMenu.Item onSelect={() => (isEditOpen = true)}>
 				<PencilIcon />
-				Edit
+				{t('common.edit')}
 			</DropdownMenu.Item>
 			<DropdownMenu.Item variant="destructive" onSelect={() => (isDeleteOpen = true)}>
 				<TrashIcon />
-				Delete
+				{t('common.delete')}
 			</DropdownMenu.Item>
 		</DropdownMenu.Content>
 	</DropdownMenu.Root>
 
 	<UserDetailDialog userId={user.id} bind:open={isDetailOpen} />
 	<UserFormDialog {user} {roles} bind:open={isEditOpen} onSaved={onUpdated} />
-	<UserDeleteAlertDialog {user} bind:open={isDeleteOpen} onDeleted={onDeleted} />
+	<UserDeleteAlertDialog {user} bind:open={isDeleteOpen} {onDeleted} />
 </div>

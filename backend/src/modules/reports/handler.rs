@@ -2,19 +2,27 @@ use axum::{
     Json,
     extract::{Query, State},
 };
+use chrono::Local;
 
 use crate::{
     app::AppState,
     auth::AuthUser,
     error::AppResult,
     models::{
-        ApiResponse, DailySalesReport, DashboardResponse, GoodsReceiptReport, ListQuery,
-        MonthlySalesReport, PayrollReport, PurchaseOrderReport, StockAdjustmentReport,
-        StockMovementReport, StockMovementReportQuery, StockReport,
+        ApiResponse, CashierPerformance, DailySalesReport, DashboardResponse, GoodsReceiptReport,
+        HourlySalesPoint, ListQuery, MonthlySalesReport, PayrollReport, ProcurementFunnel,
+        ProductScatterItem, PurchaseOrderReport, SalesByCategoryItem, StockAdjustmentReport,
+        StockMovementReport, StockMovementReportQuery, StockReport, SalesTrendPoint, TopProductItem,
     },
 };
 
-use super::service;
+use super::{
+    dto::{
+        CashierPerformanceQuery, HourlySalesQuery, LowStockQuery, ProductScatterQuery,
+        SalesByCategoryQuery, SalesTrendQuery, TopProductsQuery,
+    },
+    service,
+};
 
 pub async fn dashboard(
     State(state): State<AppState>,
@@ -114,5 +122,101 @@ pub async fn payroll(
         .await?;
     Ok(Json(ApiResponse::success(
         service::payroll(&state.db, query).await?,
+    )))
+}
+
+pub async fn sales_trend(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(query): Query<SalesTrendQuery>,
+) -> AppResult<Json<ApiResponse<Vec<SalesTrendPoint>>>> {
+    user.require_permission(&state.db, "dashboard").await?;
+    let days = query.days.unwrap_or(30).clamp(1, 365);
+    Ok(Json(ApiResponse::success(
+        service::sales_trend(&state.db, days).await?,
+    )))
+}
+
+pub async fn top_products(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(query): Query<TopProductsQuery>,
+) -> AppResult<Json<ApiResponse<Vec<TopProductItem>>>> {
+    user.require_permission(&state.db, "dashboard").await?;
+    let days = query.days.unwrap_or(30).clamp(1, 365);
+    let limit = query.limit.unwrap_or(10).clamp(1, 20);
+    Ok(Json(ApiResponse::success(
+        service::top_products(&state.db, days, limit).await?,
+    )))
+}
+
+pub async fn hourly_sales(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(query): Query<HourlySalesQuery>,
+) -> AppResult<Json<ApiResponse<Vec<HourlySalesPoint>>>> {
+    user.require_permission(&state.db, "dashboard").await?;
+    let date = query.date.unwrap_or_else(|| Local::now().date_naive());
+    Ok(Json(ApiResponse::success(
+        service::hourly_sales(&state.db, date).await?,
+    )))
+}
+
+pub async fn low_stock(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(query): Query<LowStockQuery>,
+) -> AppResult<Json<ApiResponse<Vec<StockReport>>>> {
+    user.require_permission(&state.db, "dashboard").await?;
+    let limit = query.limit.unwrap_or(20).clamp(1, 100);
+    Ok(Json(ApiResponse::success(
+        service::low_stock(&state.db, limit).await?,
+    )))
+}
+
+pub async fn sales_by_category(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(query): Query<SalesByCategoryQuery>,
+) -> AppResult<Json<ApiResponse<Vec<SalesByCategoryItem>>>> {
+    user.require_permission(&state.db, "dashboard").await?;
+    let days = query.days.unwrap_or(30).clamp(1, 365);
+    Ok(Json(ApiResponse::success(
+        service::sales_by_category(&state.db, days).await?,
+    )))
+}
+
+pub async fn product_scatter(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(query): Query<ProductScatterQuery>,
+) -> AppResult<Json<ApiResponse<Vec<ProductScatterItem>>>> {
+    user.require_permission(&state.db, "dashboard").await?;
+    let days = query.days.unwrap_or(30).clamp(1, 365);
+    let limit = query.limit.unwrap_or(50).clamp(1, 100);
+    Ok(Json(ApiResponse::success(
+        service::product_scatter(&state.db, days, limit).await?,
+    )))
+}
+
+pub async fn cashier_performance(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(query): Query<CashierPerformanceQuery>,
+) -> AppResult<Json<ApiResponse<Vec<CashierPerformance>>>> {
+    user.require_permission(&state.db, "dashboard").await?;
+    let days = query.days.unwrap_or(30).clamp(1, 365);
+    Ok(Json(ApiResponse::success(
+        service::cashier_performance(&state.db, days).await?,
+    )))
+}
+
+pub async fn procurement_funnel(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> AppResult<Json<ApiResponse<ProcurementFunnel>>> {
+    user.require_permission(&state.db, "dashboard").await?;
+    Ok(Json(ApiResponse::success(
+        service::procurement_funnel(&state.db).await?,
     )))
 }

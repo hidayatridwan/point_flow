@@ -89,7 +89,9 @@
 		<div class="grid gap-5">
 			<Dialog.Header class="px-6 pt-6">
 				<Dialog.Title>Print Receipt</Dialog.Title>
-				<Dialog.Description>Preview the receipt before sending it to the printer.</Dialog.Description>
+				<Dialog.Description
+					>Preview the receipt before sending it to the printer.</Dialog.Description
+				>
 			</Dialog.Header>
 
 			<div class="grid gap-4 px-6">

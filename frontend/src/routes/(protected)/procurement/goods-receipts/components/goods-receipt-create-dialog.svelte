@@ -502,7 +502,10 @@
 						</div>
 
 						{#if getFieldError('items')}
-							<ErrorAlert title={t('procurement.goodsReceipts.invalidItems')} message={getFieldError('items') ?? ''} />
+							<ErrorAlert
+								title={t('procurement.goodsReceipts.invalidItems')}
+								message={getFieldError('items') ?? ''}
+							/>
 						{/if}
 
 						{#if isLoadingPurchaseOrder}
@@ -636,7 +639,9 @@
 					{#if isSubmitting}
 						<Spinner />
 					{/if}
-					{isSubmitting ? t('procurement.goodsReceipts.creating') : t('procurement.goodsReceipts.createBtn')}
+					{isSubmitting
+						? t('procurement.goodsReceipts.creating')
+						: t('procurement.goodsReceipts.createBtn')}
 				</Button>
 			</Drawer.Footer>
 		</form>

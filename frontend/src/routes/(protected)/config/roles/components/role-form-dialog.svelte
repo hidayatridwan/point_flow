@@ -43,9 +43,13 @@
 	let formData = $state<RoleFormData>(getInitialFormData(null));
 
 	const isEditing = $derived(Boolean(role));
-	const dialogTitle = $derived(isEditing ? t('config.roles.editTitle') : t('config.roles.addTitle'));
+	const dialogTitle = $derived(
+		isEditing ? t('config.roles.editTitle') : t('config.roles.addTitle')
+	);
 	const submitLabel = $derived(isEditing ? t('config.roles.saveBtn') : t('config.roles.createBtn'));
-	const submittingLabel = $derived(isEditing ? t('config.roles.saving') : t('config.roles.creating'));
+	const submittingLabel = $derived(
+		isEditing ? t('config.roles.saving') : t('config.roles.creating')
+	);
 
 	$effect(() => {
 		if (!open) return;
@@ -193,9 +197,7 @@
 					</div>
 					<div class="grid gap-2 rounded-md border p-3 sm:grid-cols-2">
 						{#each permissions as permission (permission.code)}
-							<label
-								class="flex min-h-12 items-start gap-3 rounded-md px-2 py-2 hover:bg-muted/60"
-							>
+							<label class="flex min-h-12 items-start gap-3 rounded-md px-2 py-2 hover:bg-muted/60">
 								<input
 									type="checkbox"
 									class="mt-1 size-4 rounded border-input accent-primary"
@@ -231,7 +233,7 @@
 					disabled={isSubmitting}
 				>
 					{t('common.cancel')}
-					</Dialog.Close>
+				</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting}>
 					{#if isSubmitting}
 						<Spinner />

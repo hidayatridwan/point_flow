@@ -14,7 +14,7 @@
 	import { ApiError } from '$lib/api/types.js';
 	import DataPagination from '$lib/components/data-pagination.svelte';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
-	import PageHeader from '$lib/components/page-header.svelte';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import SearchField from '$lib/components/search-field.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import UserFormDialog from './components/user-form-dialog.svelte';
@@ -179,47 +179,55 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader title={t('config.users.title')} description={t('config.users.subtitle')}>
-		{#snippet actions()}
-			<Button class="w-full sm:w-auto" onclick={openCreateDialog} disabled={isLoading}>
-				<PlusIcon />
-				{t('config.users.addBtn')}
-			</Button>
-		{/snippet}
-	</PageHeader>
+	<Card.Root>
+		<Card.Header>
+			<div>
+				<Card.Title>{t('config.users.title')}</Card.Title>
+				<Card.Description>{t('config.users.subtitle')}</Card.Description>
+			</div>
+			<Card.Action>
+				<Button class="w-full sm:w-auto" onclick={openCreateDialog} disabled={isLoading}>
+					<PlusIcon />
+					{t('config.users.addBtn')}
+				</Button>
+			</Card.Action>
+		</Card.Header>
 
-	<section class="flex flex-col gap-3" aria-labelledby="users-table-title">
-		<h2 id="users-table-title" class="sr-only">{t('config.users.srHeading')}</h2>
-
-		<SearchField
-			value={searchValue}
-			disabled={isLoading}
-			ariaLabel={t('config.users.searchAriaLabel')}
-			placeholder={t('config.users.searchPlaceholder')}
-			onValueChange={updateSearchValue}
-		/>
-
-		{#if errorMessage && !isLoading}
-			<ErrorAlert title={t('config.users.errorLoad')} message={errorMessage} />
-		{:else}
-			<UsersTable
-				{users}
-				{roles}
-				{isLoading}
-				onUserDeleted={refreshUsersAfterDelete}
-				onUserUpdated={updateUserInList}
-				emptyMessage={query.search ? t('config.users.emptySearch') : t('config.users.emptyDefault')}
+		<Card.Content class="flex flex-col gap-3">
+			<SearchField
+				value={searchValue}
+				disabled={isLoading}
+				ariaLabel={t('config.users.searchAriaLabel')}
+				placeholder={t('config.users.searchPlaceholder')}
+				onValueChange={updateSearchValue}
 			/>
-			{#if !isLoading}
+
+			{#if errorMessage && !isLoading}
+				<ErrorAlert title={t('config.users.errorLoad')} message={errorMessage} />
+			{:else}
+				<UsersTable
+					{users}
+					{roles}
+					{isLoading}
+					onUserDeleted={refreshUsersAfterDelete}
+					onUserUpdated={updateUserInList}
+					emptyMessage={query.search
+						? t('config.users.emptySearch')
+						: t('config.users.emptyDefault')}
+				/>
+			{/if}
+		</Card.Content>
+		{#if !isLoading && !errorMessage}
+			<Card.Footer>
 				<DataPagination
 					{pagination}
 					{pageSizeOptions}
 					onPageChange={updatePage}
 					onPageSizeChange={updatePageSize}
 				/>
-			{/if}
+			</Card.Footer>
 		{/if}
-	</section>
+	</Card.Root>
 
 	<UserFormDialog bind:open={isCreateOpen} {roles} onSaved={refreshUsersAfterCreate} />
 </div>

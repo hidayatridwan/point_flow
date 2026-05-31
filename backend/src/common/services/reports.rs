@@ -1,11 +1,13 @@
+use chrono::NaiveDate;
 use sqlx::PgPool;
 
 use crate::{
     error::{AppError, AppResult},
     models::{
-        DailySalesReport, DashboardResponse, GoodsReceiptReport, ListQuery, MonthlySalesReport,
-        PayrollReport, PurchaseOrderReport, StockAdjustmentReport, StockMovementReport,
-        StockMovementReportQuery, StockReport,
+        CashierPerformance, DailySalesReport, DashboardResponse, GoodsReceiptReport,
+        HourlySalesPoint, ListQuery, MonthlySalesReport, PayrollReport, ProcurementFunnel,
+        ProductScatterItem, PurchaseOrderReport, SalesByCategoryItem, StockAdjustmentReport,
+        StockMovementReport, StockMovementReportQuery, StockReport, SalesTrendPoint, TopProductItem,
     },
 };
 
@@ -380,6 +382,239 @@ pub async fn payroll(pool: &PgPool, query: ListQuery) -> AppResult<Vec<PayrollRe
     .bind(query.limit())
     .bind(query.offset())
     .fetch_all(pool)
+    .await
+    .map_err(Into::into)
+}
+
+pub async fn sales_trend(pool: &PgPool, days: i32) -> AppResult<Vec<SalesTrendPoint>> {
+    let days = days.clamp(1, 365);
+    sqlx::query_as::<_, SalesTrendPoint>(
+        r#"
+        SELECT
+            d.date::date AS date,
+            COALESCE(SUM(s.total_amount), 0)::float8 AS revenue,
+            COUNT(s.id) AS transaction_count
+        FROM generate_series(
+            CURRENT_DATE - ($1::int - 1) * INTERVAL '1 day',
+            CURRENT_DATE,
+            INTERVAL '1 day'
+        ) AS d(date)
+        LEFT JOIN sales s
+            ON s.sold_at::date = d.date::date
+            AND s.status = 'completed'
+        GROUP BY d.date
+        ORDER BY d.date ASC
+        "#,
+    )
+    .bind(days)
+    .fetch_all(pool)
+    .await
+    .map_err(Into::into)
+}
+
+pub async fn top_products(pool: &PgPool, days: i32, limit: i32) -> AppResult<Vec<TopProductItem>> {
+    let days = days.clamp(1, 365);
+    let limit = limit.clamp(1, 20);
+    sqlx::query_as::<_, TopProductItem>(
+        r#"
+        SELECT
+            si.product_sku_id,
+            MIN(si.product_name) AS product_name,
+            MIN(si.product_sku)  AS product_sku,
+            MIN(si.unit)         AS unit,
+            COALESCE(SUM(si.line_total), 0)::float8 AS revenue,
+            COALESCE(SUM(si.quantity),   0)::float8 AS quantity_sold
+        FROM sale_items si
+        JOIN sales s ON s.id = si.sale_id
+        WHERE s.status = 'completed'
+            AND s.sold_at >= CURRENT_TIMESTAMP - ($1::int * INTERVAL '1 day')
+        GROUP BY si.product_sku_id
+        ORDER BY revenue DESC
+        LIMIT $2
+        "#,
+    )
+    .bind(days)
+    .bind(limit)
+    .fetch_all(pool)
+    .await
+    .map_err(Into::into)
+}
+
+pub async fn hourly_sales(pool: &PgPool, date: NaiveDate) -> AppResult<Vec<HourlySalesPoint>> {
+    sqlx::query_as::<_, HourlySalesPoint>(
+        r#"
+        SELECT
+            h.hour::int AS hour,
+            COALESCE(SUM(s.total_amount), 0)::float8 AS revenue,
+            COUNT(s.id) AS transaction_count
+        FROM generate_series(0, 23) AS h(hour)
+        LEFT JOIN sales s
+            ON EXTRACT(HOUR FROM s.sold_at)::int = h.hour
+            AND s.sold_at::date = $1
+            AND s.status = 'completed'
+        GROUP BY h.hour
+        ORDER BY h.hour ASC
+        "#,
+    )
+    .bind(date)
+    .fetch_all(pool)
+    .await
+    .map_err(Into::into)
+}
+
+pub async fn low_stock(pool: &PgPool, limit: i64) -> AppResult<Vec<StockReport>> {
+    let limit = limit.clamp(1, 100);
+    sqlx::query_as::<_, StockReport>(
+        r#"
+        SELECT
+            product_sku_id,
+            product_id,
+            product_name,
+            sku,
+            barcode,
+            category_name,
+            purchase_price::float8,
+            selling_price::float8,
+            stock::float8,
+            minimum_stock::float8,
+            unit,
+            quantity_on_order::float8,
+            is_low_stock,
+            is_active
+        FROM v_stock_report
+        WHERE is_low_stock = TRUE AND is_active = TRUE
+        ORDER BY (stock - minimum_stock) ASC
+        LIMIT $1
+        "#,
+    )
+    .bind(limit)
+    .fetch_all(pool)
+    .await
+    .map_err(Into::into)
+}
+
+pub async fn sales_by_category(pool: &PgPool, days: i32) -> AppResult<Vec<SalesByCategoryItem>> {
+    let days = days.clamp(1, 365);
+    sqlx::query_as::<_, SalesByCategoryItem>(
+        r#"
+        SELECT
+            COALESCE(c.name, 'Uncategorized') AS category_name,
+            COALESCE(SUM(si.line_total), 0)::float8 AS revenue,
+            COUNT(DISTINCT s.id) AS transaction_count,
+            ROUND(
+                (COALESCE(SUM(si.line_total), 0) /
+                 NULLIF(SUM(SUM(si.line_total)) OVER (), 0)) * 100, 2
+            )::float8 AS percentage
+        FROM sale_items si
+        JOIN sales s ON s.id = si.sale_id
+        JOIN products p ON p.id = si.product_id
+        LEFT JOIN product_categories c ON c.id = p.category_id
+        WHERE s.status = 'completed'
+            AND s.sold_at >= CURRENT_TIMESTAMP - ($1::int * INTERVAL '1 day')
+        GROUP BY c.id, c.name
+        ORDER BY revenue DESC
+        "#,
+    )
+    .bind(days)
+    .fetch_all(pool)
+    .await
+    .map_err(Into::into)
+}
+
+pub async fn product_scatter(
+    pool: &PgPool,
+    days: i32,
+    limit: i32,
+) -> AppResult<Vec<ProductScatterItem>> {
+    let days = days.clamp(1, 365);
+    let limit = limit.clamp(1, 100);
+    sqlx::query_as::<_, ProductScatterItem>(
+        r#"
+        SELECT
+            si.product_sku_id,
+            MIN(si.product_name)          AS product_name,
+            MIN(si.product_sku)           AS product_sku,
+            MIN(si.unit)                  AS unit,
+            MIN(ps.selling_price)::float8 AS selling_price,
+            COALESCE(SUM(si.quantity),   0)::float8 AS quantity_sold,
+            COALESCE(SUM(si.line_total), 0)::float8 AS revenue
+        FROM sale_items si
+        JOIN sales s         ON s.id  = si.sale_id
+        JOIN product_skus ps ON ps.id = si.product_sku_id
+        WHERE s.status = 'completed'
+            AND s.sold_at >= CURRENT_TIMESTAMP - ($1::int * INTERVAL '1 day')
+        GROUP BY si.product_sku_id
+        ORDER BY quantity_sold DESC
+        LIMIT $2
+        "#,
+    )
+    .bind(days)
+    .bind(limit)
+    .fetch_all(pool)
+    .await
+    .map_err(Into::into)
+}
+
+pub async fn cashier_performance(pool: &PgPool, days: i32) -> AppResult<Vec<CashierPerformance>> {
+    let days = days.clamp(1, 365);
+    sqlx::query_as::<_, CashierPerformance>(
+        r#"
+        WITH sales_agg AS (
+            SELECT
+                cashier_id,
+                COUNT(*)                        AS transaction_count,
+                COALESCE(SUM(total_amount), 0)  AS revenue,
+                COALESCE(AVG(total_amount), 0)  AS avg_basket_size
+            FROM sales
+            WHERE status = 'completed'
+                AND sold_at >= CURRENT_TIMESTAMP - ($1::int * INTERVAL '1 day')
+            GROUP BY cashier_id
+        ),
+        returns_agg AS (
+            SELECT cashier_id, COUNT(*) AS return_count
+            FROM sale_returns
+            WHERE status = 'completed'
+                AND returned_at >= CURRENT_TIMESTAMP - ($1::int * INTERVAL '1 day')
+            GROUP BY cashier_id
+        )
+        SELECT
+            u.id            AS cashier_id,
+            u.name          AS cashier_name,
+            sa.transaction_count,
+            sa.revenue::float8,
+            sa.avg_basket_size::float8,
+            COALESCE(ra.return_count, 0) AS return_count
+        FROM users u
+        JOIN sales_agg sa        ON sa.cashier_id = u.id
+        LEFT JOIN returns_agg ra ON ra.cashier_id = u.id
+        WHERE u.deleted_at IS NULL
+        ORDER BY revenue DESC
+        "#,
+    )
+    .bind(days)
+    .fetch_all(pool)
+    .await
+    .map_err(Into::into)
+}
+
+pub async fn procurement_funnel(pool: &PgPool) -> AppResult<ProcurementFunnel> {
+    sqlx::query_as::<_, ProcurementFunnel>(
+        r#"
+        SELECT
+            (SELECT COUNT(*) FROM purchase_orders WHERE status = 'draft')              AS po_draft,
+            (SELECT COUNT(*) FROM purchase_orders WHERE status = 'ordered')            AS po_ordered,
+            (SELECT COUNT(*) FROM purchase_orders WHERE status = 'partially_received') AS po_partially_received,
+            (SELECT COUNT(*) FROM purchase_orders WHERE status = 'received')           AS po_received,
+            (SELECT COUNT(*) FROM purchase_orders WHERE status = 'cancelled')          AS po_cancelled,
+            (SELECT COUNT(*) FROM goods_receipts  WHERE status = 'draft')              AS gr_draft,
+            (SELECT COUNT(*) FROM goods_receipts  WHERE status = 'posted')             AS gr_posted,
+            (SELECT COUNT(*) FROM goods_receipts  WHERE status = 'cancelled')          AS gr_cancelled,
+            (SELECT COUNT(*) FROM stock_adjustments WHERE status = 'draft')            AS sa_draft,
+            (SELECT COUNT(*) FROM stock_adjustments WHERE status = 'posted')           AS sa_posted,
+            (SELECT COUNT(*) FROM stock_adjustments WHERE status = 'cancelled')        AS sa_cancelled
+        "#,
+    )
+    .fetch_one(pool)
     .await
     .map_err(Into::into)
 }

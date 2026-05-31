@@ -19,7 +19,7 @@
 	import { ApiError } from '$lib/api/types.js';
 	import DataPagination from '$lib/components/data-pagination.svelte';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
-	import PageHeader from '$lib/components/page-header.svelte';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import SearchField from '$lib/components/search-field.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
@@ -163,9 +163,14 @@
 				? await updateCashRegister(editingRegister.id, payload)
 				: await createCashRegister(payload);
 
-			toast.success(editingRegister ? t('master.cashRegisters.updatedToast') : t('master.cashRegisters.createdToast'), {
-				description: `${savedRegister.code} is ready to use.`
-			});
+			toast.success(
+				editingRegister
+					? t('master.cashRegisters.updatedToast')
+					: t('master.cashRegisters.createdToast'),
+				{
+					description: `${savedRegister.code} is ready to use.`
+				}
+			);
 			isFormOpen = false;
 			query = { ...query, page: editingRegister ? query.page : 1 };
 			syncQueryUrl(query);
@@ -274,128 +279,136 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader
-		title={t('master.cashRegisters.title')}
-		description={t('master.cashRegisters.subtitle')}
-	>
-		{#snippet actions()}
-			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
-				<PlusIcon />
-				{t('master.cashRegisters.addBtn')}
-			</Button>
-		{/snippet}
-	</PageHeader>
-
-	<section class="flex flex-col gap-3" aria-labelledby="cash-register-table-title">
-		<h2 id="cash-register-table-title" class="sr-only">{t('master.cashRegisters.srHeading')}</h2>
-
-		<SearchField
-			value={searchValue}
-			disabled={isLoading}
-			ariaLabel={t('master.cashRegisters.searchAriaLabel')}
-			placeholder={t('master.cashRegisters.searchPlaceholder')}
-			onValueChange={updateSearchValue}
-		/>
-
-		{#if errorMessage && !isLoading}
-			<ErrorAlert title={t('master.cashRegisters.errorLoad')} message={errorMessage} />
-		{:else}
-			<div class="overflow-hidden rounded-md border">
-				<div class="overflow-x-auto">
-					<Table.Root>
-						<Table.Header>
-							<Table.Row>
-								<Table.Head>{t('master.cashRegisters.colCode')}</Table.Head>
-								<Table.Head>{t('master.cashRegisters.colName')}</Table.Head>
-								<Table.Head>{t('master.cashRegisters.colDescription')}</Table.Head>
-								<Table.Head>{t('master.cashRegisters.colStatus')}</Table.Head>
-								<Table.Head>{t('master.cashRegisters.colCreatedAt')}</Table.Head>
-								<Table.Head class="w-28 text-center">{t('master.cashRegisters.colAction')}</Table.Head>
-							</Table.Row>
-						</Table.Header>
-						<Table.Body>
-							{#if isLoading}
-								{#each Array.from({ length: 10 }).keys() as rowIndex (rowIndex)}
-									<Table.Row>
-										<Table.Cell><Skeleton class="h-5 w-24" /></Table.Cell>
-										<Table.Cell><Skeleton class="h-5 w-40" /></Table.Cell>
-										<Table.Cell><Skeleton class="h-5 w-52" /></Table.Cell>
-										<Table.Cell><Skeleton class="h-5 w-20" /></Table.Cell>
-										<Table.Cell><Skeleton class="h-5 w-32" /></Table.Cell>
-										<Table.Cell class="text-center"
-											><Skeleton class="mx-auto h-8 w-20" /></Table.Cell
-										>
-									</Table.Row>
-								{/each}
-							{:else if cashRegisters.length > 0}
-								{#each cashRegisters as cashRegister (cashRegister.id)}
-									<Table.Row>
-										<Table.Cell class="font-medium">{cashRegister.code}</Table.Cell>
-										<Table.Cell>{cashRegister.name}</Table.Cell>
-										<Table.Cell>{cashRegister.description ?? '-'}</Table.Cell>
-										<Table.Cell>
-											<Badge variant="outline">{cashRegister.status}</Badge>
-										</Table.Cell>
-										<Table.Cell>{formatDateTime(cashRegister.created_at)}</Table.Cell>
-										<Table.Cell>
-											<div class="flex justify-center gap-1">
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon-sm"
-													class="size-8"
-													title="Edit"
-													onclick={() => openEditDialog(cashRegister)}
-												>
-													<PencilIcon />
-													<span class="sr-only">Edit {cashRegister.code}</span>
-												</Button>
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon-sm"
-													class="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
-													title="Delete"
-													onclick={() => openDeleteDialog(cashRegister)}
-												>
-													<TrashIcon />
-													<span class="sr-only">Delete {cashRegister.code}</span>
-												</Button>
-											</div>
-										</Table.Cell>
-									</Table.Row>
-								{/each}
-							{:else}
-								<Table.Row>
-									<Table.Cell colspan={6} class="h-24 text-center text-muted-foreground">
-										{query.search
-											? t('master.cashRegisters.emptySearch')
-											: t('master.cashRegisters.emptyDefault')}
-									</Table.Cell>
-								</Table.Row>
-							{/if}
-						</Table.Body>
-					</Table.Root>
-				</div>
+	<Card.Root>
+		<Card.Header>
+			<div>
+				<Card.Title>{t('master.cashRegisters.title')}</Card.Title>
+				<Card.Description>{t('master.cashRegisters.subtitle')}</Card.Description>
 			</div>
+			<Card.Action>
+				<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
+					<PlusIcon />
+					{t('master.cashRegisters.addBtn')}
+				</Button>
+			</Card.Action>
+		</Card.Header>
 
-			{#if !isLoading}
+		<Card.Content class="flex flex-col gap-3">
+			<SearchField
+				value={searchValue}
+				disabled={isLoading}
+				ariaLabel={t('master.cashRegisters.searchAriaLabel')}
+				placeholder={t('master.cashRegisters.searchPlaceholder')}
+				onValueChange={updateSearchValue}
+			/>
+
+			{#if errorMessage && !isLoading}
+				<ErrorAlert title={t('master.cashRegisters.errorLoad')} message={errorMessage} />
+			{:else}
+				<div class="overflow-hidden rounded-md border">
+					<div class="overflow-x-auto">
+						<Table.Root>
+							<Table.Header>
+								<Table.Row>
+									<Table.Head>{t('master.cashRegisters.colCode')}</Table.Head>
+									<Table.Head>{t('master.cashRegisters.colName')}</Table.Head>
+									<Table.Head>{t('master.cashRegisters.colDescription')}</Table.Head>
+									<Table.Head>{t('master.cashRegisters.colStatus')}</Table.Head>
+									<Table.Head>{t('master.cashRegisters.colCreatedAt')}</Table.Head>
+									<Table.Head class="w-28 text-center"
+										>{t('master.cashRegisters.colAction')}</Table.Head
+									>
+								</Table.Row>
+							</Table.Header>
+							<Table.Body>
+								{#if isLoading}
+									{#each Array.from({ length: 10 }).keys() as rowIndex (rowIndex)}
+										<Table.Row>
+											<Table.Cell><Skeleton class="h-5 w-24" /></Table.Cell>
+											<Table.Cell><Skeleton class="h-5 w-40" /></Table.Cell>
+											<Table.Cell><Skeleton class="h-5 w-52" /></Table.Cell>
+											<Table.Cell><Skeleton class="h-5 w-20" /></Table.Cell>
+											<Table.Cell><Skeleton class="h-5 w-32" /></Table.Cell>
+											<Table.Cell class="text-center"
+												><Skeleton class="mx-auto h-8 w-20" /></Table.Cell
+											>
+										</Table.Row>
+									{/each}
+								{:else if cashRegisters.length > 0}
+									{#each cashRegisters as cashRegister (cashRegister.id)}
+										<Table.Row>
+											<Table.Cell class="font-medium">{cashRegister.code}</Table.Cell>
+											<Table.Cell>{cashRegister.name}</Table.Cell>
+											<Table.Cell>{cashRegister.description ?? '-'}</Table.Cell>
+											<Table.Cell>
+												<Badge variant="outline">{cashRegister.status}</Badge>
+											</Table.Cell>
+											<Table.Cell>{formatDateTime(cashRegister.created_at)}</Table.Cell>
+											<Table.Cell>
+												<div class="flex justify-center gap-1">
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon-sm"
+														class="size-8"
+														title="Edit"
+														onclick={() => openEditDialog(cashRegister)}
+													>
+														<PencilIcon />
+														<span class="sr-only">Edit {cashRegister.code}</span>
+													</Button>
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon-sm"
+														class="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+														title="Delete"
+														onclick={() => openDeleteDialog(cashRegister)}
+													>
+														<TrashIcon />
+														<span class="sr-only">Delete {cashRegister.code}</span>
+													</Button>
+												</div>
+											</Table.Cell>
+										</Table.Row>
+									{/each}
+								{:else}
+									<Table.Row>
+										<Table.Cell colspan={6} class="h-24 text-center text-muted-foreground">
+											{query.search
+												? t('master.cashRegisters.emptySearch')
+												: t('master.cashRegisters.emptyDefault')}
+										</Table.Cell>
+									</Table.Row>
+								{/if}
+							</Table.Body>
+						</Table.Root>
+					</div>
+				</div>
+			{/if}
+		</Card.Content>
+		{#if !isLoading && !errorMessage}
+			<Card.Footer>
 				<DataPagination
 					{pagination}
 					{pageSizeOptions}
 					onPageChange={updatePage}
 					onPageSizeChange={updatePageSize}
 				/>
-			{/if}
+			</Card.Footer>
 		{/if}
-	</section>
+	</Card.Root>
 </div>
 
 <Dialog.Root bind:open={isFormOpen}>
 	<Dialog.Content class="overflow-hidden p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>{editingRegister ? t('master.cashRegisters.editTitle') : t('master.cashRegisters.addTitle')}</Dialog.Title>
+				<Dialog.Title
+					>{editingRegister
+						? t('master.cashRegisters.editTitle')
+						: t('master.cashRegisters.addTitle')}</Dialog.Title
+				>
 				<Dialog.Description>
 					Configure a physical cashier device or drawer for register sessions.
 				</Dialog.Description>
@@ -462,9 +475,11 @@
 					disabled={isSubmitting}
 				>
 					{t('master.cashRegisters.cancelInlineBtn')}
-					</Dialog.Close>
+				</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting}>
-					{isSubmitting ? t('master.cashRegisters.savingRegister') : t('master.cashRegisters.saveRegisterBtn')}
+					{isSubmitting
+						? t('master.cashRegisters.savingRegister')
+						: t('master.cashRegisters.saveRegisterBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

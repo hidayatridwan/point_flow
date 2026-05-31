@@ -93,7 +93,10 @@
 				</div>
 
 				{#if errorMessage}
-					<ErrorAlert title={t('inventory.stockAdjustments.cancel.cancelFailed')} message={errorMessage} />
+					<ErrorAlert
+						title={t('inventory.stockAdjustments.cancel.cancelFailed')}
+						message={errorMessage}
+					/>
 				{/if}
 			</div>
 
@@ -111,7 +114,9 @@
 					{:else}
 						<BanIcon />
 					{/if}
-					{isSubmitting ? t('inventory.stockAdjustments.cancel.cancelling') : t('inventory.stockAdjustments.cancel.cancelBtn')}
+					{isSubmitting
+						? t('inventory.stockAdjustments.cancel.cancelling')
+						: t('inventory.stockAdjustments.cancel.cancelBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

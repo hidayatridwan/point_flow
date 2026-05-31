@@ -76,7 +76,9 @@
 				{:else}
 					<CheckCircleIcon />
 				{/if}
-				{isSubmitting ? t('procurement.goodsReceipts.post.posting') : t('procurement.goodsReceipts.post.postBtn')}
+				{isSubmitting
+					? t('procurement.goodsReceipts.post.posting')
+					: t('procurement.goodsReceipts.post.postBtn')}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

@@ -34,7 +34,7 @@
 				items: [
 					{
 						titleKey: 'nav.cashier',
-						url: '/pos/sales/new',
+						url: '/pos/register-session',
 						icon: ShoppingCartIcon,
 						items: [
 							{

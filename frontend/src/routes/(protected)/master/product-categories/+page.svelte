@@ -13,7 +13,7 @@
 	import { ApiError } from '$lib/api/types.js';
 	import DataPagination from '$lib/components/data-pagination.svelte';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
-	import PageHeader from '$lib/components/page-header.svelte';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import SearchField from '$lib/components/search-field.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import ProductCategoryCreateDialog from './components/product-category-create-dialog.svelte';
@@ -177,51 +177,54 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader
-		title={t('master.productCategories.title')}
-		description={t('master.productCategories.subtitle')}
-	>
-		{#snippet actions()}
-			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
-				<PlusIcon />
-				Add Category
-			</Button>
-		{/snippet}
-	</PageHeader>
+	<Card.Root>
+		<Card.Header>
+			<div>
+				<Card.Title>{t('master.productCategories.title')}</Card.Title>
+				<Card.Description>{t('master.productCategories.subtitle')}</Card.Description>
+			</div>
+			<Card.Action>
+				<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
+					<PlusIcon />
+					Add Category
+				</Button>
+			</Card.Action>
+		</Card.Header>
 
-	<section class="flex flex-col gap-3" aria-labelledby="product-categories-table-title">
-		<h2 id="product-categories-table-title" class="sr-only">Product category records</h2>
-
-		<SearchField
-			value={searchValue}
-			disabled={isLoading}
-			ariaLabel={t('master.productCategories.searchAriaLabel')}
-			placeholder={t('master.productCategories.searchPlaceholder')}
-			onValueChange={updateSearchValue}
-		/>
-
-		{#if errorMessage && !isLoading}
-			<ErrorAlert title={t('master.productCategories.errorLoad')} message={errorMessage} />
-		{:else}
-			<ProductCategoriesTable
-				{categories}
-				{isLoading}
-				onCategoryDeleted={refreshCategoriesAfterDelete}
-				onCategoryUpdated={updateCategoryInList}
-				emptyMessage={query.search
-					? t('master.productCategories.emptySearch')
-					: t('master.productCategories.emptyDefault')}
+		<Card.Content class="flex flex-col gap-3">
+			<SearchField
+				value={searchValue}
+				disabled={isLoading}
+				ariaLabel={t('master.productCategories.searchAriaLabel')}
+				placeholder={t('master.productCategories.searchPlaceholder')}
+				onValueChange={updateSearchValue}
 			/>
-			{#if !isLoading}
+
+			{#if errorMessage && !isLoading}
+				<ErrorAlert title={t('master.productCategories.errorLoad')} message={errorMessage} />
+			{:else}
+				<ProductCategoriesTable
+					{categories}
+					{isLoading}
+					onCategoryDeleted={refreshCategoriesAfterDelete}
+					onCategoryUpdated={updateCategoryInList}
+					emptyMessage={query.search
+						? t('master.productCategories.emptySearch')
+						: t('master.productCategories.emptyDefault')}
+				/>
+			{/if}
+		</Card.Content>
+		{#if !isLoading && !errorMessage}
+			<Card.Footer>
 				<DataPagination
 					{pagination}
 					{pageSizeOptions}
 					onPageChange={updatePage}
 					onPageSizeChange={updatePageSize}
 				/>
-			{/if}
+			</Card.Footer>
 		{/if}
-	</section>
+	</Card.Root>
 
 	<ProductCategoryCreateDialog bind:open={isCreateOpen} onCreated={refreshCategoriesAfterCreate} />
 </div>

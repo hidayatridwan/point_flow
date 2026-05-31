@@ -18,7 +18,7 @@
 	import DataPagination from '$lib/components/data-pagination.svelte';
 	import DataTableFacetedFilter from '$lib/components/data-table-faceted-filter.svelte';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
-	import PageHeader from '$lib/components/page-header.svelte';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import SearchField from '$lib/components/search-field.svelte';
 	import StockReportTable from './components/stock-report-table.svelte';
 	import { t } from '$lib/i18n/locale.svelte.js';
@@ -186,50 +186,54 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader
-		title={t('inventory.stockReport.title')}
-		description={t('inventory.stockReport.subtitle')}
-	/>
+	<Card.Root>
+		<Card.Header>
+			<div>
+				<Card.Title>{t('inventory.stockReport.title')}</Card.Title>
+				<Card.Description>{t('inventory.stockReport.subtitle')}</Card.Description>
+			</div>
+		</Card.Header>
 
-	<section class="flex flex-col gap-3" aria-labelledby="stock-report-table-title">
-		<h2 id="stock-report-table-title" class="sr-only">Stock report records</h2>
+		<Card.Content class="flex flex-col gap-3">
+			<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+				<SearchField
+					value={searchValue}
+					disabled={isLoading}
+					ariaLabel={t('inventory.stockReport.searchAriaLabel')}
+					placeholder={t('inventory.stockReport.searchPlaceholder')}
+					class="sm:max-w-sm"
+					onValueChange={updateSearchValue}
+				/>
+				<DataTableFacetedFilter
+					title="Status"
+					options={statusFilterOptions}
+					value={query.status}
+					disabled={isLoading}
+					onValueChange={updateStatusFilter}
+				/>
+			</div>
 
-		<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-			<SearchField
-				value={searchValue}
-				disabled={isLoading}
-				ariaLabel={t('inventory.stockReport.searchAriaLabel')}
-				placeholder={t('inventory.stockReport.searchPlaceholder')}
-				class="sm:max-w-sm"
-				onValueChange={updateSearchValue}
-			/>
-			<DataTableFacetedFilter
-				title="Status"
-				options={statusFilterOptions}
-				value={query.status}
-				disabled={isLoading}
-				onValueChange={updateStatusFilter}
-			/>
-		</div>
-
-		{#if errorMessage && !isLoading}
-			<ErrorAlert title={t('inventory.stockReport.errorLoad')} message={errorMessage} />
-		{:else}
-			<StockReportTable
-				{items}
-				{isLoading}
-				emptyMessage={query.search || query.status.length
-					? t('inventory.stockReport.emptySearch')
-					: t('inventory.stockReport.emptyDefault')}
-			/>
-			{#if !isLoading}
+			{#if errorMessage && !isLoading}
+				<ErrorAlert title={t('inventory.stockReport.errorLoad')} message={errorMessage} />
+			{:else}
+				<StockReportTable
+					{items}
+					{isLoading}
+					emptyMessage={query.search || query.status.length
+						? t('inventory.stockReport.emptySearch')
+						: t('inventory.stockReport.emptyDefault')}
+				/>
+			{/if}
+		</Card.Content>
+		{#if !isLoading && !errorMessage}
+			<Card.Footer>
 				<DataPagination
 					{pagination}
 					{pageSizeOptions}
 					onPageChange={updatePage}
 					onPageSizeChange={updatePageSize}
 				/>
-			{/if}
+			</Card.Footer>
 		{/if}
-	</section>
+	</Card.Root>
 </div>

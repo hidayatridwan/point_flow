@@ -78,20 +78,50 @@
 					<DetailField label={t('pos.saleReturns.detail.status')}>
 						<SaleReturnStatusBadge status={saleReturn.status} />
 					</DetailField>
-					<DetailField label={t('pos.saleReturns.detail.returnedAt')} value={formatDateTime(saleReturn.returned_at)} />
-					<DetailField label={t('pos.saleReturns.detail.saleTx')} value={saleReturn.sale_transaction_no} />
-					<DetailField label={t('pos.saleReturns.detail.cashier')} value={saleReturn.cashier_name} />
-					<DetailField label={t('pos.saleReturns.detail.register')} value={saleReturn.cash_register_code || '-'} />
-					<DetailField label={t('pos.saleReturns.detail.subtotal')} value={formatIdr(saleReturn.subtotal_amount)} />
-					<DetailField label={t('pos.saleReturns.detail.refund')} value={formatIdr(saleReturn.refund_amount)} />
-					<DetailField label={t('pos.saleReturns.detail.cancelledAt')} value={formatDateTime(saleReturn.cancelled_at)} />
-					<DetailField label={t('pos.saleReturns.detail.updatedAt')} value={formatDateTime(saleReturn.updated_at)} />
+					<DetailField
+						label={t('pos.saleReturns.detail.returnedAt')}
+						value={formatDateTime(saleReturn.returned_at)}
+					/>
+					<DetailField
+						label={t('pos.saleReturns.detail.saleTx')}
+						value={saleReturn.sale_transaction_no}
+					/>
+					<DetailField
+						label={t('pos.saleReturns.detail.cashier')}
+						value={saleReturn.cashier_name}
+					/>
+					<DetailField
+						label={t('pos.saleReturns.detail.register')}
+						value={saleReturn.cash_register_code || '-'}
+					/>
+					<DetailField
+						label={t('pos.saleReturns.detail.subtotal')}
+						value={formatIdr(saleReturn.subtotal_amount)}
+					/>
+					<DetailField
+						label={t('pos.saleReturns.detail.refund')}
+						value={formatIdr(saleReturn.refund_amount)}
+					/>
+					<DetailField
+						label={t('pos.saleReturns.detail.cancelledAt')}
+						value={formatDateTime(saleReturn.cancelled_at)}
+					/>
+					<DetailField
+						label={t('pos.saleReturns.detail.updatedAt')}
+						value={formatDateTime(saleReturn.updated_at)}
+					/>
 				</div>
 
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-					<DetailField label={t('pos.saleReturns.detail.returnReason')} value={saleReturn.reason || '-'} />
+					<DetailField
+						label={t('pos.saleReturns.detail.returnReason')}
+						value={saleReturn.reason || '-'}
+					/>
 					<DetailField label={t('pos.saleReturns.detail.notes')} value={saleReturn.notes || '-'} />
-					<DetailField label={t('pos.saleReturns.detail.cancelReason')} value={saleReturn.cancel_reason || '-'} />
+					<DetailField
+						label={t('pos.saleReturns.detail.cancelReason')}
+						value={saleReturn.cancel_reason || '-'}
+					/>
 				</div>
 
 				<div class="overflow-hidden rounded-md border">
@@ -118,7 +148,11 @@
 										<Table.Cell>{formatNumber(item.quantity)}</Table.Cell>
 										<Table.Cell>{formatIdr(item.unit_price)}</Table.Cell>
 										<Table.Cell>{formatIdr(item.line_total)}</Table.Cell>
-										<Table.Cell>{item.restock ? t('pos.saleReturns.detail.yesLabel') : t('pos.saleReturns.detail.noLabel')}</Table.Cell>
+										<Table.Cell
+											>{item.restock
+												? t('pos.saleReturns.detail.yesLabel')
+												: t('pos.saleReturns.detail.noLabel')}</Table.Cell
+										>
 										<Table.Cell>{item.reason || '-'}</Table.Cell>
 									</Table.Row>
 								{/each}

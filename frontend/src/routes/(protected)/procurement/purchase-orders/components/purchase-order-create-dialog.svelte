@@ -515,7 +515,10 @@
 						</div>
 
 						{#if getFieldError('items')}
-							<ErrorAlert title={t('procurement.purchaseOrders.invalidItems')} message={getFieldError('items') ?? ''} />
+							<ErrorAlert
+								title={t('procurement.purchaseOrders.invalidItems')}
+								message={getFieldError('items') ?? ''}
+							/>
 						{/if}
 
 						<div class="grid gap-3">
@@ -666,7 +669,9 @@
 					{#if isSubmitting}
 						<Spinner />
 					{/if}
-					{isSubmitting ? t('procurement.purchaseOrders.creating') : t('procurement.purchaseOrders.createBtn')}
+					{isSubmitting
+						? t('procurement.purchaseOrders.creating')
+						: t('procurement.purchaseOrders.createBtn')}
 				</Button>
 			</Drawer.Footer>
 		</form>

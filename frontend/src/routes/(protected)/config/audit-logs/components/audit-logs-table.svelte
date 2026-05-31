@@ -81,14 +81,7 @@
 	});
 
 	function getSkeletonClass(columnIndex: number) {
-		const widths = [
-			'h-5 w-36',
-			'h-5 w-24',
-			'h-5 w-40',
-			'h-5 w-36',
-			'h-5 w-44',
-			'h-5 w-44'
-		];
+		const widths = ['h-5 w-36', 'h-5 w-24', 'h-5 w-40', 'h-5 w-36', 'h-5 w-44', 'h-5 w-44'];
 		return widths[columnIndex] ?? 'h-5 w-full';
 	}
 </script>

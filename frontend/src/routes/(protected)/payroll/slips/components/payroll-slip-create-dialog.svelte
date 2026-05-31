@@ -471,7 +471,10 @@
 
 					<div class="grid gap-3">
 						{#if optionsErrorMessage}
-							<ErrorAlert title={t('payroll.slips.errorLoadOptions')} message={optionsErrorMessage} />
+							<ErrorAlert
+								title={t('payroll.slips.errorLoadOptions')}
+								message={optionsErrorMessage}
+							/>
 						{/if}
 
 						{#if errorMessage}
@@ -488,7 +491,7 @@
 					disabled={isSubmitting}
 				>
 					{t('common.cancel')}
-					</Dialog.Close>
+				</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting || isLoadingOptions}>
 					{#if isSubmitting}
 						<Spinner />

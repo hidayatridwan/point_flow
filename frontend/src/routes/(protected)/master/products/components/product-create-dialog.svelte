@@ -206,8 +206,12 @@
 									<Select.Value placeholder="Select status" />
 								</Select.Trigger>
 								<Select.Content>
-									<Select.Item value="true" label={t('status.active')}>{t('status.active')}</Select.Item>
-									<Select.Item value="false" label={t('status.inactive')}>{t('status.inactive')}</Select.Item>
+									<Select.Item value="true" label={t('status.active')}
+										>{t('status.active')}</Select.Item
+									>
+									<Select.Item value="false" label={t('status.inactive')}
+										>{t('status.inactive')}</Select.Item
+									>
 								</Select.Content>
 							</Select.Root>
 						{/snippet}
@@ -216,7 +220,10 @@
 				</Form.Field>
 
 				{#if categoryErrorMessage}
-					<ErrorAlert title={t('master.products.errorLoadOptions')} message={categoryErrorMessage} />
+					<ErrorAlert
+						title={t('master.products.errorLoadOptions')}
+						message={categoryErrorMessage}
+					/>
 				{/if}
 
 				{#if errorMessage}

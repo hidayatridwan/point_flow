@@ -58,7 +58,9 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>{t('config.users.deleteTitle')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				<span class="font-medium text-foreground">{user.name}</span> — {t('config.users.deleteDesc')}
+				<span class="font-medium text-foreground">{user.name}</span> — {t(
+					'config.users.deleteDesc'
+				)}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 

@@ -52,7 +52,7 @@
 	}
 </script>
 
-<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+<div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 	<p class="text-sm text-muted-foreground">{start} - {end} of {totalRecords} results</p>
 
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6 lg:gap-8">

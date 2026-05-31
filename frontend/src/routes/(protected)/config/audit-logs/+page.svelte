@@ -26,7 +26,7 @@
 	import DataTableFacetedFilter from '$lib/components/data-table-faceted-filter.svelte';
 	import DataPagination from '$lib/components/data-pagination.svelte';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
-	import PageHeader from '$lib/components/page-header.svelte';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import SearchField from '$lib/components/search-field.svelte';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -356,132 +356,138 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader title={t('config.auditLogs.title')} description={t('config.auditLogs.subtitle')}>
-		{#snippet actions()}
-			<Button
-				type="button"
-				variant="outline"
-				class="w-full sm:w-auto"
-				disabled={isLoading}
-				onclick={refreshAuditLogs}
-			>
-				<RefreshCwIcon />
-				{t('common.refresh')}
-			</Button>
-		{/snippet}
-	</PageHeader>
+	<Card.Root>
+		<Card.Header>
+			<div>
+				<Card.Title>{t('config.auditLogs.title')}</Card.Title>
+				<Card.Description>{t('config.auditLogs.subtitle')}</Card.Description>
+			</div>
+			<Card.Action>
+				<Button
+					type="button"
+					variant="outline"
+					class="w-full sm:w-auto"
+					disabled={isLoading}
+					onclick={refreshAuditLogs}
+				>
+					<RefreshCwIcon />
+					{t('common.refresh')}
+				</Button>
+			</Card.Action>
+		</Card.Header>
 
-	<section class="flex flex-col gap-3" aria-labelledby="audit-logs-table-title">
-		<h2 id="audit-logs-table-title" class="sr-only">Audit log records</h2>
+		<Card.Content class="flex flex-col gap-3">
+			<div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+				<div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+					<SearchField
+						value={searchValue}
+						disabled={isLoading}
+						ariaLabel={t('config.auditLogs.searchAriaLabel')}
+						placeholder={t('config.auditLogs.searchPlaceholder')}
+						class="sm:max-w-sm"
+						onValueChange={updateSearchValue}
+					/>
+					<DataTableFacetedFilter
+						title="Outcome"
+						options={outcomeFilterOptions}
+						value={query.outcome}
+						disabled={isLoading}
+						onValueChange={updateOutcomeFilter}
+					/>
+					<DataTableFacetedFilter
+						title="Action"
+						options={actionFilterOptions}
+						value={query.action}
+						disabled={isLoading}
+						onValueChange={updateActionFilter}
+					/>
+					<DataTableFacetedFilter
+						title="Resource"
+						options={resourceFilterOptions}
+						value={query.resource_type}
+						disabled={isLoading}
+						onValueChange={updateResourceFilter}
+					/>
+					<Input
+						value={requestIdValue}
+						placeholder={t('config.auditLogs.requestIdPlaceholder')}
+						aria-label="Filter audit logs by request ID"
+						class="h-9 sm:w-64"
+						disabled={isLoading}
+						oninput={(event) => updateRequestIdValue(event.currentTarget.value)}
+					/>
+					<Input
+						value={actorIdValue}
+						type="number"
+						min="1"
+						step="1"
+						placeholder={t('config.auditLogs.actorIdPlaceholder')}
+						aria-label="Filter audit logs by actor ID"
+						class="h-9 sm:w-32"
+						disabled={isLoading}
+						oninput={(event) => updateActorIdValue(event.currentTarget.value)}
+					/>
+				</div>
 
-		<div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
-			<div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-				<SearchField
-					value={searchValue}
-					disabled={isLoading}
-					ariaLabel={t('config.auditLogs.searchAriaLabel')}
-					placeholder={t('config.auditLogs.searchPlaceholder')}
-					class="sm:max-w-sm"
-					onValueChange={updateSearchValue}
-				/>
-				<DataTableFacetedFilter
-					title="Outcome"
-					options={outcomeFilterOptions}
-					value={query.outcome}
-					disabled={isLoading}
-					onValueChange={updateOutcomeFilter}
-				/>
-				<DataTableFacetedFilter
-					title="Action"
-					options={actionFilterOptions}
-					value={query.action}
-					disabled={isLoading}
-					onValueChange={updateActionFilter}
-				/>
-				<DataTableFacetedFilter
-					title="Resource"
-					options={resourceFilterOptions}
-					value={query.resource_type}
-					disabled={isLoading}
-					onValueChange={updateResourceFilter}
-				/>
-				<Input
-					value={requestIdValue}
-					placeholder={t('config.auditLogs.requestIdPlaceholder')}
-					aria-label="Filter audit logs by request ID"
-					class="h-9 sm:w-64"
-					disabled={isLoading}
-					oninput={(event) => updateRequestIdValue(event.currentTarget.value)}
-				/>
-				<Input
-					value={actorIdValue}
-					type="number"
-					min="1"
-					step="1"
-					placeholder={t('config.auditLogs.actorIdPlaceholder')}
-					aria-label="Filter audit logs by actor ID"
-					class="h-9 sm:w-32"
-					disabled={isLoading}
-					oninput={(event) => updateActorIdValue(event.currentTarget.value)}
-				/>
+				<Popover.Root bind:open={isDateRangeOpen}>
+					<Popover.Trigger
+						class={cn(
+							buttonVariants({ variant: 'outline' }),
+							'h-9 w-full justify-start gap-2 px-3 text-left font-normal sm:w-[280px]',
+							!query.from && !query.to && 'text-muted-foreground'
+						)}
+						disabled={isLoading}
+						aria-label="Filter audit logs by date range"
+					>
+						<CalendarIcon class="size-4" />
+						<span class="truncate">{getDateRangeLabel()}</span>
+					</Popover.Trigger>
+					<Popover.Content align="end" class="w-auto max-w-[calc(100vw-2rem)] overflow-x-auto p-0">
+						<RangeCalendar
+							bind:value={dateRangeValue}
+							class="rounded-md border-0 shadow-none"
+							numberOfMonths={2}
+						/>
+						{#if query.from || query.to}
+							<div class="flex justify-end border-t bg-popover p-2">
+								<Button type="button" variant="ghost" size="sm" onclick={clearDateRangeFilter}>
+									<XIcon />
+									Clear
+								</Button>
+							</div>
+						{/if}
+					</Popover.Content>
+				</Popover.Root>
 			</div>
 
-			<Popover.Root bind:open={isDateRangeOpen}>
-				<Popover.Trigger
-					class={cn(
-						buttonVariants({ variant: 'outline' }),
-						'h-9 w-full justify-start gap-2 px-3 text-left font-normal sm:w-[280px]',
-						!query.from && !query.to && 'text-muted-foreground'
-					)}
-					disabled={isLoading}
-					aria-label="Filter audit logs by date range"
-				>
-					<CalendarIcon class="size-4" />
-					<span class="truncate">{getDateRangeLabel()}</span>
-				</Popover.Trigger>
-				<Popover.Content align="end" class="w-auto max-w-[calc(100vw-2rem)] overflow-x-auto p-0">
-					<RangeCalendar
-						bind:value={dateRangeValue}
-						class="rounded-md border-0 shadow-none"
-						numberOfMonths={2}
-					/>
-					{#if query.from || query.to}
-						<div class="flex justify-end border-t bg-popover p-2">
-							<Button type="button" variant="ghost" size="sm" onclick={clearDateRangeFilter}>
-								<XIcon />
-								Clear
-							</Button>
-						</div>
-					{/if}
-				</Popover.Content>
-			</Popover.Root>
-		</div>
-
-		{#if errorMessage && !isLoading}
-			<ErrorAlert title={t('config.auditLogs.errorLoad')} message={errorMessage} />
-		{:else}
-			<AuditLogsTable
-				{auditLogs}
-				{isLoading}
-				emptyMessage={query.search ||
-				query.outcome.length ||
-				query.action.length ||
-				query.resource_type.length ||
-				query.request_id ||
-				query.actor_id ||
-				query.from ||
-				query.to
-					? t('config.auditLogs.emptySearch')
-					: t('config.auditLogs.emptyDefault')}
-			/>
-			{#if !isLoading}
+			{#if errorMessage && !isLoading}
+				<ErrorAlert title={t('config.auditLogs.errorLoad')} message={errorMessage} />
+			{:else}
+				<AuditLogsTable
+					{auditLogs}
+					{isLoading}
+					emptyMessage={query.search ||
+					query.outcome.length ||
+					query.action.length ||
+					query.resource_type.length ||
+					query.request_id ||
+					query.actor_id ||
+					query.from ||
+					query.to
+						? t('config.auditLogs.emptySearch')
+						: t('config.auditLogs.emptyDefault')}
+				/>
+			{/if}
+		</Card.Content>
+		{#if !isLoading && !errorMessage}
+			<Card.Footer>
 				<DataPagination
 					{pagination}
 					{pageSizeOptions}
 					onPageChange={updatePage}
 					onPageSizeChange={updatePageSize}
 				/>
-			{/if}
+			</Card.Footer>
 		{/if}
-	</section>
+	</Card.Root>
 </div>

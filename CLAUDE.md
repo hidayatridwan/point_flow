@@ -54,16 +54,18 @@ Each domain lives in `modules/<name>/` with a fixed internal structure:
 
 **Cross-cutting services** in `common/services/` are shared across modules:
 - `master.rs` — product categories, products, units, SKUs, suppliers, employees
-- `documents.rs` — purchase orders, goods receipts, stock adjustments/conversions
+- `documents.rs` — purchase orders, goods receipts, stock adjustments/conversions, sale returns, payroll slips
 - `cash_registers.rs` — register sessions, cash drawer movements
 - `auth.rs` — login, refresh, user management
-- `reports.rs` — dashboard and all report queries
+- `reports.rs` — dashboard and all report queries (daily/monthly sales, stock, payroll, procurement)
 - `rbac.rs` — role/permission checks
 - `audit.rs` — audit log writes
 
 **Response envelope**: all API responses use `ApiResponse<T>` which the frontend unwraps automatically. Pagination uses `PaginationMeta` (`page`, `limit`, `total_records`, `total_pages`).
 
 **Auth model**: JWT access token (short-lived, sent as `Authorization: Bearer`) + HttpOnly cookie refresh token. The backend has an RBAC system via `roles` table — the `admin` role is protected and cannot be assigned via user CRUD.
+
+**Additional modules**: `payroll` (payroll slips and reports) and `sale_returns` (POS return flow) each follow the same module structure as other domains — they are not in `common/services/` but delegate to `documents.rs` for their core logic.
 
 **Inventory model**: `product_skus` is the stock-holding unit. Stock changes only from:
 - goods receipt post (adds stock)

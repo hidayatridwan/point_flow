@@ -13,7 +13,7 @@
 	import { ApiError } from '$lib/api/types.js';
 	import DataPagination from '$lib/components/data-pagination.svelte';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
-	import PageHeader from '$lib/components/page-header.svelte';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import SearchField from '$lib/components/search-field.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import EmployeeCreateDialog from './components/employee-create-dialog.svelte';
@@ -175,49 +175,54 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader
-		title={t('master.employees.title')}
-		description={t('master.employees.subtitle')}
-	>
-		{#snippet actions()}
-			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
-				<PlusIcon />
-				{t('master.employees.addBtn')}
-			</Button>
-		{/snippet}
-	</PageHeader>
+	<Card.Root>
+		<Card.Header>
+			<div>
+				<Card.Title>{t('master.employees.title')}</Card.Title>
+				<Card.Description>{t('master.employees.subtitle')}</Card.Description>
+			</div>
+			<Card.Action>
+				<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
+					<PlusIcon />
+					{t('master.employees.addBtn')}
+				</Button>
+			</Card.Action>
+		</Card.Header>
 
-	<section class="flex flex-col gap-3" aria-labelledby="employees-table-title">
-		<h2 id="employees-table-title" class="sr-only">{t('master.employees.srHeading')}</h2>
-
-		<SearchField
-			value={searchValue}
-			disabled={isLoading}
-			ariaLabel={t('master.employees.searchAriaLabel')}
-			placeholder={t('master.employees.searchPlaceholder')}
-			onValueChange={updateSearchValue}
-		/>
-
-		{#if errorMessage && !isLoading}
-			<ErrorAlert title={t('master.employees.errorLoad')} message={errorMessage} />
-		{:else}
-			<EmployeesTable
-				{employees}
-				{isLoading}
-				onEmployeeDeleted={refreshEmployeesAfterDelete}
-				onEmployeeUpdated={updateEmployeeInList}
-				emptyMessage={query.search ? t('master.employees.emptySearch') : t('master.employees.emptyDefault')}
+		<Card.Content class="flex flex-col gap-3">
+			<SearchField
+				value={searchValue}
+				disabled={isLoading}
+				ariaLabel={t('master.employees.searchAriaLabel')}
+				placeholder={t('master.employees.searchPlaceholder')}
+				onValueChange={updateSearchValue}
 			/>
-			{#if !isLoading}
+
+			{#if errorMessage && !isLoading}
+				<ErrorAlert title={t('master.employees.errorLoad')} message={errorMessage} />
+			{:else}
+				<EmployeesTable
+					{employees}
+					{isLoading}
+					onEmployeeDeleted={refreshEmployeesAfterDelete}
+					onEmployeeUpdated={updateEmployeeInList}
+					emptyMessage={query.search
+						? t('master.employees.emptySearch')
+						: t('master.employees.emptyDefault')}
+				/>
+			{/if}
+		</Card.Content>
+		{#if !isLoading && !errorMessage}
+			<Card.Footer>
 				<DataPagination
 					{pagination}
 					{pageSizeOptions}
 					onPageChange={updatePage}
 					onPageSizeChange={updatePageSize}
 				/>
-			{/if}
+			</Card.Footer>
 		{/if}
-	</section>
+	</Card.Root>
 
 	<EmployeeCreateDialog bind:open={isCreateOpen} onCreated={refreshEmployeesAfterCreate} />
 </div>

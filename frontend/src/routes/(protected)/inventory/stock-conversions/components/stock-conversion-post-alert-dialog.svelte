@@ -77,7 +77,9 @@
 				{:else}
 					<CheckCircleIcon />
 				{/if}
-				{isSubmitting ? t('inventory.stockConversions.post.posting') : t('inventory.stockConversions.post.postBtn')}
+				{isSubmitting
+					? t('inventory.stockConversions.post.posting')
+					: t('inventory.stockConversions.post.postBtn')}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

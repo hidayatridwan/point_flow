@@ -109,7 +109,9 @@
 					{:else}
 						<BanIcon />
 					{/if}
-					{isSubmitting ? t('pos.saleReturns.cancel.cancelling') : t('pos.saleReturns.cancel.cancelBtn')}
+					{isSubmitting
+						? t('pos.saleReturns.cancel.cancelling')
+						: t('pos.saleReturns.cancel.cancelBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

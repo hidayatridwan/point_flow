@@ -23,7 +23,7 @@
 	import DataTableFacetedFilter from '$lib/components/data-table-faceted-filter.svelte';
 	import DataPagination from '$lib/components/data-pagination.svelte';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
-	import PageHeader from '$lib/components/page-header.svelte';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import SearchField from '$lib/components/search-field.svelte';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
@@ -264,92 +264,95 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader
-		title={t('inventory.stockConversions.title')}
-		description={t('inventory.stockConversions.subtitle')}
-	>
-		{#snippet actions()}
-			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
-				<PlusIcon />
-				{t('inventory.stockConversions.addBtn')}
-			</Button>
-		{/snippet}
-	</PageHeader>
+	<Card.Root>
+		<Card.Header>
+			<div>
+				<Card.Title>{t('inventory.stockConversions.title')}</Card.Title>
+				<Card.Description>{t('inventory.stockConversions.subtitle')}</Card.Description>
+			</div>
+			<Card.Action>
+				<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
+					<PlusIcon />
+					{t('inventory.stockConversions.addBtn')}
+				</Button>
+			</Card.Action>
+		</Card.Header>
 
-	<section class="flex flex-col gap-3" aria-labelledby="stock-conversions-table-title">
-		<h2 id="stock-conversions-table-title" class="sr-only">Stock conversion records</h2>
+		<Card.Content class="flex flex-col gap-3">
+			<div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+				<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+					<SearchField
+						value={searchValue}
+						disabled={isLoading}
+						ariaLabel="Search stock conversions"
+						placeholder={t('inventory.stockConversions.searchPlaceholder')}
+						class="sm:max-w-sm"
+						onValueChange={updateSearchValue}
+					/>
+					<DataTableFacetedFilter
+						title="Status"
+						options={statusFilterOptions}
+						value={query.status}
+						disabled={isLoading}
+						onValueChange={updateStatusFilter}
+					/>
+				</div>
 
-		<div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-			<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-				<SearchField
-					value={searchValue}
-					disabled={isLoading}
-					ariaLabel="Search stock conversions"
-					placeholder={t('inventory.stockConversions.searchPlaceholder')}
-					class="sm:max-w-sm"
-					onValueChange={updateSearchValue}
-				/>
-				<DataTableFacetedFilter
-					title="Status"
-					options={statusFilterOptions}
-					value={query.status}
-					disabled={isLoading}
-					onValueChange={updateStatusFilter}
-				/>
+				<Popover.Root bind:open={isDateRangeOpen}>
+					<Popover.Trigger
+						class={cn(
+							buttonVariants({ variant: 'outline' }),
+							'h-9 w-full justify-start gap-2 px-3 text-left font-normal sm:w-[280px]',
+							!query.from && !query.to && 'text-muted-foreground'
+						)}
+						disabled={isLoading}
+						aria-label="Filter stock conversions by date range"
+					>
+						<CalendarIcon class="size-4" />
+						<span class="truncate">{getDateRangeLabel()}</span>
+					</Popover.Trigger>
+					<Popover.Content align="end" class="w-auto max-w-[calc(100vw-2rem)] overflow-x-auto p-0">
+						<RangeCalendar
+							bind:value={dateRangeValue}
+							class="rounded-md border-0 shadow-none"
+							numberOfMonths={2}
+						/>
+						{#if query.from || query.to}
+							<div class="flex justify-end border-t bg-popover p-2">
+								<Button type="button" variant="ghost" size="sm" onclick={clearDateRangeFilter}>
+									<XIcon />
+									Clear
+								</Button>
+							</div>
+						{/if}
+					</Popover.Content>
+				</Popover.Root>
 			</div>
 
-			<Popover.Root bind:open={isDateRangeOpen}>
-				<Popover.Trigger
-					class={cn(
-						buttonVariants({ variant: 'outline' }),
-						'h-9 w-full justify-start gap-2 px-3 text-left font-normal sm:w-[280px]',
-						!query.from && !query.to && 'text-muted-foreground'
-					)}
-					disabled={isLoading}
-					aria-label="Filter stock conversions by date range"
-				>
-					<CalendarIcon class="size-4" />
-					<span class="truncate">{getDateRangeLabel()}</span>
-				</Popover.Trigger>
-				<Popover.Content align="end" class="w-auto max-w-[calc(100vw-2rem)] overflow-x-auto p-0">
-					<RangeCalendar
-						bind:value={dateRangeValue}
-						class="rounded-md border-0 shadow-none"
-						numberOfMonths={2}
-					/>
-					{#if query.from || query.to}
-						<div class="flex justify-end border-t bg-popover p-2">
-							<Button type="button" variant="ghost" size="sm" onclick={clearDateRangeFilter}>
-								<XIcon />
-								Clear
-							</Button>
-						</div>
-					{/if}
-				</Popover.Content>
-			</Popover.Root>
-		</div>
-
-		{#if errorMessage && !isLoading}
-			<ErrorAlert title={t('inventory.stockConversions.errorLoad')} message={errorMessage} />
-		{:else}
-			<StockConversionsTable
-				{stockConversions}
-				{isLoading}
-				onStockConversionChanged={refreshStockConversionsAfterStatusChange}
-				emptyMessage={query.search || query.status.length || query.from || query.to
-					? t('inventory.stockConversions.emptySearch')
-					: t('inventory.stockConversions.emptyDefault')}
-			/>
-			{#if !isLoading}
+			{#if errorMessage && !isLoading}
+				<ErrorAlert title={t('inventory.stockConversions.errorLoad')} message={errorMessage} />
+			{:else}
+				<StockConversionsTable
+					{stockConversions}
+					{isLoading}
+					onStockConversionChanged={refreshStockConversionsAfterStatusChange}
+					emptyMessage={query.search || query.status.length || query.from || query.to
+						? t('inventory.stockConversions.emptySearch')
+						: t('inventory.stockConversions.emptyDefault')}
+				/>
+			{/if}
+		</Card.Content>
+		{#if !isLoading && !errorMessage}
+			<Card.Footer>
 				<DataPagination
 					{pagination}
 					{pageSizeOptions}
 					onPageChange={updatePage}
 					onPageSizeChange={updatePageSize}
 				/>
-			{/if}
+			</Card.Footer>
 		{/if}
-	</section>
+	</Card.Root>
 
 	<StockConversionCreateDialog
 		bind:open={isCreateOpen}

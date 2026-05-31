@@ -414,7 +414,8 @@
 											</span>
 										</div>
 										<p class="mt-1 text-xs text-muted-foreground">
-											{productSku.unit_code} · {t('pos.newSale.stockLabel')} {formatNumber(productSku.stock)} ·
+											{productSku.unit_code} · {t('pos.newSale.stockLabel')}
+											{formatNumber(productSku.stock)} ·
 											{formatIdr(productSku.selling_price)}
 										</p>
 									</div>
@@ -426,7 +427,9 @@
 										onclick={() => addProductSku(productSku)}
 									>
 										<PlusIcon />
-										{isProductSkuInCart(productSku.id) ? t('pos.newSale.addMore') : t('pos.newSale.addOne')}
+										{isProductSkuInCart(productSku.id)
+											? t('pos.newSale.addMore')
+											: t('pos.newSale.addOne')}
 									</Button>
 								</div>
 							{/each}
@@ -594,7 +597,9 @@
 				</div>
 
 				<div class="space-y-2">
-					<Label for="sale-paid-amount" class="whitespace-nowrap">{t('pos.newSale.paidAmount')}</Label>
+					<Label for="sale-paid-amount" class="whitespace-nowrap"
+						>{t('pos.newSale.paidAmount')}</Label
+					>
 					<Input
 						id="sale-paid-amount"
 						type="number"

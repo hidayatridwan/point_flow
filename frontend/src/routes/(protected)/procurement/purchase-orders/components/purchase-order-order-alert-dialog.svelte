@@ -65,7 +65,10 @@
 		</AlertDialog.Header>
 
 		{#if errorMessage}
-			<ErrorAlert title={t('procurement.purchaseOrders.order.orderFailed')} message={errorMessage} />
+			<ErrorAlert
+				title={t('procurement.purchaseOrders.order.orderFailed')}
+				message={errorMessage}
+			/>
 		{/if}
 
 		<AlertDialog.Footer>
@@ -76,7 +79,9 @@
 				{:else}
 					<SendIcon />
 				{/if}
-				{isSubmitting ? t('procurement.purchaseOrders.order.ordering') : t('procurement.purchaseOrders.order.orderBtn')}
+				{isSubmitting
+					? t('procurement.purchaseOrders.order.ordering')
+					: t('procurement.purchaseOrders.order.orderBtn')}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

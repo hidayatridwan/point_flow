@@ -58,7 +58,9 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>{t('master.employees.deleteTitle')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				<span class="font-medium text-foreground">{employee.name}</span> — {t('master.employees.deleteDesc').replace('{name}', '')}
+				<span class="font-medium text-foreground">{employee.name}</span> — {t(
+					'master.employees.deleteDesc'
+				).replace('{name}', '')}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 

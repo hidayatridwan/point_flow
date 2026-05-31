@@ -291,12 +291,30 @@
 					</div>
 
 					<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-						<DetailField label={t('pos.registerSession.sessionNo')} value={activeSession.session_no} />
-						<DetailField label={t('pos.registerSession.register')} value={activeSession.cash_register_code} />
-						<DetailField label={t('pos.registerSession.openedBy')} value={activeSession.opened_by_name} />
-						<DetailField label={t('pos.registerSession.openedAt')} value={formatDateTime(activeSession.opened_at)} />
-						<DetailField label={t('pos.registerSession.openingCash')} value={formatIdr(activeSession.opening_cash)} />
-						<DetailField label={t('pos.registerSession.openingNotes')} value={activeSession.opening_notes ?? '-'} />
+						<DetailField
+							label={t('pos.registerSession.sessionNo')}
+							value={activeSession.session_no}
+						/>
+						<DetailField
+							label={t('pos.registerSession.register')}
+							value={activeSession.cash_register_code}
+						/>
+						<DetailField
+							label={t('pos.registerSession.openedBy')}
+							value={activeSession.opened_by_name}
+						/>
+						<DetailField
+							label={t('pos.registerSession.openedAt')}
+							value={formatDateTime(activeSession.opened_at)}
+						/>
+						<DetailField
+							label={t('pos.registerSession.openingCash')}
+							value={formatIdr(activeSession.opening_cash)}
+						/>
+						<DetailField
+							label={t('pos.registerSession.openingNotes')}
+							value={activeSession.opening_notes ?? '-'}
+						/>
 					</div>
 				</div>
 
@@ -328,8 +346,7 @@
 							<span class="font-medium">{formatIdr(activeSession.opening_cash)}</span>
 						</div>
 						<p class="text-muted-foreground">
-							Expected cash includes completed sales, refunds, and completed cash drawer
-							movements.
+							Expected cash includes completed sales, refunds, and completed cash drawer movements.
 						</p>
 					</div>
 
@@ -376,13 +393,22 @@
 
 					{#if closedSession}
 						<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-							<DetailField label={t('pos.registerSession.closedSession')} value={closedSession.session_no} />
-							<DetailField label={t('pos.registerSession.expectedCash')} value={formatIdr(closedSession.expected_cash)} />
+							<DetailField
+								label={t('pos.registerSession.closedSession')}
+								value={closedSession.session_no}
+							/>
+							<DetailField
+								label={t('pos.registerSession.expectedCash')}
+								value={formatIdr(closedSession.expected_cash)}
+							/>
 							<DetailField
 								label={t('pos.registerSession.countedCash')}
 								value={formatIdr(closedSession.closing_cash_counted)}
 							/>
-							<DetailField label={t('pos.registerSession.difference')} value={formatIdr(closedSession.cash_difference)} />
+							<DetailField
+								label={t('pos.registerSession.difference')}
+								value={formatIdr(closedSession.cash_difference)}
+							/>
 						</div>
 					{/if}
 				</div>

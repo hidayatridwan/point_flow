@@ -13,7 +13,7 @@
 	import { ApiError } from '$lib/api/types.js';
 	import DataPagination from '$lib/components/data-pagination.svelte';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
-	import PageHeader from '$lib/components/page-header.svelte';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import SearchField from '$lib/components/search-field.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import SupplierCreateDialog from './components/supplier-create-dialog.svelte';
@@ -175,49 +175,54 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader
-		title={t('master.suppliers.title')}
-		description={t('master.suppliers.subtitle')}
-	>
-		{#snippet actions()}
-			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
-				<PlusIcon />
-				{t('master.suppliers.addBtn')}
-			</Button>
-		{/snippet}
-	</PageHeader>
+	<Card.Root>
+		<Card.Header>
+			<div>
+				<Card.Title>{t('master.suppliers.title')}</Card.Title>
+				<Card.Description>{t('master.suppliers.subtitle')}</Card.Description>
+			</div>
+			<Card.Action>
+				<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
+					<PlusIcon />
+					{t('master.suppliers.addBtn')}
+				</Button>
+			</Card.Action>
+		</Card.Header>
 
-	<section class="flex flex-col gap-3" aria-labelledby="suppliers-table-title">
-		<h2 id="suppliers-table-title" class="sr-only">{t('master.suppliers.srHeading')}</h2>
-
-		<SearchField
-			value={searchValue}
-			disabled={isLoading}
-			ariaLabel={t('master.suppliers.searchAriaLabel')}
-			placeholder={t('master.suppliers.searchPlaceholder')}
-			onValueChange={updateSearchValue}
-		/>
-
-		{#if errorMessage && !isLoading}
-			<ErrorAlert title={t('master.suppliers.errorLoad')} message={errorMessage} />
-		{:else}
-			<SuppliersTable
-				{suppliers}
-				{isLoading}
-				onSupplierDeleted={refreshSuppliersAfterDelete}
-				onSupplierUpdated={updateSupplierInList}
-				emptyMessage={query.search ? t('master.suppliers.emptySearch') : t('master.suppliers.emptyDefault')}
+		<Card.Content class="flex flex-col gap-3">
+			<SearchField
+				value={searchValue}
+				disabled={isLoading}
+				ariaLabel={t('master.suppliers.searchAriaLabel')}
+				placeholder={t('master.suppliers.searchPlaceholder')}
+				onValueChange={updateSearchValue}
 			/>
-			{#if !isLoading}
+
+			{#if errorMessage && !isLoading}
+				<ErrorAlert title={t('master.suppliers.errorLoad')} message={errorMessage} />
+			{:else}
+				<SuppliersTable
+					{suppliers}
+					{isLoading}
+					onSupplierDeleted={refreshSuppliersAfterDelete}
+					onSupplierUpdated={updateSupplierInList}
+					emptyMessage={query.search
+						? t('master.suppliers.emptySearch')
+						: t('master.suppliers.emptyDefault')}
+				/>
+			{/if}
+		</Card.Content>
+		{#if !isLoading && !errorMessage}
+			<Card.Footer>
 				<DataPagination
 					{pagination}
 					{pageSizeOptions}
 					onPageChange={updatePage}
 					onPageSizeChange={updatePageSize}
 				/>
-			{/if}
+			</Card.Footer>
 		{/if}
-	</section>
+	</Card.Root>
 
 	<SupplierCreateDialog bind:open={isCreateOpen} onCreated={refreshSuppliersAfterCreate} />
 </div>

@@ -1,11 +1,13 @@
+use chrono::NaiveDate;
 use sqlx::PgPool;
 
 use crate::{
     error::AppResult,
     models::{
-        DailySalesReport, DashboardResponse, GoodsReceiptReport, ListQuery, MonthlySalesReport,
-        PayrollReport, PurchaseOrderReport, StockAdjustmentReport, StockMovementReport,
-        StockMovementReportQuery, StockReport,
+        CashierPerformance, DailySalesReport, DashboardResponse, GoodsReceiptReport,
+        HourlySalesPoint, ListQuery, MonthlySalesReport, PayrollReport, ProcurementFunnel,
+        ProductScatterItem, PurchaseOrderReport, SalesByCategoryItem, StockAdjustmentReport,
+        StockMovementReport, StockMovementReportQuery, StockReport, SalesTrendPoint, TopProductItem,
     },
     services::reports,
 };
@@ -53,4 +55,43 @@ pub async fn stock_adjustments(
 
 pub async fn payroll(pool: &PgPool, query: ListQuery) -> AppResult<Vec<PayrollReport>> {
     reports::payroll(pool, query).await
+}
+
+pub async fn sales_trend(pool: &PgPool, days: i32) -> AppResult<Vec<SalesTrendPoint>> {
+    reports::sales_trend(pool, days).await
+}
+
+pub async fn top_products(pool: &PgPool, days: i32, limit: i32) -> AppResult<Vec<TopProductItem>> {
+    reports::top_products(pool, days, limit).await
+}
+
+pub async fn hourly_sales(pool: &PgPool, date: NaiveDate) -> AppResult<Vec<HourlySalesPoint>> {
+    reports::hourly_sales(pool, date).await
+}
+
+pub async fn low_stock(pool: &PgPool, limit: i64) -> AppResult<Vec<StockReport>> {
+    reports::low_stock(pool, limit).await
+}
+
+pub async fn sales_by_category(pool: &PgPool, days: i32) -> AppResult<Vec<SalesByCategoryItem>> {
+    reports::sales_by_category(pool, days).await
+}
+
+pub async fn product_scatter(
+    pool: &PgPool,
+    days: i32,
+    limit: i32,
+) -> AppResult<Vec<ProductScatterItem>> {
+    reports::product_scatter(pool, days, limit).await
+}
+
+pub async fn cashier_performance(
+    pool: &PgPool,
+    days: i32,
+) -> AppResult<Vec<CashierPerformance>> {
+    reports::cashier_performance(pool, days).await
+}
+
+pub async fn procurement_funnel(pool: &PgPool) -> AppResult<ProcurementFunnel> {
+    reports::procurement_funnel(pool).await
 }

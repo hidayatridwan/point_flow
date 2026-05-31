@@ -242,7 +242,7 @@
 					disabled={isSubmitting}
 				>
 					{t('common.cancel')}
-					</Dialog.Close>
+				</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting}>
 					{#if isSubmitting}
 						<Spinner />

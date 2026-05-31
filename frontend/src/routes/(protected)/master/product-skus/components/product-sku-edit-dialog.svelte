@@ -405,7 +405,10 @@
 
 				<div class="mt-5 grid gap-3">
 					{#if unitsErrorMessage}
-						<ErrorAlert title={t('master.productSkus.errorLoadUnits')} message={unitsErrorMessage} />
+						<ErrorAlert
+							title={t('master.productSkus.errorLoadUnits')}
+							message={unitsErrorMessage}
+						/>
 					{/if}
 
 					{#if errorMessage}

@@ -99,7 +99,10 @@
 
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 					<DetailField label="Reason" value={stockAdjustment.reason} />
-					<DetailField label={t('inventory.stockAdjustments.detail.colNotes')} value={stockAdjustment.notes || '-'} />
+					<DetailField
+						label={t('inventory.stockAdjustments.detail.colNotes')}
+						value={stockAdjustment.notes || '-'}
+					/>
 					<DetailField label="Cancel Reason" value={stockAdjustment.cancel_reason || '-'} />
 					<DetailField label="Created At" value={formatDateTime(stockAdjustment.created_at)} />
 				</div>

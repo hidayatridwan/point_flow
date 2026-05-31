@@ -184,7 +184,9 @@
 										<Select.Item value="false" label={t('master.units.decimalWholeOnly')}>
 											Whole numbers only
 										</Select.Item>
-										<Select.Item value="true" label={t('master.units.decimalAllowed')}>Allow decimals</Select.Item>
+										<Select.Item value="true" label={t('master.units.decimalAllowed')}
+											>Allow decimals</Select.Item
+										>
 									</Select.Content>
 								</Select.Root>
 							{/snippet}

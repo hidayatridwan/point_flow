@@ -35,8 +35,8 @@
 					variant="ghost"
 					size="icon-sm"
 					class="size-8"
-					aria-label={`Open actions for ${employee.name}`}
-					title="Actions"
+					aria-label={`${t('common.action')}: ${employee.name}`}
+					title={t('common.action')}
 				>
 					<EllipsisIcon />
 				</Button>
@@ -45,15 +45,15 @@
 		<DropdownMenu.Content align="end" class="min-w-36">
 			<DropdownMenu.Item onSelect={() => (isDetailOpen = true)}>
 				<EyeIcon />
-				Detail
+				{t('common.detail')}
 			</DropdownMenu.Item>
 			<DropdownMenu.Item onSelect={() => (isEditOpen = true)}>
 				<PencilIcon />
-				Edit
+				{t('common.edit')}
 			</DropdownMenu.Item>
 			<DropdownMenu.Item variant="destructive" onSelect={() => (isDeleteOpen = true)}>
 				<TrashIcon />
-				Delete
+				{t('common.delete')}
 			</DropdownMenu.Item>
 		</DropdownMenu.Content>
 	</DropdownMenu.Root>

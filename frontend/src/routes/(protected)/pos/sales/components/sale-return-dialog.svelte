@@ -52,12 +52,8 @@
 	const totalRefund = $derived(
 		formItems.reduce((total, item) => total + getQuantity(item) * item.item.unit_price, 0)
 	);
-	const selectedItemCount = $derived(
-		formItems.filter((item) => getQuantity(item) > 0).length
-	);
-	const hasReturnableItems = $derived(
-		formItems.some((item) => item.item.returnable_quantity > 0)
-	);
+	const selectedItemCount = $derived(formItems.filter((item) => getQuantity(item) > 0).length);
+	const hasReturnableItems = $derived(formItems.some((item) => item.item.returnable_quantity > 0));
 	const canSubmit = $derived(
 		Boolean(activeSessionId) && selectedItemCount > 0 && !isLoading && !isSubmitting
 	);
@@ -211,12 +207,7 @@
 							<p class="text-sm text-destructive">
 								{t('pos.sales.return.noRegister')}
 							</p>
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								href="/pos/register-session"
-							>
+							<Button type="button" variant="outline" size="sm" href="/pos/register-session">
 								{t('pos.sales.return.goRegisterBtn')}
 							</Button>
 						</div>
@@ -246,7 +237,9 @@
 								</Table.Header>
 								<Table.Body>
 									{#each formItems as item (item.item.id)}
-										<Table.Row class={item.item.returnable_quantity <= 0 ? 'opacity-60' : undefined}>
+										<Table.Row
+											class={item.item.returnable_quantity <= 0 ? 'opacity-60' : undefined}
+										>
 											<Table.Cell>
 												<div class="font-medium">{item.item.product_name}</div>
 												<div class="text-xs text-muted-foreground">
@@ -363,7 +356,7 @@
 					disabled={isSubmitting}
 				>
 					{t('pos.sales.return.cancelBtn')}
-					</Dialog.Close>
+				</Dialog.Close>
 				<Button type="submit" disabled={!canSubmit}>
 					{#if isSubmitting}
 						<Spinner />

@@ -108,7 +108,9 @@
 					{:else}
 						<BanIcon />
 					{/if}
-					{isSubmitting ? t('procurement.purchaseOrders.cancelling') : t('procurement.purchaseOrders.cancelOrderBtn')}
+					{isSubmitting
+						? t('procurement.purchaseOrders.cancelling')
+						: t('procurement.purchaseOrders.cancelOrderBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

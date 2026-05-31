@@ -67,5 +67,5 @@
 
 	<RoleDetailDialog roleId={role.id} bind:open={isDetailOpen} />
 	<RoleFormDialog {role} {permissions} bind:open={isEditOpen} onSaved={onUpdated} />
-	<RoleDeleteAlertDialog {role} bind:open={isDeleteOpen} onDeleted={onDeleted} />
+	<RoleDeleteAlertDialog {role} bind:open={isDeleteOpen} {onDeleted} />
 </div>

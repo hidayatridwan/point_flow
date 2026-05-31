@@ -176,12 +176,14 @@
 					disabled={isSubmitting}
 				>
 					{t('common.cancel')}
-					</Dialog.Close>
+				</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting}>
 					{#if isSubmitting}
 						<Spinner />
 					{/if}
-					{isSubmitting ? t('master.productCategories.creating') : t('master.productCategories.createBtn')}
+					{isSubmitting
+						? t('master.productCategories.creating')
+						: t('master.productCategories.createBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

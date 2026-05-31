@@ -13,7 +13,7 @@
 	import { ApiError } from '$lib/api/types.js';
 	import DataPagination from '$lib/components/data-pagination.svelte';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
-	import PageHeader from '$lib/components/page-header.svelte';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import SearchField from '$lib/components/search-field.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import ProductSkuCreateDialog from './components/product-sku-create-dialog.svelte';
@@ -175,49 +175,54 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader
-		title={t('master.productSkus.title')}
-		description={t('master.productSkus.subtitle')}
-	>
-		{#snippet actions()}
-			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
-				<PlusIcon />
-				{t('master.productSkus.addBtn')}
-			</Button>
-		{/snippet}
-	</PageHeader>
+	<Card.Root>
+		<Card.Header>
+			<div>
+				<Card.Title>{t('master.productSkus.title')}</Card.Title>
+				<Card.Description>{t('master.productSkus.subtitle')}</Card.Description>
+			</div>
+			<Card.Action>
+				<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
+					<PlusIcon />
+					{t('master.productSkus.addBtn')}
+				</Button>
+			</Card.Action>
+		</Card.Header>
 
-	<section class="flex flex-col gap-3" aria-labelledby="product-skus-table-title">
-		<h2 id="product-skus-table-title" class="sr-only">{t('master.productSkus.srHeading')}</h2>
-
-		<SearchField
-			value={searchValue}
-			disabled={isLoading}
-			ariaLabel={t('master.productSkus.searchAriaLabel')}
-			placeholder={t('master.productSkus.searchPlaceholder')}
-			onValueChange={updateSearchValue}
-		/>
-
-		{#if errorMessage && !isLoading}
-			<ErrorAlert title={t('master.productSkus.errorLoad')} message={errorMessage} />
-		{:else}
-			<ProductSkusTable
-				{productSkus}
-				{isLoading}
-				onProductSkuDeleted={refreshProductSkusAfterDelete}
-				onProductSkuUpdated={updateProductSkuInList}
-				emptyMessage={query.search ? t('master.productSkus.emptySearch') : t('master.productSkus.emptyDefault')}
+		<Card.Content class="flex flex-col gap-3">
+			<SearchField
+				value={searchValue}
+				disabled={isLoading}
+				ariaLabel={t('master.productSkus.searchAriaLabel')}
+				placeholder={t('master.productSkus.searchPlaceholder')}
+				onValueChange={updateSearchValue}
 			/>
-			{#if !isLoading}
+
+			{#if errorMessage && !isLoading}
+				<ErrorAlert title={t('master.productSkus.errorLoad')} message={errorMessage} />
+			{:else}
+				<ProductSkusTable
+					{productSkus}
+					{isLoading}
+					onProductSkuDeleted={refreshProductSkusAfterDelete}
+					onProductSkuUpdated={updateProductSkuInList}
+					emptyMessage={query.search
+						? t('master.productSkus.emptySearch')
+						: t('master.productSkus.emptyDefault')}
+				/>
+			{/if}
+		</Card.Content>
+		{#if !isLoading && !errorMessage}
+			<Card.Footer>
 				<DataPagination
 					{pagination}
 					{pageSizeOptions}
 					onPageChange={updatePage}
 					onPageSizeChange={updatePageSize}
 				/>
-			{/if}
+			</Card.Footer>
 		{/if}
-	</section>
+	</Card.Root>
 
 	<ProductSkuCreateDialog bind:open={isCreateOpen} onCreated={refreshProductSkusAfterCreate} />
 </div>

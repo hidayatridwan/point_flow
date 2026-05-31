@@ -25,7 +25,7 @@
 	import DataTableFacetedFilter from '$lib/components/data-table-faceted-filter.svelte';
 	import DataPagination from '$lib/components/data-pagination.svelte';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
-	import PageHeader from '$lib/components/page-header.svelte';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import SearchField from '$lib/components/search-field.svelte';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
@@ -46,9 +46,21 @@
 	const statusFilterOptions = [
 		{ value: 'draft', label: t('procurement.purchaseOrders.filterDraft'), icon: CircleIcon },
 		{ value: 'ordered', label: t('procurement.purchaseOrders.filterOrdered'), icon: SendIcon },
-		{ value: 'partially_received', label: t('procurement.purchaseOrders.filterPartiallyReceived'), icon: CircleDotIcon },
-		{ value: 'received', label: t('procurement.purchaseOrders.filterReceived'), icon: PackageCheckIcon },
-		{ value: 'cancelled', label: t('procurement.purchaseOrders.filterCancelled'), icon: CircleOffIcon }
+		{
+			value: 'partially_received',
+			label: t('procurement.purchaseOrders.filterPartiallyReceived'),
+			icon: CircleDotIcon
+		},
+		{
+			value: 'received',
+			label: t('procurement.purchaseOrders.filterReceived'),
+			icon: PackageCheckIcon
+		},
+		{
+			value: 'cancelled',
+			label: t('procurement.purchaseOrders.filterCancelled'),
+			icon: CircleOffIcon
+		}
 	];
 	const statusFilterValues = new Set(statusFilterOptions.map((option) => option.value));
 
@@ -269,92 +281,95 @@
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader
-		title={t('procurement.purchaseOrders.title')}
-		description={t('procurement.purchaseOrders.subtitle')}
-	>
-		{#snippet actions()}
-			<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
-				<PlusIcon />
-				{t('procurement.purchaseOrders.addBtn')}
-			</Button>
-		{/snippet}
-	</PageHeader>
+	<Card.Root>
+		<Card.Header>
+			<div>
+				<Card.Title>{t('procurement.purchaseOrders.title')}</Card.Title>
+				<Card.Description>{t('procurement.purchaseOrders.subtitle')}</Card.Description>
+			</div>
+			<Card.Action>
+				<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
+					<PlusIcon />
+					{t('procurement.purchaseOrders.addBtn')}
+				</Button>
+			</Card.Action>
+		</Card.Header>
 
-	<section class="flex flex-col gap-3" aria-labelledby="purchase-orders-table-title">
-		<h2 id="purchase-orders-table-title" class="sr-only">Purchase order records</h2>
+		<Card.Content class="flex flex-col gap-3">
+			<div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+				<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+					<SearchField
+						value={searchValue}
+						disabled={isLoading}
+						ariaLabel="Search purchase orders"
+						placeholder={t('procurement.purchaseOrders.searchPlaceholder')}
+						class="sm:max-w-sm"
+						onValueChange={updateSearchValue}
+					/>
+					<DataTableFacetedFilter
+						title="Status"
+						options={statusFilterOptions}
+						value={query.status}
+						disabled={isLoading}
+						onValueChange={updateStatusFilter}
+					/>
+				</div>
 
-		<div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-			<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-				<SearchField
-					value={searchValue}
-					disabled={isLoading}
-					ariaLabel="Search purchase orders"
-					placeholder={t('procurement.purchaseOrders.searchPlaceholder')}
-					class="sm:max-w-sm"
-					onValueChange={updateSearchValue}
-				/>
-				<DataTableFacetedFilter
-					title="Status"
-					options={statusFilterOptions}
-					value={query.status}
-					disabled={isLoading}
-					onValueChange={updateStatusFilter}
-				/>
+				<Popover.Root bind:open={isDateRangeOpen}>
+					<Popover.Trigger
+						class={cn(
+							buttonVariants({ variant: 'outline' }),
+							'h-9 w-full justify-start gap-2 px-3 text-left font-normal sm:w-70',
+							!query.from && !query.to && 'text-muted-foreground'
+						)}
+						disabled={isLoading}
+						aria-label="Filter purchase orders by date range"
+					>
+						<CalendarIcon class="size-4" />
+						<span class="truncate">{getDateRangeLabel()}</span>
+					</Popover.Trigger>
+					<Popover.Content align="end" class="w-auto max-w-[calc(100vw-2rem)] overflow-x-auto p-0">
+						<RangeCalendar
+							bind:value={dateRangeValue}
+							class="rounded-md border-0 shadow-none"
+							numberOfMonths={2}
+						/>
+						{#if query.from || query.to}
+							<div class="flex justify-end border-t bg-popover p-2">
+								<Button type="button" variant="ghost" size="sm" onclick={clearDateRangeFilter}>
+									<XIcon />
+									Clear
+								</Button>
+							</div>
+						{/if}
+					</Popover.Content>
+				</Popover.Root>
 			</div>
 
-			<Popover.Root bind:open={isDateRangeOpen}>
-				<Popover.Trigger
-					class={cn(
-						buttonVariants({ variant: 'outline' }),
-						'h-9 w-full justify-start gap-2 px-3 text-left font-normal sm:w-70',
-						!query.from && !query.to && 'text-muted-foreground'
-					)}
-					disabled={isLoading}
-					aria-label="Filter purchase orders by date range"
-				>
-					<CalendarIcon class="size-4" />
-					<span class="truncate">{getDateRangeLabel()}</span>
-				</Popover.Trigger>
-				<Popover.Content align="end" class="w-auto max-w-[calc(100vw-2rem)] overflow-x-auto p-0">
-					<RangeCalendar
-						bind:value={dateRangeValue}
-						class="rounded-md border-0 shadow-none"
-						numberOfMonths={2}
-					/>
-					{#if query.from || query.to}
-						<div class="flex justify-end border-t bg-popover p-2">
-							<Button type="button" variant="ghost" size="sm" onclick={clearDateRangeFilter}>
-								<XIcon />
-								Clear
-							</Button>
-						</div>
-					{/if}
-				</Popover.Content>
-			</Popover.Root>
-		</div>
-
-		{#if errorMessage && !isLoading}
-			<ErrorAlert title={t('procurement.purchaseOrders.errorLoad')} message={errorMessage} />
-		{:else}
-			<PurchaseOrdersTable
-				{purchaseOrders}
-				{isLoading}
-				onPurchaseOrderChanged={updatePurchaseOrderInList}
-				emptyMessage={query.search || query.status.length || query.from || query.to
-					? t('procurement.purchaseOrders.emptySearch')
-					: t('procurement.purchaseOrders.emptyDefault')}
-			/>
-			{#if !isLoading}
+			{#if errorMessage && !isLoading}
+				<ErrorAlert title={t('procurement.purchaseOrders.errorLoad')} message={errorMessage} />
+			{:else}
+				<PurchaseOrdersTable
+					{purchaseOrders}
+					{isLoading}
+					onPurchaseOrderChanged={updatePurchaseOrderInList}
+					emptyMessage={query.search || query.status.length || query.from || query.to
+						? t('procurement.purchaseOrders.emptySearch')
+						: t('procurement.purchaseOrders.emptyDefault')}
+				/>
+			{/if}
+		</Card.Content>
+		{#if !isLoading && !errorMessage}
+			<Card.Footer>
 				<DataPagination
 					{pagination}
 					{pageSizeOptions}
 					onPageChange={updatePage}
 					onPageSizeChange={updatePageSize}
 				/>
-			{/if}
+			</Card.Footer>
 		{/if}
-	</section>
+	</Card.Root>
 
 	<PurchaseOrderCreateDialog
 		bind:open={isCreateOpen}

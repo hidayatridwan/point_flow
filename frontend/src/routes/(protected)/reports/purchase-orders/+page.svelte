@@ -23,7 +23,7 @@
 	import DataPagination from '$lib/components/data-pagination.svelte';
 	import DataTableFacetedFilter from '$lib/components/data-table-faceted-filter.svelte';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
-	import PageHeader from '$lib/components/page-header.svelte';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import SearchField from '$lib/components/search-field.svelte';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
@@ -222,9 +222,9 @@
 
 	function getDateRangeLabel() {
 		if (query.from && query.to) return `${formatDate(query.from)} - ${formatDate(query.to)}`;
-		if (query.from) return `From ${formatDate(query.from)}`;
-		if (query.to) return `Until ${formatDate(query.to)}`;
-		return 'Select date range';
+		if (query.from) return `${t('common.from')} ${formatDate(query.from)}`;
+		if (query.to) return `${t('common.until')} ${formatDate(query.to)}`;
+		return t('common.selectDateRange');
 	}
 
 	function parseStatusQuery(value: string): PurchaseOrderStatus[] {
@@ -240,91 +240,95 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load purchase order report.';
+		return t('reports.purchaseOrders.errorLoad');
 	}
 </script>
 
 <svelte:head>
-	<title>Purchase Order Report | POS System</title>
+	<title>{t('reports.purchaseOrders.title')} | {t('app.name')}</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-	<PageHeader
-		title="Purchase Order Report"
-		description="Review purchase order quantities, receipt progress, supplier totals, and status."
-	/>
+	<Card.Root>
+		<Card.Header>
+			<div>
+				<Card.Title>{t('reports.purchaseOrders.title')}</Card.Title>
+				<Card.Description>{t('reports.purchaseOrders.subtitle')}</Card.Description>
+			</div>
+		</Card.Header>
 
-	<section class="flex flex-col gap-3" aria-labelledby="purchase-order-report-table-title">
-		<h2 id="purchase-order-report-table-title" class="sr-only">Purchase order report records</h2>
+		<Card.Content class="flex flex-col gap-3">
+			<div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+				<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+					<SearchField
+						value={searchValue}
+						disabled={isLoading}
+						ariaLabel={`${t('common.search')} ${t('reports.purchaseOrders.title')}`}
+						placeholder={`${t('common.search')} ${t('reports.purchaseOrders.title')}...`}
+						class="sm:max-w-sm"
+						onValueChange={updateSearchValue}
+					/>
+					<DataTableFacetedFilter
+						title={t('common.status')}
+						options={statusFilterOptions}
+						value={query.status}
+						disabled={isLoading}
+						onValueChange={updateStatusFilter}
+					/>
+				</div>
 
-		<div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-			<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-				<SearchField
-					value={searchValue}
-					disabled={isLoading}
-					ariaLabel="Search purchase order report"
-					placeholder="Search purchase orders..."
-					class="sm:max-w-sm"
-					onValueChange={updateSearchValue}
-				/>
-				<DataTableFacetedFilter
-					title="Status"
-					options={statusFilterOptions}
-					value={query.status}
-					disabled={isLoading}
-					onValueChange={updateStatusFilter}
-				/>
+				<Popover.Root bind:open={isDateRangeOpen}>
+					<Popover.Trigger
+						class={cn(
+							buttonVariants({ variant: 'outline' }),
+							'h-9 w-full justify-start gap-2 px-3 text-left font-normal sm:w-70',
+							!query.from && !query.to && 'text-muted-foreground'
+						)}
+						disabled={isLoading}
+						aria-label={`${t('common.selectDateRange')}: ${t('reports.purchaseOrders.title')}`}
+					>
+						<CalendarIcon class="size-4" />
+						<span class="truncate">{getDateRangeLabel()}</span>
+					</Popover.Trigger>
+					<Popover.Content align="end" class="w-auto max-w-[calc(100vw-2rem)] overflow-x-auto p-0">
+						<RangeCalendar
+							bind:value={dateRangeValue}
+							class="rounded-md border-0 shadow-none"
+							numberOfMonths={2}
+						/>
+						{#if query.from || query.to}
+							<div class="flex justify-end border-t bg-popover p-2">
+								<Button type="button" variant="ghost" size="sm" onclick={clearDateRangeFilter}>
+									<XIcon />
+									{t('common.clear')}
+								</Button>
+							</div>
+						{/if}
+					</Popover.Content>
+				</Popover.Root>
 			</div>
 
-			<Popover.Root bind:open={isDateRangeOpen}>
-				<Popover.Trigger
-					class={cn(
-						buttonVariants({ variant: 'outline' }),
-						'h-9 w-full justify-start gap-2 px-3 text-left font-normal sm:w-70',
-						!query.from && !query.to && 'text-muted-foreground'
-					)}
-					disabled={isLoading}
-					aria-label="Filter purchase order report by date range"
-				>
-					<CalendarIcon class="size-4" />
-					<span class="truncate">{getDateRangeLabel()}</span>
-				</Popover.Trigger>
-				<Popover.Content align="end" class="w-auto max-w-[calc(100vw-2rem)] overflow-x-auto p-0">
-					<RangeCalendar
-						bind:value={dateRangeValue}
-						class="rounded-md border-0 shadow-none"
-						numberOfMonths={2}
-					/>
-					{#if query.from || query.to}
-						<div class="flex justify-end border-t bg-popover p-2">
-							<Button type="button" variant="ghost" size="sm" onclick={clearDateRangeFilter}>
-								<XIcon />
-								Clear
-							</Button>
-						</div>
-					{/if}
-				</Popover.Content>
-			</Popover.Root>
-		</div>
-
-		{#if errorMessage && !isLoading}
-			<ErrorAlert title="Failed to load purchase order report." message={errorMessage} />
-		{:else}
-			<PurchaseOrderReportTable
-				{reports}
-				{isLoading}
-				emptyMessage={query.search || query.from || query.to || query.status.length
-					? 'No purchase order report rows match your filters.'
-					: 'No purchase order report rows yet.'}
-			/>
-			{#if !isLoading}
+			{#if errorMessage && !isLoading}
+				<ErrorAlert title={t('reports.purchaseOrders.errorLoad')} message={errorMessage} />
+			{:else}
+				<PurchaseOrderReportTable
+					{reports}
+					{isLoading}
+					emptyMessage={query.search || query.from || query.to || query.status.length
+						? t('reports.purchaseOrders.emptySearch')
+						: t('reports.purchaseOrders.emptyDefault')}
+				/>
+			{/if}
+		</Card.Content>
+		{#if !isLoading && !errorMessage}
+			<Card.Footer>
 				<DataPagination
 					{pagination}
 					{pageSizeOptions}
 					onPageChange={updatePage}
 					onPageSizeChange={updatePageSize}
 				/>
-			{/if}
+			</Card.Footer>
 		{/if}
-	</section>
+	</Card.Root>
 </div>

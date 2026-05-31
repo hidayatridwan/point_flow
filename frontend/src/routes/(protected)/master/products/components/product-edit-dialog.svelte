@@ -236,7 +236,10 @@
 				</Form.Field>
 
 				{#if categoryErrorMessage}
-					<ErrorAlert title={t('master.products.errorLoadOptions')} message={categoryErrorMessage} />
+					<ErrorAlert
+						title={t('master.products.errorLoadOptions')}
+						message={categoryErrorMessage}
+					/>
 				{/if}
 
 				{#if errorMessage}

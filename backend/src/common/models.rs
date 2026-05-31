@@ -1165,3 +1165,71 @@ pub struct PayrollReport {
     pub total_deduction: f64,
     pub total_net_salary: f64,
 }
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct SalesTrendPoint {
+    pub date: NaiveDate,
+    pub revenue: f64,
+    pub transaction_count: i64,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct TopProductItem {
+    pub product_sku_id: i64,
+    pub product_name: String,
+    pub product_sku: String,
+    pub unit: String,
+    pub revenue: f64,
+    pub quantity_sold: f64,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct HourlySalesPoint {
+    pub hour: i32,
+    pub revenue: f64,
+    pub transaction_count: i64,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct SalesByCategoryItem {
+    pub category_name: String,
+    pub revenue: f64,
+    pub transaction_count: i64,
+    pub percentage: f64,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct ProductScatterItem {
+    pub product_sku_id: i64,
+    pub product_name: String,
+    pub product_sku: String,
+    pub unit: String,
+    pub selling_price: f64,
+    pub quantity_sold: f64,
+    pub revenue: f64,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct CashierPerformance {
+    pub cashier_id: i64,
+    pub cashier_name: String,
+    pub transaction_count: i64,
+    pub revenue: f64,
+    pub avg_basket_size: f64,
+    pub return_count: i64,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct ProcurementFunnel {
+    pub po_draft: i64,
+    pub po_ordered: i64,
+    pub po_partially_received: i64,
+    pub po_received: i64,
+    pub po_cancelled: i64,
+    pub gr_draft: i64,
+    pub gr_posted: i64,
+    pub gr_cancelled: i64,
+    pub sa_draft: i64,
+    pub sa_posted: i64,
+    pub sa_cancelled: i64,
+}

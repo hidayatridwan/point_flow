@@ -11,7 +11,17 @@
 					'bg-destructive/10 [a]:hover:bg-destructive/20 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive dark:bg-destructive/20',
 				outline: 'border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground',
 				ghost: 'hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50',
-				link: 'text-primary underline-offset-4 hover:underline'
+				link: 'text-primary underline-offset-4 hover:underline',
+				// Soft, borderless, translucent semantic tints — used by status badges.
+				success:
+					'bg-emerald-500/10 text-emerald-700 [a]:hover:bg-emerald-500/20 dark:bg-emerald-400/10 dark:text-emerald-300',
+				warning:
+					'bg-amber-500/10 text-amber-700 [a]:hover:bg-amber-500/20 dark:bg-amber-400/10 dark:text-amber-300',
+				info: 'bg-sky-500/10 text-sky-700 [a]:hover:bg-sky-500/20 dark:bg-sky-400/10 dark:text-sky-300',
+				accent:
+					'bg-violet-500/10 text-violet-700 [a]:hover:bg-violet-500/20 dark:bg-violet-400/10 dark:text-violet-300',
+				neutral:
+					'bg-zinc-500/10 text-zinc-600 [a]:hover:bg-zinc-500/20 dark:bg-zinc-400/10 dark:text-zinc-300'
 			}
 		},
 		defaultVariants: {

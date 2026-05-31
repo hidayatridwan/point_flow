@@ -80,17 +80,29 @@
 					</DetailField>
 					<DetailField label={t('pos.sales.detail.soldAt')} value={formatDateTime(sale.sold_at)} />
 					<DetailField label={t('pos.sales.detail.cashier')} value={sale.cashier_name} />
-					<DetailField label={t('pos.sales.detail.register')} value={sale.cash_register_code || '-'} />
+					<DetailField
+						label={t('pos.sales.detail.register')}
+						value={sale.cash_register_code || '-'}
+					/>
 					<DetailField label={t('pos.sales.detail.total')} value={formatIdr(sale.total_amount)} />
 					<DetailField label={t('pos.sales.detail.paid')} value={formatIdr(sale.paid_amount)} />
 					<DetailField label={t('pos.sales.detail.change')} value={formatIdr(sale.change_amount)} />
-					<DetailField label={t('pos.sales.detail.cancelledAt')} value={formatDateTime(sale.cancelled_at)} />
-					<DetailField label={t('pos.sales.detail.updatedAt')} value={formatDateTime(sale.updated_at)} />
+					<DetailField
+						label={t('pos.sales.detail.cancelledAt')}
+						value={formatDateTime(sale.cancelled_at)}
+					/>
+					<DetailField
+						label={t('pos.sales.detail.updatedAt')}
+						value={formatDateTime(sale.updated_at)}
+					/>
 				</div>
 
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 					<DetailField label={t('pos.sales.detail.notes')} value={sale.notes || '-'} />
-					<DetailField label={t('pos.sales.detail.cancelReason')} value={sale.cancel_reason || '-'} />
+					<DetailField
+						label={t('pos.sales.detail.cancelReason')}
+						value={sale.cancel_reason || '-'}
+					/>
 				</div>
 
 				<div class="overflow-hidden rounded-md border">
