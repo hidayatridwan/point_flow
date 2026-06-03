@@ -1,17 +1,20 @@
 use std::{env, net::IpAddr};
 
 use anyhow::{Context, Result, bail};
+use axum::http::HeaderValue;
 
 pub struct AppConfig {
     pub host: IpAddr,
     pub port: u16,
     pub database_url: String,
+    pub cors_allowed_origins: Vec<HeaderValue>,
     pub jwt_secret: String,
     pub jwt_ttl_seconds: i64,
     pub refresh_token_ttl_seconds: i64,
     pub refresh_token_cookie_name: String,
     pub refresh_token_cookie_secure: bool,
     pub refresh_token_cookie_same_site: String,
+    pub refresh_token_cookie_domain: Option<String>,
 }
 
 impl AppConfig {
@@ -25,6 +28,8 @@ impl AppConfig {
             .parse()
             .context("APP_PORT must be a valid TCP port")?;
         let database_url = env::var("DATABASE_URL").context("DATABASE_URL is required")?;
+        let cors_allowed_origins =
+            parse_cors_allowed_origins(&env::var("CORS_ALLOWED_ORIGINS").unwrap_or_default())?;
         let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| {
             "dev-only-change-this-secret-before-running-in-production".to_string()
         });
@@ -45,6 +50,8 @@ impl AppConfig {
         let refresh_token_cookie_same_site = normalize_same_site(
             &env::var("REFRESH_TOKEN_COOKIE_SAME_SITE").unwrap_or_else(|_| "Lax".to_string()),
         )?;
+        let refresh_token_cookie_domain =
+            normalize_cookie_domain(env::var("REFRESH_TOKEN_COOKIE_DOMAIN").ok())?;
 
         if jwt_ttl_seconds <= 0 {
             bail!("JWT_TTL_SECONDS must be greater than zero");
@@ -63,14 +70,40 @@ impl AppConfig {
             host,
             port,
             database_url,
+            cors_allowed_origins,
             jwt_secret,
             jwt_ttl_seconds,
             refresh_token_ttl_seconds,
             refresh_token_cookie_name,
             refresh_token_cookie_secure,
             refresh_token_cookie_same_site,
+            refresh_token_cookie_domain,
         })
     }
+}
+
+fn parse_cors_allowed_origins(value: &str) -> Result<Vec<HeaderValue>> {
+    value
+        .split(',')
+        .map(str::trim)
+        .filter(|origin| !origin.is_empty())
+        .map(parse_cors_origin)
+        .collect()
+}
+
+fn parse_cors_origin(origin: &str) -> Result<HeaderValue> {
+    if origin == "*" {
+        bail!("CORS_ALLOWED_ORIGINS does not allow wildcard '*' when credentials are enabled");
+    }
+    if !(origin.starts_with("http://") || origin.starts_with("https://")) {
+        bail!("CORS_ALLOWED_ORIGINS entries must include http:// or https://");
+    }
+    if origin.ends_with('/') {
+        bail!("CORS_ALLOWED_ORIGINS entries must not end with a trailing slash");
+    }
+
+    HeaderValue::from_str(origin)
+        .with_context(|| format!("CORS_ALLOWED_ORIGINS contains an invalid origin: {origin}"))
 }
 
 fn normalize_same_site(value: &str) -> Result<String> {
@@ -80,4 +113,22 @@ fn normalize_same_site(value: &str) -> Result<String> {
         "none" => Ok("None".to_string()),
         _ => bail!("REFRESH_TOKEN_COOKIE_SAME_SITE must be Lax, Strict, or None"),
     }
+}
+
+fn normalize_cookie_domain(value: Option<String>) -> Result<Option<String>> {
+    let Some(value) = value else {
+        return Ok(None);
+    };
+    let domain = value.trim();
+    if domain.is_empty() {
+        return Ok(None);
+    }
+    if domain.starts_with("http://") || domain.starts_with("https://") {
+        bail!("REFRESH_TOKEN_COOKIE_DOMAIN must be a domain, not a URL");
+    }
+    if domain.contains(';') || domain.contains(',') || domain.chars().any(char::is_whitespace) {
+        bail!("REFRESH_TOKEN_COOKIE_DOMAIN contains invalid characters");
+    }
+
+    Ok(Some(domain.to_string()))
 }

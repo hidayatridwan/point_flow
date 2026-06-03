@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
 use anyhow::Context;
-use axum::{Router, middleware};
+use axum::{Router, http::HeaderValue, middleware};
 use tower_http::{
     compression::CompressionLayer,
     cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer},
@@ -22,12 +22,14 @@ pub async fn run() -> anyhow::Result<()> {
 
     let state = AppState::new(
         pool,
+        config.cors_allowed_origins,
         config.jwt_secret,
         config.jwt_ttl_seconds,
         config.refresh_token_ttl_seconds,
         config.refresh_token_cookie_name,
         config.refresh_token_cookie_secure,
         config.refresh_token_cookie_same_site,
+        config.refresh_token_cookie_domain,
     );
     let addr = SocketAddr::from((config.host, config.port));
     let app = app(state);
@@ -40,21 +42,31 @@ pub async fn run() -> anyhow::Result<()> {
 }
 
 pub fn app(state: AppState) -> Router {
+    let cors = cors_layer(&state.cors_allowed_origins);
+
     Router::new()
         .nest("/api/v1", http::router())
         .layer(CompressionLayer::new())
-        .layer(
-            CorsLayer::new()
-                .allow_origin(AllowOrigin::mirror_request())
-                .allow_methods(AllowMethods::mirror_request())
-                .allow_headers(AllowHeaders::mirror_request())
-                .allow_credentials(true),
-        )
+        .layer(cors)
         .layer(TraceLayer::new_for_http())
         .layer(PropagateRequestIdLayer::x_request_id())
         .layer(middleware::from_fn(request_context::bind_request_id))
         .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid))
         .with_state(state)
+}
+
+fn cors_layer(allowed_origins: &[HeaderValue]) -> CorsLayer {
+    let allow_origin = if allowed_origins.is_empty() {
+        AllowOrigin::mirror_request()
+    } else {
+        AllowOrigin::list(allowed_origins.to_vec())
+    };
+
+    CorsLayer::new()
+        .allow_origin(allow_origin)
+        .allow_methods(AllowMethods::mirror_request())
+        .allow_headers(AllowHeaders::mirror_request())
+        .allow_credentials(true)
 }
 
 fn init_tracing() {

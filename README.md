@@ -100,12 +100,14 @@ Variable utama:
 APP_HOST=0.0.0.0
 APP_PORT=8080
 DATABASE_URL=postgres://pos:pos@localhost:5432/pos
+CORS_ALLOWED_ORIGINS=
 JWT_SECRET=dev-only-change-this-secret-before-running-in-production
 JWT_TTL_SECONDS=900
 REFRESH_TOKEN_TTL_SECONDS=2592000
 REFRESH_TOKEN_COOKIE_NAME=refresh_token
 REFRESH_TOKEN_COOKIE_SECURE=false
 REFRESH_TOKEN_COOKIE_SAME_SITE=Lax
+REFRESH_TOKEN_COOKIE_DOMAIN=
 ```
 
 Untuk local HTTP tanpa HTTPS, browser bisa menolak cookie `Secure`. Saat testing lokal dengan Postman biasanya aman, tetapi untuk browser development gunakan:
@@ -114,7 +116,7 @@ Untuk local HTTP tanpa HTTPS, browser bisa menolak cookie `Secure`. Saat testing
 REFRESH_TOKEN_COOKIE_SECURE=false
 ```
 
-Untuk environment production HTTPS, set `REFRESH_TOKEN_COOKIE_SECURE=true`. Jangan gunakan `JWT_SECRET` default untuk environment production.
+Untuk environment production HTTPS dengan frontend di Netlify dan backend di domain sendiri, gunakan `CORS_ALLOWED_ORIGINS=https://nama-site.netlify.app`, `REFRESH_TOKEN_COOKIE_SECURE=true`, dan `REFRESH_TOKEN_COOKIE_SAME_SITE=None`. Biarkan `REFRESH_TOKEN_COOKIE_DOMAIN` kosong jika cookie cukup host-only di domain backend. Jangan gunakan `JWT_SECRET` default untuk environment production.
 
 ## Run With Docker Compose
 
@@ -146,6 +148,42 @@ Response:
 ```
 
 Migration SQL di `backend/migrations` dipasang ke container PostgreSQL melalui `/docker-entrypoint-initdb.d`. File migration akan otomatis dijalankan saat database volume pertama kali dibuat.
+
+## Production Deploy
+
+Backend production di VPS memakai compose terpisah:
+
+```bash
+cp .env.prod.example .env.prod
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
+
+Edit `.env.prod` sebelum menjalankan command tersebut:
+
+```text
+DATABASE_URL=postgres://pos:password-yang-sama@postgres:5432/pos
+CORS_ALLOWED_ORIGINS=https://nama-site.netlify.app
+JWT_SECRET=secret-production-yang-panjang-dan-random
+REFRESH_TOKEN_COOKIE_SECURE=true
+REFRESH_TOKEN_COOKIE_SAME_SITE=None
+POSTGRES_PASSWORD=password-yang-sama
+```
+
+Compose production hanya menjalankan backend dan PostgreSQL. PostgreSQL tidak publish port ke host, sedangkan backend bind ke `127.0.0.1:8080` untuk dipakai reverse proxy HTTPS di VPS.
+
+Frontend production dideploy oleh Netlify dari folder `frontend`. `netlify.toml` sudah mengatur:
+
+```text
+base = "frontend"
+command = "bun run build"
+publish = "build"
+```
+
+Set environment variable berikut di Netlify:
+
+```text
+PUBLIC_API_BASE_URL=https://domain-backend-anda.com/api/v1
+```
 
 ## Run Backend Locally
 

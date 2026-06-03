@@ -146,6 +146,9 @@ fn build_refresh_token_cookie(state: &AppState, value: &str, clear: bool) -> Str
         format!("SameSite={}", state.refresh_token_cookie_same_site),
     ];
 
+    if let Some(domain) = &state.refresh_token_cookie_domain {
+        parts.push(format!("Domain={domain}"));
+    }
     if clear {
         parts.push("Expires=Thu, 01 Jan 1970 00:00:00 GMT".to_string());
     }

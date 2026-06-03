@@ -1,0 +1,4 @@
+[build]
+base = "frontend"
+command = "bun run build"
+publish = "build"
