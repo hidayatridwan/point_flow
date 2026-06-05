@@ -13,6 +13,8 @@ echo "==> Fetching secrets from Vault (kv/pos/config)..."
 eval "$(vault kv get -format=json -mount=kv/pos config \
   | jq -r '.data.data | to_entries[] | "export \(.key)=\(.value | @sh)"')"
 
+docker network inspect proxy >/dev/null 2>&1 || docker network create proxy
+
 echo "==> Deploying POS stack..."
 docker compose -f docker-compose.prod.yml up -d --build
 
