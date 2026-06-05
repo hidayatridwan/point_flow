@@ -13,10 +13,16 @@ echo "==> Fetching secrets from Vault (kv/pos/config)..."
 eval "$(vault kv get -format=json -mount=kv/pos config \
   | jq -r '.data.data | to_entries[] | "export \(.key)=\(.value | @sh)"')"
 
+if [[ -n "${GHCR_TOKEN:-}" ]]; then
+  echo "==> Logging in to GHCR..."
+  echo "${GHCR_TOKEN}" | docker login ghcr.io -u hidayatridwan --password-stdin
+fi
+
 docker network inspect proxy >/dev/null 2>&1 || docker network create proxy
 
 echo "==> Deploying POS stack..."
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
 
 echo "==> Done."
 docker compose -f docker-compose.prod.yml ps

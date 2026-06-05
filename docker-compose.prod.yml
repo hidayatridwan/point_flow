@@ -1,8 +1,6 @@
 services:
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.prod
+    image: ghcr.io/hidayatridwan/pos-backend:latest
     container_name: pos-backend
     restart: unless-stopped
     environment:
