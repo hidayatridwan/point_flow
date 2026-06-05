@@ -259,7 +259,7 @@
 </script>
 
 <svelte:head>
-	<title>Goods Receipts | POS System</title>
+	<title>Goods Receipts | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

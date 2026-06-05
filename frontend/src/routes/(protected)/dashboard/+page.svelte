@@ -41,7 +41,7 @@
 </script>
 
 <svelte:head>
-	<title>Dashboard | POS System</title>
+	<title>Dashboard | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

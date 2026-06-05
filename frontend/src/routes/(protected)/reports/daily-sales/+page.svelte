@@ -190,7 +190,7 @@
 </script>
 
 <svelte:head>
-	<title>Daily Sales Report | POS System</title>
+	<title>Daily Sales Report | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

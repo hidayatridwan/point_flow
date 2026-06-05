@@ -244,7 +244,7 @@
 </script>
 
 <svelte:head>
-	<title>Stock Movements | POS System</title>
+	<title>Stock Movements | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

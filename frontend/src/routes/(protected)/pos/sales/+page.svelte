@@ -243,7 +243,7 @@
 </script>
 
 <svelte:head>
-	<title>Sales History | POS System</title>
+	<title>Sales History | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

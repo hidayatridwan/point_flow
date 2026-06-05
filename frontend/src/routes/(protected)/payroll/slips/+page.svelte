@@ -224,7 +224,7 @@
 </script>
 
 <svelte:head>
-	<title>Payroll Slips | POS System</title>
+	<title>Payroll Slips | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

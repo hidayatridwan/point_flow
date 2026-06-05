@@ -260,7 +260,7 @@
 </script>
 
 <svelte:head>
-	<title>Stock Adjustments | POS System</title>
+	<title>Stock Adjustments | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

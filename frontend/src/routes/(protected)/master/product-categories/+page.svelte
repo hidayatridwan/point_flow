@@ -173,7 +173,7 @@
 </script>
 
 <svelte:head>
-	<title>Product Categories | POS System</title>
+	<title>Product Categories | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

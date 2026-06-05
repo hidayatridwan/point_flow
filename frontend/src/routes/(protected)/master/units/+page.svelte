@@ -169,7 +169,7 @@
 </script>
 
 <svelte:head>
-	<title>Units | POS System</title>
+	<title>Units | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

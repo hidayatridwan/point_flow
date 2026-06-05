@@ -182,7 +182,7 @@
 </script>
 
 <svelte:head>
-	<title>Stock Report | POS System</title>
+	<title>Stock Report | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

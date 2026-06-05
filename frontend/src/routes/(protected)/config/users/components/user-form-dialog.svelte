@@ -148,7 +148,7 @@
 </script>
 
 <Dialog.Root bind:open>
-	<Dialog.Content class="overflow-hidden p-0 sm:max-w-2xl">
+	<Dialog.Content class="p-0 sm:max-w-2xl">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
 				<Dialog.Title>{dialogTitle}</Dialog.Title>

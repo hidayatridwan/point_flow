@@ -116,7 +116,7 @@
 </script>
 
 <Dialog.Root bind:open>
-	<Dialog.Content class="overflow-hidden p-0 sm:max-w-lg">
+	<Dialog.Content class="p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
 				<Dialog.Title>Edit Product Category</Dialog.Title>

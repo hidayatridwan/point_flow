@@ -171,7 +171,7 @@
 </script>
 
 <svelte:head>
-	<title>Product SKUs | POS System</title>
+	<title>Product SKUs | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

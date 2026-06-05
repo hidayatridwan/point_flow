@@ -212,7 +212,7 @@
 </script>
 
 <svelte:head>
-	<title>Register Session | POS System</title>
+	<title>Register Session | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

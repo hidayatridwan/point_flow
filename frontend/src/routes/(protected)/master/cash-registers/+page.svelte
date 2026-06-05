@@ -275,7 +275,7 @@
 </script>
 
 <svelte:head>
-	<title>Cash Registers | POS System</title>
+	<title>Cash Registers | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
@@ -401,7 +401,7 @@
 </div>
 
 <Dialog.Root bind:open={isFormOpen}>
-	<Dialog.Content class="overflow-hidden p-0 sm:max-w-lg">
+	<Dialog.Content class="p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
 				<Dialog.Title

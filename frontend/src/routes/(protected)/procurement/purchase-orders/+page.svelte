@@ -277,7 +277,7 @@
 </script>
 
 <svelte:head>
-	<title>Purchase Orders | POS System</title>
+	<title>Purchase Orders | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

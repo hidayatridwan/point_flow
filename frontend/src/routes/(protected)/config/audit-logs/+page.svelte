@@ -352,7 +352,7 @@
 </script>
 
 <svelte:head>
-	<title>Audit Logs | POS System</title>
+	<title>Audit Logs | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

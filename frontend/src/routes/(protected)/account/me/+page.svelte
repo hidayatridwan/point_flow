@@ -118,7 +118,7 @@
 </script>
 
 <svelte:head>
-	<title>Current User | POS System</title>
+	<title>Current User | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

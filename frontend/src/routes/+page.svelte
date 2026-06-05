@@ -8,6 +8,7 @@
 	import { refreshAccessToken } from '$lib/api/client.js';
 	import { login, type LoginCredentials } from '$lib/api/session.js';
 	import { ApiError } from '$lib/api/types.js';
+	import LanguageToggle from '$lib/components/language-toggle.svelte';
 	import LoginForm from '$lib/components/login-form.svelte';
 	import SessionTransition from '$lib/components/session-transition.svelte';
 	import { t } from '$lib/i18n/locale.svelte.js';
@@ -77,7 +78,7 @@
 </script>
 
 <svelte:head>
-	<title>Sign In | POS System</title>
+	<title>Sign In | PointFlow</title>
 </svelte:head>
 
 {#if isCheckingSession || transitionMessage}
@@ -87,7 +88,12 @@
 		description={t('session.pleaseWait')}
 	/>
 {:else}
-	<div class="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
+	<div
+		class="relative flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10"
+	>
+		<div class="absolute top-4 right-4">
+			<LanguageToggle />
+		</div>
 		<div class="flex w-full max-w-sm flex-col gap-6">
 			<a href={resolve('/')} class="flex items-center gap-2 self-center font-medium">
 				<div
@@ -95,7 +101,7 @@
 				>
 					<StoreIcon class="size-4" />
 				</div>
-				POS System
+				PointFlow
 			</a>
 			<LoginForm {isSubmitting} {errorMessage} onSubmit={handleLogin} />
 		</div>

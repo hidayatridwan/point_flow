@@ -337,7 +337,7 @@
 <form class="min-h-0" onsubmit={handleSubmit}>
 	<div class="grid min-h-0 gap-5 lg:grid-cols-[1fr_420px]">
 		<section
-			class="flex h-[calc(100vh-120px)] min-h-0 flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)] dark:border-slate-800 dark:bg-slate-950"
+			class="flex min-h-0 flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)] lg:h-[calc(100dvh-120px)] dark:border-slate-800 dark:bg-slate-950"
 			aria-label="Product selection"
 		>
 			<div class="shrink-0 space-y-3 border-b border-slate-100 p-4 dark:border-slate-800">
@@ -387,7 +387,7 @@
 				{/if}
 			</div>
 
-			<div class="min-h-0 flex-1 overflow-y-auto p-4">
+			<div class="max-h-[60vh] min-h-0 flex-1 overflow-y-auto p-4 lg:max-h-none">
 				{#if isLoadingSkus}
 					<div
 						class="flex min-h-40 items-center justify-center gap-2 text-sm text-muted-foreground"
@@ -486,7 +486,7 @@
 		</section>
 
 		<section
-			class="flex h-[calc(100vh-120px)] min-h-0 flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)] dark:border-slate-800 dark:bg-slate-950"
+			class="flex min-h-0 flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)] lg:h-[calc(100dvh-120px)] dark:border-slate-800 dark:bg-slate-950"
 			aria-labelledby="cart-title"
 		>
 			<div
@@ -510,7 +510,7 @@
 				</Button>
 			</div>
 
-			<div class="min-h-0 flex-1 overflow-y-auto p-4">
+			<div class="max-h-[60vh] min-h-0 flex-1 overflow-y-auto p-4 lg:max-h-none">
 				{#if cartItems.length > 0}
 					<div class="grid gap-3">
 						{#each cartItems as item (item.client_id)}

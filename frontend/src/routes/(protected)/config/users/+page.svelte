@@ -175,7 +175,7 @@
 </script>
 
 <svelte:head>
-	<title>Users | POS System</title>
+	<title>Users | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

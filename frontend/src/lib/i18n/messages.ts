@@ -10,10 +10,11 @@ export const localeLabels: Record<Locale, string> = {
 export const messages = {
 	id: {
 		app: {
-			name: 'POS System',
+			name: 'PointFlow',
 			subtitle: 'Kasir & Inventori'
 		},
 		language: {
+			label: 'Bahasa',
 			switchToEnglish: 'Ganti bahasa ke Inggris',
 			switchToIndonesian: 'Ganti bahasa ke Indonesia'
 		},
@@ -972,7 +973,7 @@ export const messages = {
 				statusCancelled: 'Dibatalkan'
 			},
 			newSale: {
-				title: 'Transaksi Baru | POS System',
+				title: 'Transaksi Baru | PointFlow',
 				searchPlaceholder: 'Cari produk...',
 				noActiveRegister: 'Tidak Ada Register Aktif',
 				noActiveRegisterDesc: 'Buka sesi register sebelum memulai transaksi kasir.',
@@ -1375,10 +1376,11 @@ export const messages = {
 	},
 	en: {
 		app: {
-			name: 'POS System',
+			name: 'PointFlow',
 			subtitle: 'Cashier & Inventory'
 		},
 		language: {
+			label: 'Language',
 			switchToEnglish: 'Switch language to English',
 			switchToIndonesian: 'Switch language to Indonesian'
 		},
@@ -2353,7 +2355,7 @@ export const messages = {
 				}
 			},
 			newSale: {
-				title: 'New Transaction | POS System',
+				title: 'New Transaction | PointFlow',
 				searchPlaceholder: 'Search products...',
 				noActiveRegister: 'No Active Register',
 				noActiveRegisterDesc: 'Open a register session before starting cashier transactions.',

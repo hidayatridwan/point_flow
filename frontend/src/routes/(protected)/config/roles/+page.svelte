@@ -176,7 +176,7 @@
 </script>
 
 <svelte:head>
-	<title>Roles | POS System</title>
+	<title>Roles | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

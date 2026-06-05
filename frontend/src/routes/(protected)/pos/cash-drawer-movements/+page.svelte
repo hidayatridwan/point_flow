@@ -380,7 +380,7 @@
 </script>
 
 <svelte:head>
-	<title>Cash Drawer Movements | POS System</title>
+	<title>Cash Drawer Movements | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
