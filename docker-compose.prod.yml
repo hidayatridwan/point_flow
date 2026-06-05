@@ -49,6 +49,12 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Schema + seed SQL mounted read-only for manual runs, e.g.:
+      #   docker exec pos-postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /sql/seeds/dashboard_demo.sql
+      # NOTE: these are NOT auto-applied on init (that only happens via
+      # /docker-entrypoint-initdb.d, which we intentionally do not use in prod).
+      - ./backend/migrations:/sql/migrations:ro
+      - ./backend/seeds:/sql/seeds:ro
     logging: *pos-backend-logging
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
