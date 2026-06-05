@@ -15,15 +15,13 @@ jobs:
     steps:
       - name: SSH deploy
         uses: appleboy/ssh-action@v1
-        env:
-          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
         with:
           host: ${{ secrets.VPS_HOST }}
           port: ${{ secrets.VPS_PORT }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
-          envs: VAULT_TOKEN
           script: |
             cd ~/app
             git pull origin main
+            export VAULT_TOKEN="${{ secrets.VAULT_TOKEN }}"
             ./deploy.sh
