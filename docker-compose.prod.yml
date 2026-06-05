@@ -1,6 +1,6 @@
 name: pos-backend
 
-x-logging: &pos-logging
+x-logging: &pos-backend-logging
   driver: json-file
   options:
     max-size: "10m"
@@ -31,7 +31,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    logging: *pos-logging
+    logging: *pos-backend-logging
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:$${APP_PORT}/api/v1/health"]
       interval: 10s
@@ -49,7 +49,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    logging: *pos-logging
+    logging: *pos-backend-logging
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 10s
