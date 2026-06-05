@@ -34,7 +34,7 @@
   "variable": [
     {
       "key": "base_url",
-      "value": "http://localhost:8080/api/v1"
+      "value": "https://pos.ridwannhidayat.my.id/api/v1"
     },
     {
       "key": "access_token",
