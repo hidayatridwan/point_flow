@@ -31,7 +31,8 @@
 		payroll: 'nav.payroll',
 		reports: 'nav.reports',
 		config: 'nav.config',
-		account: 'nav.account'
+		account: 'nav.account',
+		'help-desk': 'nav.helpDesk'
 	};
 
 	const routeLabelKeyByPath: Record<string, string> = {
@@ -64,7 +65,8 @@
 		'/reports/stock-adjustments': 'nav.stockAdjustments',
 		'/config/roles': 'nav.roles',
 		'/config/audit-logs': 'nav.auditLogs',
-		'/account/me': 'nav.currentUser'
+		'/account/me': 'nav.currentUser',
+		'/help-desk': 'nav.helpDesk'
 	};
 
 	const breadcrumbItems = $derived(buildBreadcrumbItems(page.url.pathname));

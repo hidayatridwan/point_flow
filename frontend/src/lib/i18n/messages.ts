@@ -1373,6 +1373,91 @@ export const messages = {
 				resourceSale: 'Penjualan',
 				resourceSaleReturn: 'Retur Penjualan'
 			}
+		},
+		helpDesk: {
+			title: 'Pusat Bantuan',
+			subtitle: 'Temukan jawaban atas pertanyaan umum dan pelajari cara menggunakan sistem.',
+			searchPlaceholder: 'Cari bantuan...',
+			searchAriaLabel: 'Cari artikel bantuan',
+			noResults: 'Tidak ada artikel yang sesuai dengan pencarian Anda.',
+			categories: {
+				all: 'Semua',
+				pos: 'Point of Sale',
+				procurement: 'Pembelian',
+				inventory: 'Inventori',
+				payroll: 'Payroll',
+				reports: 'Laporan',
+				access: 'Akses & umum'
+			},
+			contactTitle: 'Masih butuh bantuan?',
+			contactDesc: 'Hubungi tim dukungan kami dan kami akan segera membalas.',
+			contactEmail: 'Email dukungan',
+			contactWhatsapp: 'Chat WhatsApp',
+			appInfoTitle: 'Informasi aplikasi',
+			appInfoVersion: 'Versi',
+			appInfoLanguage: 'Bahasa',
+			faq: {
+				openSession: {
+					q: 'Bagaimana cara mulai berjualan?',
+					a: 'Buka sesi register kas terlebih dahulu. Masuk ke Point of Sale → Sesi Register dan buka sesi dengan kas awal. Sesi harus aktif sebelum Anda dapat membuat transaksi atau mencatat pergerakan kas.'
+				},
+				noSession: {
+					q: 'Mengapa saya tidak bisa memulai transaksi?',
+					a: 'Transaksi dan pergerakan kas memerlukan sesi register kas yang aktif. Jika layar Transaksi Baru nonaktif, buka sesi di Point of Sale → Sesi Register, lalu coba lagi.'
+				},
+				saleReturn: {
+					q: 'Bagaimana cara mencatat retur penjualan?',
+					a: 'Masuk ke Point of Sale → Retur Penjualan dan buat retur atas penjualan asli. Retur menyesuaikan stok dan kas, serta hanya dapat diproses saat sesi register terbuka.'
+				},
+				cashMovement: {
+					q: 'Bagaimana cara mencatat kas masuk atau keluar dari laci?',
+					a: 'Gunakan Point of Sale → Pergerakan Kas untuk mencatat kas yang ditambahkan atau diambil dari laci (mis. kas kecil, pengeluaran). Ini memerlukan sesi register yang terbuka.'
+				},
+				poToGr: {
+					q: 'Bagaimana alur pembelian, dari pesanan hingga stok?',
+					a: 'Buat Purchase Order di Pembelian → Purchase Order dan tandai sebagai dipesan. Saat barang tiba, catat Penerimaan Barang atas PO tersebut di Pembelian → Penerimaan Barang. Memposting penerimaan akan menambah jumlah yang diterima ke stok.'
+				},
+				postGr: {
+					q: 'Mengapa stok tidak bertambah setelah menerima barang?',
+					a: 'Stok hanya bertambah saat Penerimaan Barang diposting (bukan saat masih draf). Buka penerimaan tersebut dan posting; setelah diposting tidak dapat diubah lagi, hanya dapat dibatalkan.'
+				},
+				stockAdjust: {
+					q: 'Stok sistem tidak cocok dengan rak. Bagaimana memperbaikinya?',
+					a: 'Buat Penyesuaian Stok di Inventori → Penyesuaian Stok dan masukkan jumlah yang benar. Memposting penyesuaian akan mengatur stok SKU ke nilai yang Anda masukkan.'
+				},
+				stockConvert: {
+					q: 'Bagaimana cara memindahkan stok antar-SKU pada produk yang sama?',
+					a: 'Gunakan Inventori → Konversi Stok untuk memindahkan jumlah dari satu SKU ke SKU lain pada produk yang sama (mis. karton ke pcs). Memposting konversi memperbarui stok kedua SKU.'
+				},
+				stockChanges: {
+					q: 'Tindakan apa saja yang mengubah tingkat stok?',
+					a: 'Hanya empat: memposting penerimaan barang (menambah stok), memposting penyesuaian stok (mengatur nilai yang benar), memposting konversi stok (memindahkan stok antar-SKU), dan menyelesaikan penjualan (mengurangi stok).'
+				},
+				payrollSlip: {
+					q: 'Bagaimana cara membuat slip payroll?',
+					a: 'Masuk ke Payroll → Slip Payroll dan buat slip untuk karyawan dan periode terkait. Anda dapat meninjau total payroll di Payroll → Laporan Payroll.'
+				},
+				salesReports: {
+					q: 'Di mana saya melihat laporan penjualan?',
+					a: 'Buka bagian Laporan: Penjualan Harian dan Penjualan Bulanan merangkum penjualan yang selesai. Laporan pembelian, penerimaan barang, dan penyesuaian stok juga tersedia di sana.'
+				},
+				permissionDenied: {
+					q: "Mengapa sebuah menu hilang atau muncul 'akses ditolak'?",
+					a: 'Akses ditentukan oleh role Anda. Jika Anda tidak melihat suatu fitur atau sebuah aksi diblokir, role Anda tidak memiliki izin tersebut — minta administrator memperbarui role Anda di Konfigurasi → Role.'
+				},
+				languageTheme: {
+					q: 'Bagaimana cara mengganti bahasa atau mode gelap/terang?',
+					a: 'Gunakan kontrol di pojok kanan atas layar untuk beralih antara Bahasa Indonesia dan Inggris serta antara tema terang dan gelap. Pilihan Anda diingat di perangkat ini.'
+				},
+				changePassword: {
+					q: 'Bagaimana cara mengganti kata sandi?',
+					a: 'Buka akun Anda dari menu pengguna (Akun → User Saat Ini) dan gunakan formulir ganti kata sandi. Pilih kata sandi yang kuat dan tidak Anda gunakan di tempat lain.'
+				},
+				documentLifecycle: {
+					q: 'Bisakah saya mengubah atau membatalkan dokumen setelah diposting?',
+					a: 'Dokumen pembelian dan inventori berpindah dari draf ke diposting (atau dipesan) lalu hanya dapat dibatalkan — memposting bersifat final. Pembatalan hanya diizinkan selama sesi register terkait masih terbuka.'
+				}
+			}
 		}
 	},
 	en: {
@@ -2754,6 +2839,91 @@ export const messages = {
 				resourceCashMovement: 'Cash Movement',
 				resourceSale: 'Sale',
 				resourceSaleReturn: 'Sale Return'
+			}
+		},
+		helpDesk: {
+			title: 'Help Center',
+			subtitle: 'Find answers to common questions and learn how to use the system.',
+			searchPlaceholder: 'Search help...',
+			searchAriaLabel: 'Search help articles',
+			noResults: 'No articles match your search.',
+			categories: {
+				all: 'All',
+				pos: 'Point of Sale',
+				procurement: 'Procurement',
+				inventory: 'Inventory',
+				payroll: 'Payroll',
+				reports: 'Reports',
+				access: 'Access & general'
+			},
+			contactTitle: 'Still need help?',
+			contactDesc: 'Reach our support team and we will get back to you.',
+			contactEmail: 'Email support',
+			contactWhatsapp: 'Chat on WhatsApp',
+			appInfoTitle: 'App information',
+			appInfoVersion: 'Version',
+			appInfoLanguage: 'Language',
+			faq: {
+				openSession: {
+					q: 'How do I start selling?',
+					a: 'Open a cash register session first. Go to Point of Sale → Register Session and open a session with your starting cash. A session must be active before you can create transactions or record cash movements.'
+				},
+				noSession: {
+					q: "Why can't I start a transaction?",
+					a: 'Transactions and cash drawer movements require an active cash register session. If the New Transaction screen is disabled, open a session under Point of Sale → Register Session, then try again.'
+				},
+				saleReturn: {
+					q: 'How do I record a sale return?',
+					a: 'Go to Point of Sale → Sale Returns and create a return against the original sale. Returns adjust stock and cash, and can only be processed while a register session is open.'
+				},
+				cashMovement: {
+					q: 'How do I record cash in or out of the drawer?',
+					a: 'Use Point of Sale → Cash Drawer Movements to log cash added to or removed from the drawer (e.g. petty cash, payouts). This requires an open register session.'
+				},
+				poToGr: {
+					q: 'How does purchasing work, from order to stock?',
+					a: 'Create a Purchase Order under Procurement → Purchase Orders and mark it ordered. When goods arrive, record a Goods Receipt against the PO under Procurement → Goods Receipts. Posting the receipt adds the received quantities to stock.'
+				},
+				postGr: {
+					q: "Why didn't my stock go up after receiving goods?",
+					a: 'Stock only increases when a Goods Receipt is posted (not while it is still a draft). Open the receipt and post it; once posted it can no longer be edited, only cancelled.'
+				},
+				stockAdjust: {
+					q: "The system stock doesn't match the shelf. How do I fix it?",
+					a: "Create a Stock Adjustment under Inventory → Stock Adjustments and enter the corrected count. Posting the adjustment sets the SKU's stock to the value you entered."
+				},
+				stockConvert: {
+					q: 'How do I move stock between SKUs of the same product?',
+					a: "Use Inventory → Stock Conversions to move quantity from one SKU to another SKU of the same product (e.g. carton to piece). Posting the conversion updates both SKUs' stock."
+				},
+				stockChanges: {
+					q: 'What actions change my stock levels?',
+					a: 'Only four: posting a goods receipt (adds stock), posting a stock adjustment (sets the corrected value), posting a stock conversion (moves stock between SKUs), and completing a sale (reduces stock).'
+				},
+				payrollSlip: {
+					q: 'How do I generate a payroll slip?',
+					a: 'Go to Payroll → Slips and create a slip for the employee and period. You can review payroll totals under Payroll → Report.'
+				},
+				salesReports: {
+					q: 'Where do I see sales reports?',
+					a: 'Open the Reports section: Daily Sales and Monthly Sales summarise completed sales. Procurement, goods receipt and stock adjustment reports are there too.'
+				},
+				permissionDenied: {
+					q: "Why is a menu missing or why do I get 'permission denied'?",
+					a: "Access is controlled by your role. If you can't see a feature or an action is blocked, your role doesn't have that permission — ask an administrator to update your role under Configuration → Roles."
+				},
+				languageTheme: {
+					q: 'How do I change the language or switch dark/light mode?',
+					a: 'Use the controls at the top-right of the screen to toggle between English and Indonesian and between light and dark themes. Your choice is remembered on this device.'
+				},
+				changePassword: {
+					q: 'How do I change my password?',
+					a: "Open your account from the user menu (Account → Current User) and use the change-password form. Choose a strong password you don't use elsewhere."
+				},
+				documentLifecycle: {
+					q: 'Can I edit or cancel a document after posting it?',
+					a: 'Procurement and inventory documents move from draft to posted (or ordered) and then can only be cancelled — posting is final. Cancellation is only allowed while the related register session is still open.'
+				}
 			}
 		}
 	}
