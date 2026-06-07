@@ -1,33 +1,27 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { BarChart } from 'layerchart';
-	import * as Chart from '$lib/components/ui/chart/index.js';
 	import { getTopProducts, type TopProductItem } from '$lib/api/dashboard.js';
 	import { ApiError } from '$lib/api/types.js';
-	import { formatIdr } from '$lib/formatters.js';
+	import { formatIdr, formatNumber } from '$lib/formatters.js';
 	import { t } from '$lib/i18n/locale.svelte.js';
 	import ChartCard from './chart-card.svelte';
 	import RangeSelect from './range-select.svelte';
-	import { formatCompact } from './chart-helpers.js';
 
 	let days = $state(30);
 	let items = $state<TopProductItem[]>([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 
-	const chartData = $derived(
-		items.map((item) => ({
-			product: item.productName,
-			revenue: item.revenue,
-			quantitySold: item.quantitySold
-		}))
-	);
-
-	const chartConfig = $derived({
-		revenue: { label: t('dashboard.charts.revenue'), color: 'var(--chart-2)' }
-	} satisfies Chart.ChartConfig);
-
 	const hasData = $derived(items.length > 0 && items.some((item) => item.revenue > 0));
+
+	// Largest revenue in the set, used to scale each bar's fill width.
+	const maxRevenue = $derived(items.reduce((max, item) => Math.max(max, item.revenue), 0));
+
+	// Bar fill as a percentage of the top earner; keep non-zero rows visible with a small floor.
+	function fillPercent(revenue: number): number {
+		if (maxRevenue <= 0 || revenue <= 0) return 0;
+		return Math.max((revenue / maxRevenue) * 100, 2);
+	}
 
 	onMount(() => {
 		void load();
@@ -45,10 +39,6 @@
 			loading = false;
 		}
 	}
-
-	function truncate(value: string, max = 16): string {
-		return value.length > max ? `${value.slice(0, max - 1)}…` : value;
-	}
 </script>
 
 <ChartCard
@@ -62,34 +52,37 @@
 		<RangeSelect bind:value={days} disabled={loading} onChange={() => load()} />
 	{/snippet}
 
-	<Chart.Container config={chartConfig} class="h-[320px] w-full">
-		<BarChart
-			data={chartData}
-			orientation="horizontal"
-			x="revenue"
-			y="product"
-			series={[{ key: 'revenue', label: t('dashboard.charts.revenue'), color: 'var(--chart-2)' }]}
-			props={{
-				bars: { radius: 4, rounded: 'right' },
-				xAxis: { format: (value: number) => formatCompact(value) },
-				yAxis: { format: (value: string) => truncate(value) }
-			}}
-		>
-			{#snippet tooltip()}
-				<Chart.Tooltip indicator="dot" hideLabel={false}>
-					{#snippet formatter({ value, item })}
-						<div class="flex w-full items-center justify-between gap-4">
-							<span class="flex items-center gap-1.5 text-muted-foreground">
-								<span class="size-2.5 rounded-[2px]" style="background-color: {item.color}"></span>
-								{item.label}
-							</span>
-							<span class="font-mono font-medium text-foreground tabular-nums">
-								{formatIdr(Number(value))}
-							</span>
-						</div>
-					{/snippet}
-				</Chart.Tooltip>
-			{/snippet}
-		</BarChart>
-	</Chart.Container>
+	<ol class="flex flex-col gap-3">
+		{#each items as item, index (item.productSkuId)}
+			<li class="group flex flex-col gap-1.5">
+				<div class="flex items-baseline justify-between gap-3">
+					<div class="flex min-w-0 items-baseline gap-2.5">
+						<span
+							class="w-4 shrink-0 text-right text-xs font-semibold text-muted-foreground tabular-nums"
+						>
+							{index + 1}
+						</span>
+						<span class="truncate text-sm font-medium" title={item.productName}>
+							{item.productName}
+						</span>
+					</div>
+					<span class="shrink-0 font-mono text-sm font-semibold tabular-nums">
+						{formatIdr(item.revenue)}
+					</span>
+				</div>
+				<div class="flex items-center gap-3 pl-6.5">
+					<div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+						<div
+							class="h-full rounded-full transition-[width] duration-500 ease-out"
+							style="width: {fillPercent(item.revenue)}%; background-color: var(--chart-2)"
+						></div>
+					</div>
+					<span class="shrink-0 text-xs text-muted-foreground tabular-nums">
+						{formatNumber(item.quantitySold)}
+						{t('dashboard.charts.topProductsSold')}
+					</span>
+				</div>
+			</li>
+		{/each}
+	</ol>
 </ChartCard>
