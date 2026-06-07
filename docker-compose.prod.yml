@@ -67,5 +67,8 @@ services:
 
 networks:
   default: {}
+  # The Caddy reverse proxy lives on the external 'web' network; pos-backend joins
+  # it so Caddy can reach the container by name (reverse_proxy pos-backend:8081).
   proxy:
     external: true
+    name: web

@@ -44,7 +44,12 @@ if [[ -n "${GHCR_TOKEN:-}" ]]; then
   echo "${GHCR_TOKEN}" | docker login ghcr.io -u hidayatridwan --password-stdin
 fi
 
-docker network inspect proxy >/dev/null 2>&1 || docker network create proxy
+# The 'web' network is owned by the Caddy/infra stack — don't create it here,
+# just fail clearly if it's missing.
+docker network inspect web >/dev/null 2>&1 || {
+  echo "error: external docker network 'web' not found (created by the Caddy/infra stack)" >&2
+  exit 1
+}
 
 echo "==> Deploying POS stack..."
 $COMPOSE pull
