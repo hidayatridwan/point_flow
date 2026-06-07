@@ -151,25 +151,55 @@ Migration SQL di `backend/migrations` dipasang ke container PostgreSQL melalui `
 
 ## Production Deploy
 
-Backend production di VPS memakai compose terpisah:
+Backend production **tidak dibuild di VPS**. Image dikompilasi di GitHub Actions
+(`backend/Dockerfile.prod`, multi-stage) lalu dipush ke GHCR
+(`ghcr.io/<owner>/pos-backend:latest`). VPS hanya menerima artefak — tidak ada
+source code maupun `.git` yang dikirim ke server.
+
+Alur otomatis (`.github/workflows/deploy-backend.yml`, trigger push ke `main`
+pada `backend/**`, atau `workflow_dispatch`):
+
+1. Job `build` — build image dan push ke GHCR.
+2. Job `deploy` — `scp` hanya 4 artefak ke `~/app` di VPS
+   (`docker-compose.prod.yml`, `deploy.sh`, `backend/migrations/`, `backend/seeds/`),
+   lalu jalankan `./deploy.sh`. `deploy.sh` mengambil secret dari Vault
+   (`kv/pos/config`), login GHCR, `docker compose pull`, lalu `up -d`.
+
+Compose production hanya menjalankan backend dan PostgreSQL. Data PostgreSQL
+disimpan sebagai **bind mount ke direktori host** (`POSTGRES_DATA_DIR`, default
+`/srv/pos/postgres`) — **bukan** Docker named volume. Konsekuensinya: data tetap
+aman walau Docker volume dihapus atau `docker compose down -v` dijalankan; satu-
+satunya cara kehilangan data adalah menghapus direktori itu sendiri. Direktori
+sengaja diletakkan **di luar `~/app`** agar tidak ikut terhapus saat cleanup atau
+tertimpa saat sync artefak deploy. PostgreSQL tidak publish port ke host, sedangkan
+backend bind ke `127.0.0.1:8081` untuk dipakai reverse proxy HTTPS.
+
+### Setup VPS sekali di awal
+
+Siapkan direktori data DB (di luar `~/app`), lalu bersihkan `~/app` dari git clone
+lama agar tidak ada `.git`/source yang tertinggal:
 
 ```bash
-cp .env.prod.example .env.prod
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+sudo mkdir -p /srv/pos/postgres          # direktori data DB (bind mount)
+cd ~ && rm -rf ~/app && mkdir -p ~/app   # aman: data DB ada di /srv/pos, bukan ~/app
+# verifikasi setelah deploy berjalan: tidak ada .git, src, atau Cargo.*
+ls -la ~/app
 ```
 
-Edit `.env.prod` sebelum menjalankan command tersebut:
+### Migrasi & seed (manual)
 
-```text
-DATABASE_URL=postgres://pos:password-yang-sama@postgres:5432/pos
-CORS_ALLOWED_ORIGINS=https://nama-site.netlify.app
-JWT_SECRET=secret-production-yang-panjang-dan-random
-REFRESH_TOKEN_COOKIE_SECURE=true
-REFRESH_TOKEN_COOKIE_SAME_SITE=None
-POSTGRES_PASSWORD=password-yang-sama
+Migrasi tidak pernah dijalankan otomatis saat deploy. Jalankan satu file per
+perintah, berurutan, dari `~/app` di VPS (butuh `VAULT_TOKEN` di environment):
+
+```bash
+./deploy.sh migrate 001_initial_pos_schema.sql
+# ... lanjutkan sampai migrasi terakhir secara berurutan
+./deploy.sh seed dashboard_demo.sql
 ```
 
-Compose production hanya menjalankan backend dan PostgreSQL. PostgreSQL tidak publish port ke host, sedangkan backend bind ke `127.0.0.1:8080` untuk dipakai reverse proxy HTTPS di VPS.
+> Catatan: `docker-compose.prod.yml` me-mount `backend/migrations` dan
+> `backend/seeds` read-only ke `/sql/migrations` dan `/sql/seeds` di container
+> PostgreSQL — itulah yang dibaca oleh helper di atas.
 
 Frontend production dideploy oleh Netlify dari folder `frontend`. `netlify.toml` sudah mengatur:
 

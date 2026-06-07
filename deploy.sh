@@ -15,7 +15,25 @@ eval "$(vault kv get -format=json -mount=kv/pos config \
 
 COMPOSE="docker compose -f docker-compose.prod.yml"
 
-# Pass any subcommand directly to docker compose with secrets injected
+# Manual, opt-in schema helpers. These are never run by the deploy path below;
+# you invoke them by hand, one file at a time, e.g.:
+#   ./deploy.sh migrate 001_initial_pos_schema.sql
+#   ./deploy.sh seed dashboard_demo.sql
+# (No migration tracking table exists, so apply files individually and in order.)
+case "${1:-}" in
+  migrate)
+    [[ -n "${2:-}" ]] || { echo "usage: ./deploy.sh migrate <file.sql>" >&2; exit 1; }
+    exec $COMPOSE exec -T postgres \
+      psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -f "/sql/migrations/$2"
+    ;;
+  seed)
+    [[ -n "${2:-}" ]] || { echo "usage: ./deploy.sh seed <file.sql>" >&2; exit 1; }
+    exec $COMPOSE exec -T postgres \
+      psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -f "/sql/seeds/$2"
+    ;;
+esac
+
+# Pass any other subcommand directly to docker compose with secrets injected
 if [[ $# -gt 0 ]]; then
   exec $COMPOSE "$@"
 fi
