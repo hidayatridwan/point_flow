@@ -130,6 +130,7 @@
 
 [data-slot='button'][class*='px-']:hover {
 	background-color: #504dbc;
+	color: #fff;
 }
 
 /* Colorful, slowly-animated gradient for dashboard cards.
