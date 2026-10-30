@@ -10,7 +10,7 @@
 	};
 
 	const tones: Record<AuditLogOutcome, BadgeVariant> = {
-		success: 'success',
+		success: 'default',
 		failure: 'destructive'
 	};
 </script>

@@ -278,7 +278,7 @@
 				<div class="grid gap-4">
 					<div class="flex items-center gap-3 rounded-md border bg-muted/20 p-5">
 						<div
-							class="flex size-11 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-700"
+							class="flex size-11 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
 						>
 							<UnlockIcon class="size-5" />
 						</div>

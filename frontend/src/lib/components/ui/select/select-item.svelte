@@ -1,34 +1,42 @@
 <script lang="ts">
-	import CheckIcon from '@lucide/svelte/icons/check';
 	import { Select as SelectPrimitive } from 'bits-ui';
-	import type { Snippet } from 'svelte';
-	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
+	import CheckIcon from '@lucide/svelte/icons/check';
+	import { cn, type WithoutChild } from '$lib/utils.js';
 
 	let {
 		ref = $bindable(null),
 		class: className,
+		value,
+		label,
 		children: childrenProp,
 		...restProps
-	}: WithoutChildrenOrChild<SelectPrimitive.ItemProps> & {
-		children?: Snippet;
-	} = $props();
+	}: WithoutChild<SelectPrimitive.ItemProps> = $props();
 </script>
 
 <SelectPrimitive.Item
 	bind:ref
+	{value}
+	{label}
 	data-slot="select-item"
 	class={cn(
-		'relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-none select-none focus:bg-accent focus:text-accent-foreground data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50',
+		"relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+		'data-highlighted:bg-accent data-highlighted:text-accent-foreground',
 		className
 	)}
 	{...restProps}
 >
-	{#snippet children({ selected })}
-		<span class="absolute right-2 flex size-3.5 items-center justify-center">
+	{#snippet children({ selected, highlighted })}
+		<span class="pointer-events-none absolute right-2 flex size-4 items-center justify-center">
 			{#if selected}
-				<CheckIcon class="size-4" />
+				<CheckIcon class="pointer-events-none" />
 			{/if}
 		</span>
-		{@render childrenProp?.()}
+		<span class="flex flex-1 shrink-0 gap-2 whitespace-nowrap">
+			{#if childrenProp}
+				{@render childrenProp({ selected, highlighted })}
+			{:else}
+				{label || value}
+			{/if}
+		</span>
 	{/snippet}
 </SelectPrimitive.Item>

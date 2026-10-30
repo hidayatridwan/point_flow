@@ -14,10 +14,10 @@
 	});
 
 	const tones: Record<PurchaseOrderStatus, BadgeVariant> = {
-		draft: 'neutral',
-		ordered: 'info',
-		partially_received: 'warning',
-		received: 'success',
+		draft: 'ghost',
+		ordered: 'secondary',
+		partially_received: 'outline',
+		received: 'default',
 		cancelled: 'destructive'
 	};
 </script>

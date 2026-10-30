@@ -13,10 +13,10 @@
 	});
 
 	const tones: Record<CashDrawerMovementType, BadgeVariant> = {
-		cash_in: 'success',
-		cash_out: 'warning',
-		cash_drop: 'info',
-		petty_cash: 'accent'
+		cash_in: 'default',
+		cash_out: 'outline',
+		cash_drop: 'secondary',
+		petty_cash: 'ghost'
 	};
 </script>
 

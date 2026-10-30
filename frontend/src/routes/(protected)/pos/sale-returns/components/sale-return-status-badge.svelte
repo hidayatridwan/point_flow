@@ -11,7 +11,7 @@
 	});
 
 	const tones: Record<SaleReturnStatus, BadgeVariant> = {
-		completed: 'success',
+		completed: 'default',
 		cancelled: 'destructive'
 	};
 </script>

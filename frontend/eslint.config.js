@@ -12,6 +12,11 @@ const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
 
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
+	{
+		// Generated shadcn-svelte registry components are kept verbatim (factory
+		// defaults) and are not linted so the CLI can overwrite them freely.
+		ignores: ['src/lib/components/ui/**']
+	},
 	js.configs.recommended,
 	ts.configs.recommended,
 	svelte.configs.recommended,

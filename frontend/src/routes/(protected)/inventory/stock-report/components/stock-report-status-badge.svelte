@@ -8,14 +8,14 @@
 
 	function getStockStatus(item: StockReportItem): { label: string; tone: BadgeVariant } {
 		if (!item.is_active) {
-			return { label: 'Inactive', tone: 'neutral' };
+			return { label: 'Inactive', tone: 'ghost' };
 		}
 
 		if (item.is_low_stock) {
 			return { label: 'Low Stock', tone: 'destructive' };
 		}
 
-		return { label: 'In Stock', tone: 'success' };
+		return { label: 'In Stock', tone: 'default' };
 	}
 </script>
 

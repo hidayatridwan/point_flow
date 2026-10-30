@@ -174,7 +174,7 @@
 				</div>
 				<div class="flex flex-wrap justify-center gap-2">
 					<Badge variant="outline">{formatRole(currentUser.role)}</Badge>
-					<Badge variant={currentUser.is_active ? 'success' : 'destructive'}>
+					<Badge variant={currentUser.is_active ? 'default' : 'destructive'}>
 						{currentUser.is_active ? t('status.active') : t('status.inactive')}
 					</Badge>
 				</div>

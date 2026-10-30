@@ -11,7 +11,7 @@
 	} as Record<string, string>);
 
 	const tones: Record<StockMovementDirection, BadgeVariant> = {
-		in: 'success',
+		in: 'default',
 		out: 'destructive'
 	};
 </script>

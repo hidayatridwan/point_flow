@@ -20,8 +20,6 @@
 		value: string;
 		description: string;
 		icon: Component;
-		tone: string;
-		accent: string;
 	};
 
 	const metrics = $derived<Metric[]>(
@@ -31,49 +29,37 @@
 						label: t('dashboard.revenueToday'),
 						value: formatIdr(summary.revenueToday),
 						description: t('dashboard.revenueDesc'),
-						icon: BanknoteIcon,
-						tone: 'bg-emerald-500/10 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300',
-						accent: 'var(--color-emerald-500, #10b981)'
+						icon: BanknoteIcon
 					},
 					{
 						label: t('dashboard.transactions'),
 						value: formatNumber(summary.transactionCountToday),
 						description: t('dashboard.transactionsDesc'),
-						icon: ReceiptTextIcon,
-						tone: 'bg-sky-500/10 text-sky-700 dark:bg-sky-400/10 dark:text-sky-300',
-						accent: 'var(--color-sky-500, #0ea5e9)'
+						icon: ReceiptTextIcon
 					},
 					{
 						label: t('dashboard.lowStock'),
 						value: formatNumber(summary.lowStockProductCount),
 						description: t('dashboard.lowStockDesc'),
-						icon: PackageSearchIcon,
-						tone: 'bg-amber-500/10 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300',
-						accent: 'var(--color-amber-500, #f59e0b)'
+						icon: PackageSearchIcon
 					},
 					{
 						label: t('dashboard.pendingPO'),
 						value: formatNumber(summary.pendingPurchaseOrderCount),
 						description: t('dashboard.pendingPODesc'),
-						icon: TruckIcon,
-						tone: 'bg-violet-500/10 text-violet-700 dark:bg-violet-400/10 dark:text-violet-300',
-						accent: 'var(--color-violet-500, #8b5cf6)'
+						icon: TruckIcon
 					},
 					{
 						label: t('dashboard.draftAdj'),
 						value: formatNumber(summary.draftStockAdjustmentCount),
 						description: t('dashboard.draftAdjDesc'),
-						icon: ClipboardListIcon,
-						tone: 'bg-rose-500/10 text-rose-700 dark:bg-rose-400/10 dark:text-rose-300',
-						accent: 'var(--color-rose-500, #f43f5e)'
+						icon: ClipboardListIcon
 					},
 					{
 						label: t('dashboard.activeEmployees'),
 						value: formatNumber(summary.activeEmployeeCount),
 						description: t('dashboard.activeEmployeesDesc'),
-						icon: UsersIcon,
-						tone: 'bg-cyan-500/10 text-cyan-700 dark:bg-cyan-400/10 dark:text-cyan-300',
-						accent: 'var(--color-cyan-500, #06b6d4)'
+						icon: UsersIcon
 					}
 				]
 			: []
@@ -88,18 +74,14 @@
 	{:else}
 		{#each metrics as metric (metric.label)}
 			{@const Icon = metric.icon}
-			<Card.Root
-				size="sm"
-				style={`--tile: ${metric.accent}`}
-				class="dashboard-gradient-card border border-white/40 ring-0 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-white/10"
-			>
+			<Card.Root size="sm">
 				<Card.Header class="flex flex-row items-center justify-between gap-3">
 					<div class="space-y-1">
 						<Card.Description>{metric.label}</Card.Description>
 						<Card.Title class="text-2xl">{metric.value}</Card.Title>
 					</div>
 					<div
-						class={`flex size-10 shrink-0 items-center justify-center rounded-full ${metric.tone}`}
+						class="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
 					>
 						<Icon class="size-5" />
 					</div>

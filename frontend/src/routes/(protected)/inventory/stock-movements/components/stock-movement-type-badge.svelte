@@ -17,14 +17,14 @@
 	} as Record<string, string>);
 
 	const tones: Record<StockMovementType, BadgeVariant> = {
-		stock_in: 'success',
+		stock_in: 'default',
 		stock_out: 'destructive',
-		sale: 'info',
-		purchase_receipt: 'success',
-		adjustment: 'warning',
-		conversion_in: 'info',
-		conversion_out: 'warning',
-		correction: 'accent'
+		sale: 'secondary',
+		purchase_receipt: 'default',
+		adjustment: 'outline',
+		conversion_in: 'secondary',
+		conversion_out: 'outline',
+		correction: 'ghost'
 	};
 </script>
 

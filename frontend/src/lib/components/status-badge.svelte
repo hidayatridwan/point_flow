@@ -12,6 +12,6 @@
 	} = $props();
 </script>
 
-<Badge variant={active ? 'success' : 'neutral'}>
+<Badge variant={active ? 'default' : 'ghost'}>
 	{active ? activeLabel : inactiveLabel}
 </Badge>

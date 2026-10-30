@@ -12,8 +12,8 @@
 	});
 
 	const tones: Record<StockAdjustmentStatus, BadgeVariant> = {
-		draft: 'neutral',
-		posted: 'success',
+		draft: 'ghost',
+		posted: 'default',
 		cancelled: 'destructive'
 	};
 </script>

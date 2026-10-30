@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { RangeCalendar as RangeCalendarPrimitive } from 'bits-ui';
-	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
+	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
 
 	let {
 		ref = $bindable(null),
@@ -25,7 +25,7 @@
 						value={yearItem.value}
 						selected={value !== undefined
 							? yearItem.value === value
-							: yearItem.value === selectedYearItem.value}
+							: yearItem.value === selectedYearItem?.value}
 					>
 						{yearItem.label}
 					</option>
@@ -35,7 +35,7 @@
 				class="flex h-(--cell-size) items-center gap-1 rounded-md ps-2 pe-1 text-sm font-medium select-none [&>svg]:size-3.5 [&>svg]:text-muted-foreground"
 				aria-hidden="true"
 			>
-				{yearItems.find((item) => item.value === value)?.label || selectedYearItem.label}
+				{yearItems.find((item) => item.value === value)?.label || selectedYearItem?.label || value}
 				<ChevronDownIcon class={cn('size-4', className)} />
 			</span>
 		{/snippet}
