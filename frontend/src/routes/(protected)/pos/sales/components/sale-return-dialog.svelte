@@ -268,7 +268,7 @@
 														disabled={isSubmitting || item.item.returnable_quantity <= 0}
 														onclick={() => fillMax(item)}
 													>
-														Max
+														{t('pos.sales.return.maxBtn')}
 													</Button>
 												</div>
 											</Table.Cell>
@@ -301,7 +301,7 @@
 															disabled={isSubmitting}
 															onclick={() => clearQuantity(item)}
 														>
-															Clear
+															{t('pos.sales.return.clear')}
 														</Button>
 													{/if}
 												</div>
@@ -324,7 +324,7 @@
 
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div class="space-y-2">
-						<Label for={`sale-return-reason-${sale.id}`}>Return Reason</Label>
+						<Label for={`sale-return-reason-${sale.id}`}>{t('pos.sales.return.reason')}</Label>
 						<Input
 							id={`sale-return-reason-${sale.id}`}
 							placeholder={t('pos.sales.return.reasonPlaceholder')}
@@ -333,7 +333,7 @@
 						/>
 					</div>
 					<div class="space-y-2">
-						<Label for={`sale-return-notes-${sale.id}`}>Notes</Label>
+						<Label for={`sale-return-notes-${sale.id}`}>{t('pos.sales.return.notes')}</Label>
 						<Textarea
 							id={`sale-return-notes-${sale.id}`}
 							placeholder={t('pos.sales.return.notesPlaceholder')}

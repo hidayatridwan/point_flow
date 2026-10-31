@@ -44,7 +44,7 @@
 			});
 			await onCancelled?.(cancelledSaleReturn);
 			toast.success(t('pos.saleReturns.cancel.cancelledToast'), {
-				description: `${cancelledSaleReturn.return_no} was cancelled.`
+				description: `${cancelledSaleReturn.return_no} ${t('common.wasCancelled')}`
 			});
 			open = false;
 		} catch (error) {
@@ -70,17 +70,16 @@
 	<Dialog.Content class="p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Cancel Return</Dialog.Title>
+				<Dialog.Title>{t('pos.saleReturns.cancel.title')}</Dialog.Title>
 				<Dialog.Description>
-					Cancel {saleReturn.return_no}. Stock and cash reversal require the register session to
-					still be open.
+					{t('pos.saleReturns.cancel.desc').replace('{no}', saleReturn.return_no)}
 				</Dialog.Description>
 			</Dialog.Header>
 
 			<div class="grid gap-4 px-6">
 				<div class="space-y-2">
 					<label for={`sale-return-cancel-reason-${saleReturn.id}`} class="text-sm font-medium">
-						Cancel Reason
+						{t('pos.saleReturns.cancel.cancelReason')}
 					</label>
 					<Textarea
 						id={`sale-return-cancel-reason-${saleReturn.id}`}
@@ -101,7 +100,7 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Keep return
+					{t('pos.saleReturns.cancel.keepReturn')}
 				</Dialog.Close>
 				<Button type="submit" variant="destructive" disabled={isSubmitting}>
 					{#if isSubmitting}

@@ -236,9 +236,9 @@
 
 	function getDateRangeLabel() {
 		if (query.from && query.to) return `${formatDate(query.from)} - ${formatDate(query.to)}`;
-		if (query.from) return `From ${formatDate(query.from)}`;
-		if (query.to) return `Until ${formatDate(query.to)}`;
-		return 'Select date range';
+		if (query.from) return `${t('common.from')} ${formatDate(query.from)}`;
+		if (query.to) return `${t('common.until')} ${formatDate(query.to)}`;
+		return t('common.selectDateRange');
 	}
 
 	function parseStatusQuery(value: string): GoodsReceiptStatus[] {
@@ -259,7 +259,7 @@
 </script>
 
 <svelte:head>
-	<title>Goods Receipts | PointFlow</title>
+	<title>{t('procurement.goodsReceipts.title')} | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
@@ -283,13 +283,13 @@
 					<SearchField
 						value={searchValue}
 						disabled={isLoading}
-						ariaLabel="Search goods receipts"
+						ariaLabel={t('procurement.goodsReceipts.searchAriaLabel')}
 						placeholder={t('procurement.goodsReceipts.searchPlaceholder')}
 						class="sm:max-w-sm"
 						onValueChange={updateSearchValue}
 					/>
 					<DataTableFacetedFilter
-						title="Status"
+						title={t('common.status')}
 						options={statusFilterOptions}
 						value={query.status}
 						disabled={isLoading}
@@ -305,7 +305,7 @@
 							!query.from && !query.to && 'text-muted-foreground'
 						)}
 						disabled={isLoading}
-						aria-label="Filter goods receipts by date range"
+						aria-label={t('common.filterByDateRange')}
 					>
 						<CalendarIcon class="size-4" />
 						<span class="truncate">{getDateRangeLabel()}</span>
@@ -320,7 +320,7 @@
 							<div class="flex justify-end border-t bg-popover p-2">
 								<Button type="button" variant="ghost" size="sm" onclick={clearDateRangeFilter}>
 									<XIcon />
-									Clear
+									{t('common.clear')}
 								</Button>
 							</div>
 						{/if}

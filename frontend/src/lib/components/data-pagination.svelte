@@ -14,6 +14,7 @@
 	import ChevronsRightIcon from '@lucide/svelte/icons/chevrons-right';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		pagination,
@@ -53,11 +54,16 @@
 </script>
 
 <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-	<p class="text-sm text-muted-foreground">{start} - {end} of {totalRecords} results</p>
+	<p class="text-sm text-muted-foreground">
+		{t('common.resultsCount')
+			.replace('{start}', String(start))
+			.replace('{end}', String(end))
+			.replace('{totalRecords}', String(totalRecords))}
+	</p>
 
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6 lg:gap-8">
 		<div class="flex items-center gap-2">
-			<p class="text-sm font-medium">Rows per page</p>
+			<p class="text-sm font-medium">{t('common.rowsPerPage')}</p>
 			<Select.Root
 				allowDeselect={false}
 				type="single"
@@ -76,7 +82,9 @@
 		</div>
 
 		<div class="flex w-28 items-center justify-start text-sm font-medium sm:justify-center">
-			Page {currentPage} of {totalPages}
+			{t('common.pageOf')
+				.replace('{page}', String(currentPage))
+				.replace('{totalPages}', String(totalPages))}
 		</div>
 
 		<div class="flex items-center gap-2">
@@ -85,9 +93,9 @@
 				class="hidden size-8 p-0 lg:flex"
 				disabled={!canGoToPreviousPage}
 				onclick={() => onPageChange(1)}
-				title="Go to first page"
+				title={t('common.srGoFirstPage')}
 			>
-				<span class="sr-only">Go to first page</span>
+				<span class="sr-only">{t('common.srGoFirstPage')}</span>
 				<ChevronsLeftIcon class="h-4 w-4" />
 			</Button>
 			<Button
@@ -95,9 +103,9 @@
 				class="size-8 p-0"
 				disabled={!canGoToPreviousPage}
 				onclick={() => onPageChange(currentPage - 1)}
-				title="Go to previous page"
+				title={t('common.srGoPrevPage')}
 			>
-				<span class="sr-only">Go to previous page</span>
+				<span class="sr-only">{t('common.srGoPrevPage')}</span>
 				<ChevronLeftIcon class="h-4 w-4" />
 			</Button>
 			<Button
@@ -105,9 +113,9 @@
 				class="size-8 p-0"
 				disabled={!canGoToNextPage}
 				onclick={() => onPageChange(currentPage + 1)}
-				title="Go to next page"
+				title={t('common.srGoNextPage')}
 			>
-				<span class="sr-only">Go to next page</span>
+				<span class="sr-only">{t('common.srGoNextPage')}</span>
 				<ChevronRightIcon class="h-4 w-4" />
 			</Button>
 			<Button
@@ -115,9 +123,9 @@
 				class="hidden size-8 p-0 lg:flex"
 				disabled={!canGoToNextPage}
 				onclick={() => onPageChange(totalPages)}
-				title="Go to last page"
+				title={t('common.srGoLastPage')}
 			>
-				<span class="sr-only">Go to last page</span>
+				<span class="sr-only">{t('common.srGoLastPage')}</span>
 				<ChevronsRightIcon class="h-4 w-4" />
 			</Button>
 		</div>

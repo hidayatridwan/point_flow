@@ -9,6 +9,7 @@
 	import ProductCategoryDeleteAlertDialog from './product-category-delete-alert-dialog.svelte';
 	import ProductCategoryDetailDialog from './product-category-detail-dialog.svelte';
 	import ProductCategoryEditDialog from './product-category-edit-dialog.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		category,
@@ -46,8 +47,8 @@
 					variant="ghost"
 					size="icon-sm"
 					class="size-8"
-					aria-label={`Open actions for ${category.name}`}
-					title="Actions"
+					aria-label={`${t('common.action')}: ${category.name}`}
+					title={t('common.action')}
 				>
 					<EllipsisIcon />
 				</Button>
@@ -56,15 +57,15 @@
 		<DropdownMenu.Content align="end" class="min-w-36">
 			<DropdownMenu.Item onSelect={openDetail}>
 				<EyeIcon />
-				Detail
+				{t('common.detail')}
 			</DropdownMenu.Item>
 			<DropdownMenu.Item onSelect={openEdit}>
 				<PencilIcon />
-				Edit
+				{t('common.edit')}
 			</DropdownMenu.Item>
 			<DropdownMenu.Item variant="destructive" onSelect={openDelete}>
 				<TrashIcon />
-				Delete
+				{t('common.delete')}
 			</DropdownMenu.Item>
 		</DropdownMenu.Content>
 	</DropdownMenu.Root>

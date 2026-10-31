@@ -44,7 +44,7 @@
 			});
 			await onCancelled?.(cancelledStockAdjustment);
 			toast.success(t('inventory.stockAdjustments.cancel.cancelledToast'), {
-				description: `${cancelledStockAdjustment.adjustment_no} was cancelled.`
+				description: `${cancelledStockAdjustment.adjustment_no} ${t('common.wasCancelled')}`
 			});
 			open = false;
 		} catch (error) {
@@ -70,7 +70,7 @@
 	<Dialog.Content class="p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Cancel Stock Adjustment</Dialog.Title>
+				<Dialog.Title>{t('inventory.stockAdjustments.cancel.title')}</Dialog.Title>
 				<Dialog.Description>
 					Cancel {stockAdjustment.adjustment_no}. Add a reason if this needs audit context.
 				</Dialog.Description>
@@ -82,7 +82,7 @@
 						for={`stock-adjustment-cancel-reason-${stockAdjustment.id}`}
 						class="text-sm font-medium"
 					>
-						Cancel Reason
+						{t('inventory.stockAdjustments.cancel.cancelReason')}
 					</label>
 					<Textarea
 						id={`stock-adjustment-cancel-reason-${stockAdjustment.id}`}
@@ -106,7 +106,7 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Keep adjustment
+					{t('inventory.stockAdjustments.cancel.keepAdjustment')}
 				</Dialog.Close>
 				<Button type="submit" variant="destructive" disabled={isSubmitting}>
 					{#if isSubmitting}

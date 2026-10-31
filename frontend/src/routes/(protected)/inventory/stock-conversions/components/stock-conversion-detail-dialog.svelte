@@ -7,6 +7,7 @@
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDateTime, formatNumber } from '$lib/formatters.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import StockConversionStatusBadge from './stock-conversion-status-badge.svelte';
 
 	let {
@@ -54,16 +55,15 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load stock conversion details.';
+		return t('inventory.stockConversions.detail.loadFailed');
 	}
 </script>
 
 <Dialog.Root bind:open>
 	<Dialog.Content class="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
 		<Dialog.Header>
-			<Dialog.Title>Stock Conversion Details</Dialog.Title>
-			<Dialog.Description>Conversion status and source to target SKU line items.</Dialog.Description
-			>
+			<Dialog.Title>{t('inventory.stockConversions.detail.title')}</Dialog.Title>
+			<Dialog.Description>{t('inventory.stockConversions.detail.desc')}</Dialog.Description>
 		</Dialog.Header>
 
 		{#if isLoading}
@@ -74,24 +74,51 @@
 				<Skeleton class="h-32 w-full" />
 			</div>
 		{:else if errorMessage}
-			<ErrorAlert title="Failed to load details." message={errorMessage} />
+			<ErrorAlert
+				title={t('inventory.stockConversions.detail.loadFailed')}
+				message={errorMessage}
+			/>
 		{:else if stockConversion}
 			<div class="grid gap-5">
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					<DetailField label="Conversion No" value={stockConversion.conversion_no} />
-					<DetailField label="Status">
+					<DetailField
+						label={t('inventory.stockConversions.colConversionNo')}
+						value={stockConversion.conversion_no}
+					/>
+					<DetailField label={t('common.status')}>
 						<StockConversionStatusBadge status={stockConversion.status} />
 					</DetailField>
-					<DetailField label="Converted At" value={formatDateTime(stockConversion.converted_at)} />
-					<DetailField label="Posted At" value={formatDateTime(stockConversion.posted_at)} />
-					<DetailField label="Cancelled At" value={formatDateTime(stockConversion.cancelled_at)} />
-					<DetailField label="Updated At" value={formatDateTime(stockConversion.updated_at)} />
+					<DetailField
+						label={t('inventory.stockConversions.convertedAt')}
+						value={formatDateTime(stockConversion.converted_at)}
+					/>
+					<DetailField
+						label={t('common.postedAt')}
+						value={formatDateTime(stockConversion.posted_at)}
+					/>
+					<DetailField
+						label={t('common.cancelledAt')}
+						value={formatDateTime(stockConversion.cancelled_at)}
+					/>
+					<DetailField
+						label={t('common.updatedAt')}
+						value={formatDateTime(stockConversion.updated_at)}
+					/>
 				</div>
 
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailField label="Notes" value={stockConversion.notes || '-'} />
-					<DetailField label="Cancel Reason" value={stockConversion.cancel_reason || '-'} />
-					<DetailField label="Created At" value={formatDateTime(stockConversion.created_at)} />
+					<DetailField
+						label={t('inventory.stockConversions.detail.notes')}
+						value={stockConversion.notes || '-'}
+					/>
+					<DetailField
+						label={t('inventory.stockConversions.cancel.cancelReason')}
+						value={stockConversion.cancel_reason || '-'}
+					/>
+					<DetailField
+						label={t('common.createdAt')}
+						value={formatDateTime(stockConversion.created_at)}
+					/>
 				</div>
 
 				<div class="overflow-hidden rounded-md border">
@@ -99,15 +126,15 @@
 						<Table.Root>
 							<Table.Header>
 								<Table.Row>
-									<Table.Head>From Product</Table.Head>
-									<Table.Head>From SKU</Table.Head>
-									<Table.Head>Out Qty</Table.Head>
-									<Table.Head>From Stock</Table.Head>
-									<Table.Head>To Product</Table.Head>
-									<Table.Head>To SKU</Table.Head>
-									<Table.Head>In Qty</Table.Head>
-									<Table.Head>To Stock</Table.Head>
-									<Table.Head>Notes</Table.Head>
+									<Table.Head>{t('inventory.stockConversions.detail.fromProduct')}</Table.Head>
+									<Table.Head>{t('inventory.stockConversions.detail.fromSku')}</Table.Head>
+									<Table.Head>{t('inventory.stockConversions.detail.outQty')}</Table.Head>
+									<Table.Head>{t('inventory.stockConversions.detail.fromStock')}</Table.Head>
+									<Table.Head>{t('inventory.stockConversions.detail.toProduct')}</Table.Head>
+									<Table.Head>{t('inventory.stockConversions.detail.toSku')}</Table.Head>
+									<Table.Head>{t('inventory.stockConversions.detail.inQty')}</Table.Head>
+									<Table.Head>{t('inventory.stockConversions.detail.toStock')}</Table.Head>
+									<Table.Head>{t('inventory.stockConversions.detail.notes')}</Table.Head>
 								</Table.Row>
 							</Table.Header>
 							<Table.Body>

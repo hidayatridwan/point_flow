@@ -7,6 +7,7 @@
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { formatDateTime } from '$lib/formatters.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import RolePermissions from './role-permissions.svelte';
 
 	let {
@@ -50,15 +51,15 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load role details.';
+		return t('config.roles.loadFailed');
 	}
 </script>
 
 <Dialog.Root bind:open>
 	<Dialog.Content class="sm:max-w-2xl">
 		<Dialog.Header>
-			<Dialog.Title>Role Details</Dialog.Title>
-			<Dialog.Description>Latest information from the role record.</Dialog.Description>
+			<Dialog.Title>{t('config.roles.detailTitle')}</Dialog.Title>
+			<Dialog.Description>{t('config.roles.detailDesc')}</Dialog.Description>
 		</Dialog.Header>
 
 		{#if isLoading}
@@ -69,21 +70,25 @@
 				<Skeleton class="h-5 w-40" />
 			</div>
 		{:else if errorMessage}
-			<ErrorAlert title="Failed to load details." message={errorMessage} />
+			<ErrorAlert title={t('common.loadFailed')} message={errorMessage} />
 		{:else if role}
 			<div class="grid gap-4">
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailField label="Code" value={role.code} />
-					<DetailField label="Name" value={role.name} />
-					<DetailField label="Type">
-						<StatusBadge active={role.is_system} activeLabel="System" inactiveLabel="Custom" />
+					<DetailField label={t('config.roles.code')} value={role.code} />
+					<DetailField label={t('common.name')} value={role.name} />
+					<DetailField label={t('config.roles.type')}>
+						<StatusBadge
+							active={role.is_system}
+							activeLabel={t('config.roles.typeSystem')}
+							inactiveLabel={t('config.roles.typeCustom')}
+						/>
 					</DetailField>
-					<DetailField label="Description" value={role.description ?? '-'} />
-					<DetailField label="ID" value={role.id} />
-					<DetailField label="Created At" value={formatDateTime(role.created_at)} />
-					<DetailField label="Updated At" value={formatDateTime(role.updated_at)} />
+					<DetailField label={t('common.description')} value={role.description ?? '-'} />
+					<DetailField label={t('common.id')} value={role.id} />
+					<DetailField label={t('common.createdAt')} value={formatDateTime(role.created_at)} />
+					<DetailField label={t('common.updatedAt')} value={formatDateTime(role.updated_at)} />
 				</div>
-				<DetailField label="Permissions">
+				<DetailField label={t('config.roles.permissions')}>
 					<RolePermissions permissions={role.permissions} limit={100} />
 				</DetailField>
 			</div>

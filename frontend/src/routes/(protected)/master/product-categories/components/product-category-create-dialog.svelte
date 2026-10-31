@@ -78,7 +78,7 @@
 			});
 			await onCreated?.(createdCategory);
 			toast.success(t('master.productCategories.createdToast'), {
-				description: `${createdCategory.name} is ready to use.`
+				description: `${createdCategory.name} ${t('common.createdToastDesc')}`
 			});
 			open = false;
 		} catch (error) {
@@ -99,9 +99,9 @@
 	<Dialog.Content class="p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Add Product Category</Dialog.Title>
+				<Dialog.Title>{t('master.productCategories.addTitle')}</Dialog.Title>
 				<Dialog.Description>
-					Create a new product category to keep items grouped consistently.
+					{t('master.productCategories.addDesc')}
 				</Dialog.Description>
 			</Dialog.Header>
 
@@ -109,10 +109,10 @@
 				<Form.Field {form} name="name">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Name</Form.Label>
+							<Form.Label>{t('common.name')}</Form.Label>
 							<Input
 								{...props}
-								placeholder="Enter category name"
+								placeholder={t('master.productCategories.namePlaceholder')}
 								disabled={isSubmitting}
 								bind:value={$formData.name}
 							/>
@@ -124,10 +124,10 @@
 				<Form.Field {form} name="description">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Description</Form.Label>
+							<Form.Label>{t('common.description')}</Form.Label>
 							<Textarea
 								{...props}
-								placeholder="Enter category description"
+								placeholder={t('master.productCategories.descriptionPlaceholder')}
 								disabled={isSubmitting}
 								bind:value={$formData.description}
 							/>
@@ -139,7 +139,7 @@
 				<Form.Field {form} name="is_active">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Status</Form.Label>
+							<Form.Label>{t('common.status')}</Form.Label>
 							<Select.Root
 								allowDeselect={false}
 								type="single"
@@ -152,11 +152,15 @@
 								}}
 							>
 								<Select.Trigger {...props} class="w-full">
-									<Select.Value placeholder="Select status" />
+									<Select.Value placeholder={t('common.selectStatus')} />
 								</Select.Trigger>
 								<Select.Content>
-									<Select.Item value="true" label="Active">Active</Select.Item>
-									<Select.Item value="false" label="Inactive">Inactive</Select.Item>
+									<Select.Item value="true" label={t('status.active')}
+										>{t('status.active')}</Select.Item
+									>
+									<Select.Item value="false" label={t('status.inactive')}
+										>{t('status.inactive')}</Select.Item
+									>
 								</Select.Content>
 							</Select.Root>
 						{/snippet}

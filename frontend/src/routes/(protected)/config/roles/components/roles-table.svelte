@@ -10,6 +10,7 @@
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { formatDateTime } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import RoleActions from './role-actions.svelte';
 	import RolePermissions from './role-permissions.svelte';
 
@@ -34,33 +35,33 @@
 
 	const columns = [
 		columnHelper.accessor('code', {
-			header: 'Code',
+			header: () => t('config.roles.code'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('name', {
-			header: 'Name',
+			header: () => t('common.name'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('permissions', {
-			header: 'Permissions',
+			header: () => t('config.roles.permissions'),
 			cell: (info) => renderComponent(RolePermissions, { permissions: info.getValue() })
 		}),
 		columnHelper.accessor('is_system', {
-			header: 'Type',
+			header: () => t('config.roles.type'),
 			cell: (info) =>
 				renderComponent(StatusBadge, {
 					active: info.getValue(),
-					activeLabel: 'System',
-					inactiveLabel: 'Custom'
+					activeLabel: t('config.roles.typeSystem'),
+					inactiveLabel: t('config.roles.typeCustom')
 				})
 		}),
 		columnHelper.accessor('updated_at', {
-			header: 'Updated At',
+			header: () => t('common.updatedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.display({
 			id: 'actions',
-			header: () => 'Action',
+			header: () => t('common.action'),
 			cell: (info) =>
 				renderComponent(RoleActions, {
 					role: info.row.original,

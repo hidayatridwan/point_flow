@@ -5,6 +5,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDate, formatIdr, formatNumber } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		reports,
@@ -21,31 +22,31 @@
 
 	const columns = [
 		columnHelper.accessor('period_start', {
-			header: 'Period Start',
+			header: () => t('payroll.slips.periodStart'),
 			cell: (info) => formatDate(info.getValue())
 		}),
 		columnHelper.accessor('period_end', {
-			header: 'Period End',
+			header: () => t('payroll.slips.periodEnd'),
 			cell: (info) => formatDate(info.getValue())
 		}),
 		columnHelper.accessor('slip_count', {
-			header: 'Slip Count',
+			header: () => t('payroll.report.colSlipCount'),
 			cell: (info) => formatNumber(info.getValue())
 		}),
 		columnHelper.accessor('total_base_salary', {
-			header: 'Total Base Salary',
+			header: () => t('payroll.report.colTotalBaseSalary'),
 			cell: (info) => formatIdr(info.getValue())
 		}),
 		columnHelper.accessor('total_bonus', {
-			header: 'Total Bonus',
+			header: () => t('payroll.report.colTotalBonus'),
 			cell: (info) => formatIdr(info.getValue())
 		}),
 		columnHelper.accessor('total_deduction', {
-			header: 'Total Deduction',
+			header: () => t('payroll.report.colTotalDeduction'),
 			cell: (info) => formatIdr(info.getValue())
 		}),
 		columnHelper.accessor('total_net_salary', {
-			header: 'Total Net Salary',
+			header: () => t('payroll.report.colTotalNetSalary'),
 			cell: (info) => formatIdr(info.getValue())
 		})
 	];

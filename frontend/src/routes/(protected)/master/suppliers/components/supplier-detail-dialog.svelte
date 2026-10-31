@@ -57,8 +57,8 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="sm:max-w-lg">
 		<Dialog.Header>
-			<Dialog.Title>Supplier Details</Dialog.Title>
-			<Dialog.Description>Latest information from the supplier record.</Dialog.Description>
+			<Dialog.Title>{t('master.suppliers.detailDialogTitle')}</Dialog.Title>
+			<Dialog.Description>{t('master.suppliers.detailDialogDesc')}</Dialog.Description>
 		</Dialog.Header>
 
 		{#if isLoading}
@@ -72,22 +72,22 @@
 			<ErrorAlert title={t('common.loadFailed')} message={errorMessage} />
 		{:else if supplier}
 			<div class="grid gap-4">
-				<DetailField label="Name" value={supplier.name} />
+				<DetailField label={t('common.name')} value={supplier.name} />
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailField label="Contact Name" value={supplier.contact_name} />
-					<DetailField label="Phone" value={supplier.phone} />
-					<DetailField label="Email" value={supplier.email} />
-					<DetailField label="Status">
+					<DetailField label={t('master.suppliers.contactName')} value={supplier.contact_name} />
+					<DetailField label={t('common.phone')} value={supplier.phone} />
+					<DetailField label={t('common.email')} value={supplier.email} />
+					<DetailField label={t('common.status')}>
 						<StatusBadge active={supplier.is_active} />
 					</DetailField>
 				</div>
-				<DetailField label="Address">
+				<DetailField label={t('common.address')}>
 					<p class="text-sm leading-relaxed">{supplier.address || '-'}</p>
 				</DetailField>
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailField label="ID" value={supplier.id} />
-					<DetailField label="Created At" value={formatDateTime(supplier.created_at)} />
-					<DetailField label="Updated At" value={formatDateTime(supplier.updated_at)} />
+					<DetailField label={t('common.id')} value={supplier.id} />
+					<DetailField label={t('common.createdAt')} value={formatDateTime(supplier.created_at)} />
+					<DetailField label={t('common.updatedAt')} value={formatDateTime(supplier.updated_at)} />
 				</div>
 			</div>
 		{/if}

@@ -168,7 +168,7 @@
 					? t('master.cashRegisters.updatedToast')
 					: t('master.cashRegisters.createdToast'),
 				{
-					description: `${savedRegister.code} is ready to use.`
+					description: `${savedRegister.code} ${t('common.createdToastDesc')}`
 				}
 			);
 			isFormOpen = false;
@@ -192,7 +192,7 @@
 		try {
 			await deleteCashRegister(deletingRegister.id);
 			toast.success(t('master.cashRegisters.deletedToast'), {
-				description: `${deletingRegister.code} was removed.`
+				description: `${deletingRegister.code} ${t('common.wasRemoved')}`
 			});
 			isDeleteOpen = false;
 			await loadCashRegisters(query);
@@ -275,7 +275,7 @@
 </script>
 
 <svelte:head>
-	<title>Cash Registers | PointFlow</title>
+	<title>{t('master.cashRegisters.title')} | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
@@ -351,22 +351,22 @@
 														variant="ghost"
 														size="icon-sm"
 														class="size-8"
-														title="Edit"
+														title={t('common.edit')}
 														onclick={() => openEditDialog(cashRegister)}
 													>
 														<PencilIcon />
-														<span class="sr-only">Edit {cashRegister.code}</span>
+														<span class="sr-only">{t('common.edit')} {cashRegister.code}</span>
 													</Button>
 													<Button
 														type="button"
 														variant="ghost"
 														size="icon-sm"
 														class="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
-														title="Delete"
+														title={t('common.delete')}
 														onclick={() => openDeleteDialog(cashRegister)}
 													>
 														<TrashIcon />
-														<span class="sr-only">Delete {cashRegister.code}</span>
+														<span class="sr-only">{t('common.delete')} {cashRegister.code}</span>
 													</Button>
 												</div>
 											</Table.Cell>
@@ -410,7 +410,7 @@
 						: t('master.cashRegisters.addTitle')}</Dialog.Title
 				>
 				<Dialog.Description>
-					Configure a physical cashier device or drawer for register sessions.
+					{t('master.cashRegisters.formDesc')}
 				</Dialog.Description>
 			</Dialog.Header>
 
@@ -428,7 +428,7 @@
 					<Label for="cash-register-name">{t('common.name')}</Label>
 					<Input
 						id="cash-register-name"
-						placeholder="Front Register"
+						placeholder={t('master.cashRegisters.addName')}
 						disabled={isSubmitting}
 						bind:value={formData.name}
 					/>
@@ -437,7 +437,7 @@
 					<Label for="cash-register-description">{t('common.description')}</Label>
 					<Textarea
 						id="cash-register-description"
-						placeholder="Optional description"
+						placeholder={t('master.cashRegisters.addDescription')}
 						disabled={isSubmitting}
 						bind:value={formData.description}
 					/>
@@ -457,8 +457,12 @@
 							<Select.Value placeholder={t('common.selectStatus')} />
 						</Select.Trigger>
 						<Select.Content>
-							<Select.Item value="active" label="Active">{t('status.active')}</Select.Item>
-							<Select.Item value="inactive" label="Inactive">{t('status.inactive')}</Select.Item>
+							<Select.Item value="active" label={t('status.active')}
+								>{t('status.active')}</Select.Item
+							>
+							<Select.Item value="inactive" label={t('status.inactive')}
+								>{t('status.inactive')}</Select.Item
+							>
 						</Select.Content>
 					</Select.Root>
 				</div>
@@ -492,10 +496,7 @@
 			<AlertDialog.Header>
 				<AlertDialog.Title>{t('master.cashRegisters.deleteTitle')}</AlertDialog.Title>
 				<AlertDialog.Description>
-					This action will delete <span class="font-medium text-foreground"
-						>{deletingRegister.code}</span
-					>
-					from the register list.
+					{t('master.cashRegisters.deleteDesc').replace('{code}', deletingRegister.code)}
 				</AlertDialog.Description>
 			</AlertDialog.Header>
 

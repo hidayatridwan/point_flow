@@ -9,6 +9,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDateTime, formatIdr } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import SaleReturnActions from './sale-return-actions.svelte';
 	import SaleReturnStatusBadge from './sale-return-status-badge.svelte';
 
@@ -29,36 +30,36 @@
 
 	const columns = [
 		columnHelper.accessor('return_no', {
-			header: 'Return No',
+			header: () => t('pos.saleReturns.detail.returnNo'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('sale_transaction_no', {
-			header: 'Sale Transaction',
+			header: () => t('pos.saleReturns.detail.saleTx'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('returned_at', {
-			header: 'Returned At',
+			header: () => t('pos.saleReturns.detail.returnedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.accessor('cashier_name', {
-			header: 'Cashier',
+			header: () => t('pos.saleReturns.detail.cashier'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('cash_register_code', {
-			header: 'Register',
+			header: () => t('pos.saleReturns.detail.register'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('status', {
-			header: 'Status',
+			header: () => t('common.status'),
 			cell: (info) => renderComponent(SaleReturnStatusBadge, { status: info.getValue() })
 		}),
 		columnHelper.accessor('refund_amount', {
-			header: 'Refund',
+			header: () => t('pos.saleReturns.detail.refund'),
 			cell: (info) => formatIdr(info.getValue())
 		}),
 		columnHelper.display({
 			id: 'actions',
-			header: () => 'Action',
+			header: () => t('common.action'),
 			cell: (info) =>
 				renderComponent(SaleReturnActions, {
 					saleReturn: info.row.original,

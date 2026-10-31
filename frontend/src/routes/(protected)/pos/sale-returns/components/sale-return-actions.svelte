@@ -5,6 +5,7 @@
 	import type { SaleReturn } from '$lib/api/sales.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import SaleReturnCancelDialog from './sale-return-cancel-dialog.svelte';
 	import SaleReturnDetailDialog from './sale-return-detail-dialog.svelte';
 
@@ -39,8 +40,8 @@
 					variant="ghost"
 					size="icon-sm"
 					class="size-8"
-					aria-label={`Open actions for ${saleReturn.return_no}`}
-					title="Actions"
+					aria-label={t('common.openActions').replace('{docNo}', saleReturn.return_no)}
+					title={t('common.action')}
 				>
 					<EllipsisIcon />
 				</Button>
@@ -49,12 +50,12 @@
 		<DropdownMenu.Content align="end" class="min-w-44">
 			<DropdownMenu.Item onSelect={openDetail}>
 				<EyeIcon />
-				Detail
+				{t('common.detail')}
 			</DropdownMenu.Item>
 			{#if canCancel}
 				<DropdownMenu.Item variant="destructive" onSelect={openCancel}>
 					<BanIcon />
-					Cancel return
+					{t('pos.saleReturns.cancel.title')}
 				</DropdownMenu.Item>
 			{/if}
 		</DropdownMenu.Content>

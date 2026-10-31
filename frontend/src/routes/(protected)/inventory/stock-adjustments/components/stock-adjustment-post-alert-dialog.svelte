@@ -57,11 +57,12 @@
 <AlertDialog.Root bind:open>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>Post Stock Adjustment?</AlertDialog.Title>
+			<AlertDialog.Title>{t('inventory.stockAdjustments.post.title')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				This action will post
-				<span class="font-medium text-foreground">{stockAdjustment.adjustment_no}</span>
-				and update product SKU stock to the adjusted quantities.
+				{t('inventory.stockAdjustments.post.desc').replace(
+					'{adjNo}',
+					stockAdjustment.adjustment_no
+				)}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 
@@ -70,7 +71,9 @@
 		{/if}
 
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel disabled={isSubmitting}>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel disabled={isSubmitting}
+				>{t('inventory.stockAdjustments.post.cancelBtn')}</AlertDialog.Cancel
+			>
 			<AlertDialog.Action disabled={isSubmitting} onclick={handlePost}>
 				{#if isSubmitting}
 					<Spinner />

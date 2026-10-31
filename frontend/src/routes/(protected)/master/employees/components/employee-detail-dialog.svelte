@@ -57,8 +57,8 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="sm:max-w-lg">
 		<Dialog.Header>
-			<Dialog.Title>Employee Details</Dialog.Title>
-			<Dialog.Description>Latest information from the employee record.</Dialog.Description>
+			<Dialog.Title>{t('master.employees.detailTitle')}</Dialog.Title>
+			<Dialog.Description>{t('master.employees.detailDesc')}</Dialog.Description>
 		</Dialog.Header>
 
 		{#if isLoading}
@@ -69,25 +69,28 @@
 				<Skeleton class="h-5 w-32" />
 			</div>
 		{:else if errorMessage}
-			<ErrorAlert title="Failed to load details." message={errorMessage} />
+			<ErrorAlert title={t('common.loadFailed')} message={errorMessage} />
 		{:else if employee}
 			<div class="grid gap-4">
-				<DetailField label="Name" value={employee.name} />
+				<DetailField label={t('common.name')} value={employee.name} />
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailField label="Position" value={employee.position} />
-					<DetailField label="Phone" value={employee.phone} />
-					<DetailField label="Base Salary" value={formatIdr(employee.base_salary)} />
-					<DetailField label="Status">
+					<DetailField label={t('master.employees.position')} value={employee.position} />
+					<DetailField label={t('common.phone')} value={employee.phone} />
+					<DetailField
+						label={t('master.employees.baseSalary')}
+						value={formatIdr(employee.base_salary)}
+					/>
+					<DetailField label={t('common.status')}>
 						<StatusBadge active={employee.is_active} />
 					</DetailField>
 				</div>
-				<DetailField label="Address">
+				<DetailField label={t('common.address')}>
 					<p class="text-sm leading-relaxed">{employee.address || '-'}</p>
 				</DetailField>
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailField label="ID" value={employee.id} />
-					<DetailField label="Created At" value={formatDateTime(employee.created_at)} />
-					<DetailField label="Updated At" value={formatDateTime(employee.updated_at)} />
+					<DetailField label={t('common.id')} value={employee.id} />
+					<DetailField label={t('common.createdAt')} value={formatDateTime(employee.created_at)} />
+					<DetailField label={t('common.updatedAt')} value={formatDateTime(employee.updated_at)} />
 				</div>
 			</div>
 		{/if}

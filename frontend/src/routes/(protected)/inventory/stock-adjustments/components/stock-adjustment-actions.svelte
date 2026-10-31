@@ -6,6 +6,7 @@
 	import type { StockAdjustment } from '$lib/api/stock-adjustments.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import StockAdjustmentCancelDialog from './stock-adjustment-cancel-dialog.svelte';
 	import StockAdjustmentDetailDialog from './stock-adjustment-detail-dialog.svelte';
 	import StockAdjustmentPostAlertDialog from './stock-adjustment-post-alert-dialog.svelte';
@@ -47,8 +48,8 @@
 					variant="ghost"
 					size="icon-sm"
 					class="size-8"
-					aria-label={`Open actions for ${stockAdjustment.adjustment_no}`}
-					title="Actions"
+					aria-label={t('common.openActions').replace('{docNo}', stockAdjustment.adjustment_no)}
+					title={t('common.action')}
 				>
 					<EllipsisIcon />
 				</Button>
@@ -57,18 +58,18 @@
 		<DropdownMenu.Content align="end" class="min-w-48">
 			<DropdownMenu.Item onSelect={openDetail}>
 				<EyeIcon />
-				Detail
+				{t('common.detail')}
 			</DropdownMenu.Item>
 			{#if canPost}
 				<DropdownMenu.Item onSelect={openPost}>
 					<CheckCircleIcon />
-					Post adjustment
+					{t('inventory.stockAdjustments.post.postBtn')}
 				</DropdownMenu.Item>
 			{/if}
 			{#if canCancel}
 				<DropdownMenu.Item variant="destructive" onSelect={openCancel}>
 					<BanIcon />
-					Cancel adjustment
+					{t('inventory.stockAdjustments.cancel.title')}
 				</DropdownMenu.Item>
 			{/if}
 		</DropdownMenu.Content>

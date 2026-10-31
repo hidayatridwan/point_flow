@@ -11,10 +11,11 @@
 	import { formatDateTime } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
 	import SupplierActions from './supplier-actions.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		suppliers,
-		emptyMessage = 'No suppliers.',
+		emptyMessage = t('master.suppliers.emptyDefault'),
 		isLoading = false,
 		onSupplierDeleted,
 		onSupplierUpdated
@@ -31,32 +32,32 @@
 
 	const columns = [
 		columnHelper.accessor('name', {
-			header: 'Name',
+			header: () => t('common.name'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('contact_name', {
-			header: 'Contact',
+			header: () => t('master.suppliers.contactName'),
 			cell: (info) => info.getValue() || '-'
 		}),
 		columnHelper.accessor('phone', {
-			header: 'Phone',
+			header: () => t('common.phone'),
 			cell: (info) => info.getValue() || '-'
 		}),
 		columnHelper.accessor('email', {
-			header: 'Email',
+			header: () => t('common.email'),
 			cell: (info) => info.getValue() || '-'
 		}),
 		columnHelper.accessor('is_active', {
-			header: 'Status',
+			header: () => t('common.status'),
 			cell: (info) => renderComponent(StatusBadge, { active: info.getValue() })
 		}),
 		columnHelper.accessor('updated_at', {
-			header: 'Updated At',
+			header: () => t('common.updatedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.display({
 			id: 'actions',
-			header: () => 'Action',
+			header: () => t('common.action'),
 			cell: (info) =>
 				renderComponent(SupplierActions, {
 					supplier: info.row.original,

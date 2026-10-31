@@ -9,6 +9,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDateTime, formatIdr, formatNumber } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import GoodsReceiptStatusBadge from '../../../procurement/goods-receipts/components/goods-receipt-status-badge.svelte';
 
 	let {
@@ -26,39 +27,39 @@
 
 	const columns = [
 		columnHelper.accessor('gr_no', {
-			header: 'GR No',
+			header: () => t('procurement.goodsReceipts.colGrNo'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('po_no', {
-			header: 'PO No',
+			header: () => t('procurement.goodsReceipts.colPoNo'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('supplier_name', {
-			header: 'Supplier',
+			header: () => t('procurement.goodsReceipts.colSupplier'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('received_at', {
-			header: 'Received At',
+			header: () => t('procurement.goodsReceipts.colReceivedDate'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.accessor('status', {
-			header: 'Status',
+			header: () => t('procurement.goodsReceipts.colStatus'),
 			cell: (info) => renderComponent(GoodsReceiptStatusBadge, { status: info.getValue() })
 		}),
 		columnHelper.accessor('item_count', {
-			header: 'Items',
+			header: () => t('common.colItems'),
 			cell: (info) => formatNumber(info.getValue())
 		}),
 		columnHelper.accessor('total_quantity_received', {
-			header: 'Received Qty',
+			header: () => t('common.colReceivedQty'),
 			cell: (info) => formatNumber(info.getValue())
 		}),
 		columnHelper.accessor('total_amount', {
-			header: 'Total Amount',
+			header: () => t('procurement.goodsReceipts.colTotal'),
 			cell: (info) => formatIdr(info.getValue())
 		}),
 		columnHelper.accessor('updated_at', {
-			header: 'Updated At',
+			header: () => t('common.updatedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		})
 	];

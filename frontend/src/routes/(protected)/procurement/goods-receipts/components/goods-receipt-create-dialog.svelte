@@ -384,10 +384,8 @@
 			<Drawer.Header
 				class="shrink-0 border-b px-6 py-5 text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left"
 			>
-				<Drawer.Title>Add Goods Receipt</Drawer.Title>
-				<Drawer.Description>
-					Create a draft goods receipt from ordered purchase order quantities.
-				</Drawer.Description>
+				<Drawer.Title>{t('procurement.goodsReceipts.addTitle')}</Drawer.Title>
+				<Drawer.Description>{t('procurement.goodsReceipts.addDesc')}</Drawer.Description>
 			</Drawer.Header>
 
 			<div class="flex-1 overflow-y-auto px-6 py-5">
@@ -395,7 +393,7 @@
 					<div class="grid grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2">
 						<div class="space-y-2">
 							<Label for="goods-receipt-purchase-order" class="whitespace-nowrap">
-								Purchase Order
+								{t('procurement.purchaseOrders.title')}
 							</Label>
 							<Select.Root
 								allowDeselect={false}
@@ -409,7 +407,7 @@
 								}}
 							>
 								<Select.Trigger id="goods-receipt-purchase-order" class="w-full">
-									<Select.Value placeholder="Select ordered purchase order" />
+									<Select.Value placeholder={t('procurement.goodsReceipts.selectOrderedPo')} />
 								</Select.Trigger>
 								<Select.Content>
 									{#each purchaseOrders as purchaseOrder (purchaseOrder.id)}
@@ -429,7 +427,7 @@
 
 						<div class="space-y-2">
 							<Label for="goods-receipt-received-date" class="whitespace-nowrap">
-								Received Date
+								{t('procurement.goodsReceipts.receivedDate')}
 							</Label>
 							<Popover.Root bind:open={isReceivedDateOpen}>
 								<Popover.Trigger
@@ -445,7 +443,7 @@
 									<span class="truncate">
 										{formData.received_date
 											? formatDate(formData.received_date)
-											: 'Select received date'}
+											: t('procurement.goodsReceipts.selectReceivedDate')}
 									</span>
 								</Popover.Trigger>
 								<Popover.Content align="start" class="w-auto p-0">
@@ -462,10 +460,10 @@
 						</div>
 
 						<div class="space-y-2 md:col-span-2">
-							<Label for="goods-receipt-notes" class="whitespace-nowrap">Notes</Label>
+							<Label for="goods-receipt-notes" class="whitespace-nowrap">{t('common.notes')}</Label>
 							<Textarea
 								id="goods-receipt-notes"
-								placeholder="Goods received"
+								placeholder={t('procurement.goodsReceipts.notesPlaceholder')}
 								class="min-h-9 resize-none"
 								disabled={isSubmitting}
 								bind:value={formData.notes}
@@ -479,15 +477,19 @@
 					{#if selectedPurchaseOrder}
 						<div class="grid grid-cols-1 gap-3 rounded-md border bg-muted/10 p-4 sm:grid-cols-3">
 							<div>
-								<p class="text-xs text-muted-foreground">PO No</p>
+								<p class="text-xs text-muted-foreground">{t('procurement.goodsReceipts.poNo')}</p>
 								<p class="text-sm font-medium">{selectedPurchaseOrder.po_no}</p>
 							</div>
 							<div>
-								<p class="text-xs text-muted-foreground">Supplier</p>
+								<p class="text-xs text-muted-foreground">
+									{t('procurement.purchaseOrders.supplier')}
+								</p>
 								<p class="text-sm font-medium">{selectedPurchaseOrder.supplier_name}</p>
 							</div>
 							<div>
-								<p class="text-xs text-muted-foreground">Expected Date</p>
+								<p class="text-xs text-muted-foreground">
+									{t('procurement.purchaseOrders.expectedDate')}
+								</p>
 								<p class="text-sm font-medium">{formatDate(selectedPurchaseOrder.expected_date)}</p>
 							</div>
 						</div>
@@ -495,9 +497,9 @@
 
 					<div class="flex flex-col gap-3">
 						<div>
-							<h3 class="text-sm font-medium">Received Items</h3>
+							<h3 class="text-sm font-medium">{t('procurement.goodsReceipts.receivedItems')}</h3>
 							<p class="text-sm text-muted-foreground">
-								Adjust quantities for partial receipt or remove items not received yet.
+								{t('procurement.goodsReceipts.receivedItemsDesc')}
 							</p>
 						</div>
 
@@ -510,7 +512,7 @@
 
 						{#if isLoadingPurchaseOrder}
 							<div class="rounded-md border p-4 text-sm text-muted-foreground">
-								Loading purchase order items...
+								{t('procurement.goodsReceipts.loadingItems')}
 							</div>
 						{:else if formData.items.length > 0}
 							<div class="grid gap-3">
@@ -530,20 +532,24 @@
 												class="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
 												disabled={isSubmitting || formData.items.length === 1}
 												onclick={() => removeLineItem(item.client_id)}
-												title="Remove item"
+												title={t('common.removeItem')}
 											>
 												<TrashIcon />
-												<span class="sr-only">Remove item</span>
+												<span class="sr-only">{t('common.removeItem')}</span>
 											</Button>
 										</div>
 
 										<div class="grid grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2 lg:grid-cols-4">
 											<div class="space-y-1 rounded-md bg-background p-3">
-												<p class="text-xs text-muted-foreground">Ordered</p>
+												<p class="text-xs text-muted-foreground">
+													{t('procurement.goodsReceipts.ordered')}
+												</p>
 												<p class="text-sm font-medium">{formatNumber(item.quantity_ordered)}</p>
 											</div>
 											<div class="space-y-1 rounded-md bg-background p-3">
-												<p class="text-xs text-muted-foreground">Received</p>
+												<p class="text-xs text-muted-foreground">
+													{t('procurement.goodsReceipts.received')}
+												</p>
 												<p class="text-sm font-medium">
 													{formatNumber(item.quantity_received_to_date)}
 												</p>
@@ -553,7 +559,7 @@
 													for={`goods-receipt-item-quantity-${item.client_id}`}
 													class="whitespace-nowrap"
 												>
-													Receive Qty
+													{t('procurement.goodsReceipts.receiveQty')}
 												</Label>
 												<Input
 													id={`goods-receipt-item-quantity-${item.client_id}`}
@@ -565,7 +571,8 @@
 													bind:value={item.quantity_received}
 												/>
 												<p class="text-xs text-muted-foreground">
-													Remaining {formatNumber(item.remaining_quantity)}
+													{t('procurement.goodsReceipts.remaining')}
+													{formatNumber(item.remaining_quantity)}
 												</p>
 												{#if getFieldError(`items.${index}.quantity_received`)}
 													<p class="text-sm text-destructive">
@@ -578,7 +585,7 @@
 													for={`goods-receipt-item-unit-cost-${item.client_id}`}
 													class="whitespace-nowrap"
 												>
-													Unit Cost
+													{t('procurement.goodsReceipts.unitCost')}
 												</Label>
 												<Input
 													id={`goods-receipt-item-unit-cost-${item.client_id}`}
@@ -589,7 +596,8 @@
 													bind:value={item.unit_cost}
 												/>
 												<p class="text-xs text-muted-foreground">
-													Line total {formatIdr(getLineTotal(item))}
+													{t('common.lineTotal')}
+													{formatIdr(getLineTotal(item))}
 												</p>
 												{#if getFieldError(`items.${index}.unit_cost`)}
 													<p class="text-sm text-destructive">
@@ -603,25 +611,33 @@
 							</div>
 						{:else}
 							<div class="rounded-md border p-4 text-sm text-muted-foreground">
-								Select a purchase order to load receivable items.
+								{t('procurement.goodsReceipts.selectPoFirst')}
 							</div>
 						{/if}
 					</div>
 
 					<div class="flex justify-end border-t pt-4">
 						<div class="text-right">
-							<p class="text-sm text-muted-foreground">Total Received Amount</p>
+							<p class="text-sm text-muted-foreground">
+								{t('procurement.goodsReceipts.totalReceived')}
+							</p>
 							<p class="text-lg font-semibold">{formatIdr(totalAmount)}</p>
 						</div>
 					</div>
 
 					<div class="grid gap-3">
 						{#if optionsErrorMessage}
-							<ErrorAlert title="Failed to load options." message={optionsErrorMessage} />
+							<ErrorAlert
+								title={t('procurement.goodsReceipts.errorLoadOptions')}
+								message={optionsErrorMessage}
+							/>
 						{/if}
 
 						{#if errorMessage}
-							<ErrorAlert title="Failed to create goods receipt." message={errorMessage} />
+							<ErrorAlert
+								title={t('procurement.goodsReceipts.errorCreate')}
+								message={errorMessage}
+							/>
 						{/if}
 					</div>
 				</div>
@@ -633,7 +649,7 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
+					{t('common.cancel')}
 				</Drawer.Close>
 				<Button type="submit" disabled={isSubmitting || isLoadingOptions || isLoadingPurchaseOrder}>
 					{#if isSubmitting}

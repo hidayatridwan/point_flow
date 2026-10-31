@@ -9,6 +9,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDateTime, formatNumber } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import StockAdjustmentStatusBadge from '../../../inventory/stock-adjustments/components/stock-adjustment-status-badge.svelte';
 
 	let {
@@ -26,39 +27,39 @@
 
 	const columns = [
 		columnHelper.accessor('adjustment_no', {
-			header: 'Adjustment No',
+			header: () => t('inventory.stockAdjustments.colAdjustmentNo'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('adjusted_at', {
-			header: 'Adjusted At',
+			header: () => t('inventory.stockAdjustments.adjustedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.accessor('reason', {
-			header: 'Reason',
+			header: () => t('inventory.stockAdjustments.reason'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('status', {
-			header: 'Status',
+			header: () => t('common.status'),
 			cell: (info) => renderComponent(StockAdjustmentStatusBadge, { status: info.getValue() })
 		}),
 		columnHelper.accessor('item_count', {
-			header: 'Items',
+			header: () => t('common.colItems'),
 			cell: (info) => formatNumber(info.getValue())
 		}),
 		columnHelper.accessor('total_quantity_increased', {
-			header: 'Qty In',
+			header: () => t('inventory.stockAdjustments.colQtyIn'),
 			cell: (info) => formatNumber(info.getValue())
 		}),
 		columnHelper.accessor('total_quantity_decreased', {
-			header: 'Qty Out',
+			header: () => t('inventory.stockAdjustments.colQtyOut'),
 			cell: (info) => formatNumber(info.getValue())
 		}),
 		columnHelper.accessor('posted_at', {
-			header: 'Posted At',
+			header: () => t('common.postedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.accessor('updated_at', {
-			header: 'Updated At',
+			header: () => t('common.updatedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		})
 	];

@@ -5,6 +5,7 @@
 	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
 	import DialogOverlay from './dialog-overlay.svelte';
 	import DialogPortal from './dialog-portal.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import type { Snippet } from 'svelte';
 	import type { ComponentProps } from 'svelte';
 
@@ -39,7 +40,7 @@
 				{#snippet child({ props })}
 					<Button variant="ghost" class="absolute top-2 right-2" size="icon-sm" {...props}>
 						<XIcon />
-						<span class="sr-only">Close</span>
+						<span class="sr-only">{t('common.close')}</span>
 					</Button>
 				{/snippet}
 			</DialogPrimitive.Close>

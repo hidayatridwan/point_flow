@@ -44,7 +44,7 @@
 			});
 			await onCancelled?.(cancelledPurchaseOrder);
 			toast.success(t('procurement.purchaseOrders.cancelledToast'), {
-				description: `${cancelledPurchaseOrder.po_no} was cancelled.`
+				description: `${cancelledPurchaseOrder.po_no} ${t('common.wasCancelled')}`
 			});
 			open = false;
 		} catch (error) {
@@ -62,7 +62,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to cancel purchase order.';
+		return t('procurement.purchaseOrders.cancelFailed');
 	}
 </script>
 
@@ -70,7 +70,7 @@
 	<Dialog.Content class="p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Cancel Purchase Order</Dialog.Title>
+				<Dialog.Title>{t('procurement.purchaseOrders.cancelTitle')}</Dialog.Title>
 				<Dialog.Description>
 					Cancel {purchaseOrder.po_no}. Add a reason if this needs audit context.
 				</Dialog.Description>
@@ -79,11 +79,11 @@
 			<div class="grid gap-4 px-6">
 				<div class="space-y-2">
 					<label for={`cancel-reason-${purchaseOrder.id}`} class="text-sm font-medium">
-						Cancel Reason
+						{t('procurement.purchaseOrders.cancelReason')}
 					</label>
 					<Textarea
 						id={`cancel-reason-${purchaseOrder.id}`}
-						placeholder="Wrong input"
+						placeholder={t('procurement.purchaseOrders.cancelReasonPlaceholder')}
 						disabled={isSubmitting}
 						bind:value={reason}
 					/>
@@ -100,7 +100,7 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Keep order
+					{t('procurement.purchaseOrders.keepOrder')}
 				</Dialog.Close>
 				<Button type="submit" variant="destructive" disabled={isSubmitting}>
 					{#if isSubmitting}

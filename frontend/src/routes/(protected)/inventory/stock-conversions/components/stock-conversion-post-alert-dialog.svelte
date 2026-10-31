@@ -57,11 +57,12 @@
 <AlertDialog.Root bind:open>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>Post Stock Conversion?</AlertDialog.Title>
+			<AlertDialog.Title>{t('inventory.stockConversions.post.title')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				This action will post
-				<span class="font-medium text-foreground">{stockConversion.conversion_no}</span>
-				and move stock between product SKUs.
+				{t('inventory.stockConversions.post.desc').replace(
+					'{convNo}',
+					stockConversion.conversion_no
+				)}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 
@@ -70,7 +71,9 @@
 		{/if}
 
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel disabled={isSubmitting}>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel disabled={isSubmitting}
+				>{t('inventory.stockConversions.post.cancelBtn')}</AlertDialog.Cancel
+			>
 			<AlertDialog.Action disabled={isSubmitting} onclick={handlePost}>
 				{#if isSubmitting}
 					<Spinner />

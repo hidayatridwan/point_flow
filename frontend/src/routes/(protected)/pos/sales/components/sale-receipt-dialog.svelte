@@ -9,6 +9,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { printSaleReceipt } from '$lib/receipt/sale-receipt.js';
 	import { formatDateTime, formatIdr, formatNumber } from '$lib/formatters.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
 
@@ -69,7 +70,7 @@
 
 		try {
 			printSaleReceipt(sale);
-			toast.success('Receipt print window opened.', {
+			toast.success(t('pos.sales.receipt.printOpened'), {
 				description: sale.transaction_no
 			});
 		} catch (error) {
@@ -80,7 +81,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to print receipt.';
+		return t('pos.sales.receipt.errorLoad');
 	}
 </script>
 
@@ -88,10 +89,8 @@
 	<Dialog.Content class="max-h-[90vh] overflow-y-auto p-0 sm:max-w-lg">
 		<div class="grid gap-5">
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Print Receipt</Dialog.Title>
-				<Dialog.Description
-					>Preview the receipt before sending it to the printer.</Dialog.Description
-				>
+				<Dialog.Title>{t('pos.sales.receipt.title')}</Dialog.Title>
+				<Dialog.Description>{t('pos.sales.receipt.desc')}</Dialog.Description>
 			</Dialog.Header>
 
 			<div class="grid gap-4 px-6">
@@ -103,33 +102,33 @@
 						<Skeleton class="h-5 w-full" />
 					</div>
 				{:else if errorMessage}
-					<ErrorAlert title="Receipt failed." message={errorMessage} />
+					<ErrorAlert title={t('pos.sales.receipt.errorTitle')} message={errorMessage} />
 				{:else if sale}
 					<div
 						class="mx-auto w-full max-w-80 rounded-md border bg-white p-4 font-mono text-[11px] leading-relaxed text-slate-950 shadow-sm"
 					>
 						<div class="text-center">
 							<div class="text-sm font-bold">POS SYSTEM</div>
-							<div class="text-slate-500">Receipt</div>
+							<div class="text-slate-500">{t('pos.sales.receipt.receiptLabel')}</div>
 						</div>
 
 						<div class="my-3 border-t border-dashed border-slate-400"></div>
 
 						<div class="grid gap-1">
 							<div class="flex justify-between gap-3">
-								<span>No</span>
+								<span>{t('pos.sales.receipt.no')}</span>
 								<span class="text-right">{sale.transaction_no}</span>
 							</div>
 							<div class="flex justify-between gap-3">
-								<span>Date</span>
+								<span>{t('pos.sales.receipt.date')}</span>
 								<span class="text-right">{formatDateTime(sale.sold_at)}</span>
 							</div>
 							<div class="flex justify-between gap-3">
-								<span>Cashier</span>
+								<span>{t('pos.sales.receipt.cashier')}</span>
 								<span class="text-right">{sale.cashier_name}</span>
 							</div>
 							<div class="flex justify-between gap-3">
-								<span>Register</span>
+								<span>{t('pos.sales.receipt.register')}</span>
 								<span class="text-right">{sale.cash_register_code ?? '-'}</span>
 							</div>
 						</div>
@@ -159,19 +158,19 @@
 
 						<div class="grid gap-1">
 							<div class="flex justify-between gap-3">
-								<span>Subtotal</span>
+								<span>{t('pos.sales.receipt.subtotal')}</span>
 								<span>{formatIdr(sale.subtotal_amount)}</span>
 							</div>
 							<div class="flex justify-between gap-3 text-sm font-bold">
-								<span>Total</span>
+								<span>{t('pos.sales.receipt.total')}</span>
 								<span>{formatIdr(sale.total_amount)}</span>
 							</div>
 							<div class="flex justify-between gap-3">
-								<span>Paid</span>
+								<span>{t('pos.sales.receipt.paid')}</span>
 								<span>{formatIdr(sale.paid_amount)}</span>
 							</div>
 							<div class="flex justify-between gap-3">
-								<span>Change</span>
+								<span>{t('pos.sales.receipt.change')}</span>
 								<span>{formatIdr(sale.change_amount)}</span>
 							</div>
 						</div>
@@ -179,15 +178,15 @@
 						{#if sale.notes}
 							<div class="my-3 border-t border-dashed border-slate-400"></div>
 							<div>
-								<div>Notes</div>
+								<div>{t('pos.sales.receipt.notes')}</div>
 								<div>{sale.notes}</div>
 							</div>
 						{/if}
 
 						<div class="my-3 border-t border-dashed border-slate-400"></div>
 						<div class="text-center">
-							<div>Terima kasih</div>
-							<div class="text-slate-500">Barang yang sudah dibeli mengikuti kebijakan toko.</div>
+							<div>{t('pos.sales.receipt.thanks')}</div>
+							<div class="text-slate-500">{t('pos.sales.receipt.policy')}</div>
 						</div>
 					</div>
 				{/if}
@@ -195,11 +194,11 @@
 
 			<Dialog.Footer class="border-t bg-muted/30 px-6 py-4">
 				<Dialog.Close type="button" class={cn(buttonVariants({ variant: 'outline' }))}>
-					Close
+					{t('common.close')}
 				</Dialog.Close>
 				<Button type="button" disabled={!sale || isLoading} onclick={handlePrint}>
 					<PrinterIcon />
-					Print receipt
+					{t('pos.sales.printReceipt')}
 				</Button>
 			</Dialog.Footer>
 		</div>

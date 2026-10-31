@@ -162,16 +162,16 @@ BEGIN
 	) THEN
 		FOR v_rec IN
 			SELECT * FROM (VALUES
-				('[DEMO] Mineral Water 600ml', 'bev',   'pcs',  1500, 3000, 400),
-				('[DEMO] UHT Milk 1L',         'bev',   'pcs',  9000, 14000, 220),
-				('[DEMO] Coffee Sachet',       'bev',   'pcs',  1200, 2500, 600),
-				('[DEMO] Tea Box',             'bev',   'box',  8000, 13000, 90),
-				('[DEMO] Instant Noodles',     'snack', 'pcs',  2300, 3500, 800),
-				('[DEMO] Potato Chips',        'snack', 'pack', 7000, 11000, 180),
-				('[DEMO] Toothpaste',          'pers',  'pcs',  9000, 15000, 140),
-				('[DEMO] Shampoo Sachet',      'pers',  'pcs',  1000, 2000, 500),
-				('[DEMO] Dish Soap',           'house', 'pcs',  8000, 13000, 160),
-				('[DEMO] Floor Cleaner 800ml', 'house', 'pcs', 12000, 19000, 120)
+				('Mineral Water 600ml', 'bev',   'pcs',  1500, 3000, 400),
+				('UHT Milk 1L',         'bev',   'pcs',  9000, 14000, 220),
+				('Coffee Sachet',       'bev',   'pcs',  1200, 2500, 600),
+				('Tea Box',             'bev',   'box',  8000, 13000, 90),
+				('Instant Noodles',     'snack', 'pcs',  2300, 3500, 800),
+				('Potato Chips',        'snack', 'pack', 7000, 11000, 180),
+				('Toothpaste',          'pers',  'pcs',  9000, 15000, 140),
+				('Shampoo Sachet',      'pers',  'pcs',  1000, 2000, 500),
+				('Dish Soap',           'house', 'pcs',  8000, 13000, 160),
+				('Floor Cleaner 800ml', 'house', 'pcs', 12000, 19000, 120)
 			) AS t(pname, cat, unitcode, pprice, sprice, stk)
 		LOOP
 			INSERT INTO products (category_id, name)
@@ -207,7 +207,7 @@ BEGIN
 
 	IF v_conv_product IS NULL THEN
 		INSERT INTO products (category_id, name)
-		VALUES (v_cat_bev, '[DEMO] Bundle Drink (Box & Pcs)')
+		VALUES (v_cat_bev, 'Bundle Drink (Box & Pcs)')
 		RETURNING id INTO v_conv_product;
 
 		SELECT id INTO v_unit_id FROM units WHERE lower(code) = 'box' AND deleted_at IS NULL LIMIT 1;
@@ -236,12 +236,12 @@ BEGIN
 	INSERT INTO employees (name, position, phone, address, base_salary, is_active)
 	SELECT x.name, x.pos, 'demo-seed', x.addr, x.sal, x.active
 	FROM (VALUES
-		('[DEMO] Dewi Lestari',  'Senior Cashier', 'Jl. Melati No. 1',  4000000, TRUE),
-		('[DEMO] Budi Santoso',  'Cashier',        'Jl. Mawar No. 2',   3500000, TRUE),
-		('[DEMO] Sari Wahyuni',  'Cashier',        'Jl. Anggrek No. 3', 3500000, TRUE),
-		('[DEMO] Eko Prasetyo',  'Store Keeper',   'Jl. Kenanga No. 4', 3800000, TRUE),
-		('[DEMO] Rina Marlina',  'Supervisor',     'Jl. Dahlia No. 5',  5500000, TRUE),
-		('[DEMO] Joko Susilo',   'Helper',         'Jl. Flamboyan No.6',3000000, FALSE)
+		('Dewi Lestari',  'Senior Cashier', 'Jl. Melati No. 1',  4000000, TRUE),
+		('Budi Santoso',  'Cashier',        'Jl. Mawar No. 2',   3500000, TRUE),
+		('Sari Wahyuni',  'Cashier',        'Jl. Anggrek No. 3', 3500000, TRUE),
+		('Eko Prasetyo',  'Store Keeper',   'Jl. Kenanga No. 4', 3800000, TRUE),
+		('Rina Marlina',  'Supervisor',     'Jl. Dahlia No. 5',  5500000, TRUE),
+		('Joko Susilo',   'Helper',         'Jl. Flamboyan No.6',3000000, FALSE)
 	) AS x(name, pos, addr, sal, active)
 	WHERE NOT EXISTS (
 		SELECT 1 FROM employees e WHERE e.name = x.name AND e.deleted_at IS NULL

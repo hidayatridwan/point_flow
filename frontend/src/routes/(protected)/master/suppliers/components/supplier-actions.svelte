@@ -9,6 +9,7 @@
 	import SupplierDeleteAlertDialog from './supplier-delete-alert-dialog.svelte';
 	import SupplierDetailDialog from './supplier-detail-dialog.svelte';
 	import SupplierEditDialog from './supplier-edit-dialog.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		supplier,
@@ -34,8 +35,8 @@
 					variant="ghost"
 					size="icon-sm"
 					class="size-8"
-					aria-label={`Open actions for ${supplier.name}`}
-					title="Actions"
+					aria-label={`${t('common.action')}: ${supplier.name}`}
+					title={t('common.action')}
 				>
 					<EllipsisIcon />
 				</Button>
@@ -44,15 +45,15 @@
 		<DropdownMenu.Content align="end" class="min-w-36">
 			<DropdownMenu.Item onSelect={() => (isDetailOpen = true)}>
 				<EyeIcon />
-				Detail
+				{t('common.detail')}
 			</DropdownMenu.Item>
 			<DropdownMenu.Item onSelect={() => (isEditOpen = true)}>
 				<PencilIcon />
-				Edit
+				{t('common.edit')}
 			</DropdownMenu.Item>
 			<DropdownMenu.Item variant="destructive" onSelect={() => (isDeleteOpen = true)}>
 				<TrashIcon />
-				Delete
+				{t('common.delete')}
 			</DropdownMenu.Item>
 		</DropdownMenu.Content>
 	</DropdownMenu.Root>

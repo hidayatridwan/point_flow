@@ -115,11 +115,14 @@
 			closingNotes = '';
 			setStoredActiveCashRegisterSessionId(session.id);
 			toast.success(t('pos.registerSession.openedToast'), {
-				description: `${session.cash_register_code} is ready for transactions.`
+				description: t('pos.registerSession.openedToastDesc').replace(
+					'{code}',
+					session.cash_register_code
+				)
 			});
 			await loadRegisterSessionState();
 		} catch (error) {
-			openErrorMessage = getErrorMessage(error, 'Failed to open register session.');
+			openErrorMessage = getErrorMessage(error, t('pos.registerSession.errorOpen'));
 		} finally {
 			isOpening = false;
 		}
@@ -152,10 +155,12 @@
 			closingCashCounted = '';
 			closingNotes = '';
 			toast.success(t('pos.registerSession.closedToast'), {
-				description: `${session.session_no} difference ${formatIdr(session.cash_difference)}.`
+				description: t('pos.registerSession.closedToastDesc')
+					.replace('{sessionNo}', session.session_no)
+					.replace('{amount}', formatIdr(session.cash_difference))
 			});
 		} catch (error) {
-			closeErrorMessage = getErrorMessage(error, 'Failed to close register session.');
+			closeErrorMessage = getErrorMessage(error, t('pos.registerSession.errorClose'));
 		} finally {
 			isClosing = false;
 		}
@@ -212,7 +217,7 @@
 </script>
 
 <svelte:head>
-	<title>Register Session | PointFlow</title>
+	<title>{t('pos.registerSession.title')} | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
@@ -229,11 +234,11 @@
 					onclick={loadRegisterSessionState}
 				>
 					<RefreshCwIcon />
-					Refresh
+					{t('common.refresh')}
 				</Button>
 				<Button class="w-full sm:w-auto" href="/pos/cash-drawer-movements">
 					<BanknoteIcon />
-					Cash Movements
+					{t('pos.registerSession.cashMovementsBtn')}
 				</Button>
 			</div>
 		{/snippet}
@@ -242,14 +247,14 @@
 	{#if isLoading}
 		<div class="flex min-h-40 items-center justify-center gap-2 text-sm text-muted-foreground">
 			<Spinner />
-			Loading register session...
+			{t('pos.registerSession.loadingSession')}
 		</div>
 	{:else if errorMessage}
-		<ErrorAlert title="Failed to load register session." message={errorMessage} />
+		<ErrorAlert title={t('pos.registerSession.errorLoad')} message={errorMessage} />
 	{:else}
 		{#if openSessions.length > 1}
 			<section class="grid gap-2">
-				<Label>Active Open Session</Label>
+				<Label>{t('pos.registerSession.activeSession')}</Label>
 				<Select.Root
 					allowDeselect={false}
 					type="single"
@@ -283,7 +288,7 @@
 							<UnlockIcon class="size-5" />
 						</div>
 						<div class="min-w-0">
-							<h2 class="text-base font-semibold">Register Open</h2>
+							<h2 class="text-base font-semibold">{t('pos.registerSession.openSection')}</h2>
 							<p class="truncate text-sm text-muted-foreground">
 								{activeSession.cash_register_code} - {activeSession.cash_register_name}
 							</p>
@@ -321,11 +326,11 @@
 				<form class="grid content-start gap-4 rounded-md border p-5" onsubmit={handleCloseSession}>
 					<div class="flex items-center gap-2">
 						<LockIcon class="size-5 text-muted-foreground" />
-						<h2 class="text-base font-semibold">Close Register</h2>
+						<h2 class="text-base font-semibold">{t('pos.registerSession.closeSection')}</h2>
 					</div>
 
 					<div class="grid gap-2">
-						<Label for="closing-cash-counted">Closing Cash Counted</Label>
+						<Label for="closing-cash-counted">{t('pos.registerSession.closingCash')}</Label>
 						<Input
 							id="closing-cash-counted"
 							type="number"
@@ -339,29 +344,27 @@
 
 					<div
 						class="grid gap-2 rounded-md bg-muted/30 p-3 text-sm"
-						aria-label="Closing calculation"
+						aria-label={t('pos.registerSession.closeSummary')}
 					>
 						<div class="flex justify-between gap-3">
-							<span class="text-muted-foreground">Opening cash</span>
+							<span class="text-muted-foreground">{t('pos.registerSession.openingCash')}</span>
 							<span class="font-medium">{formatIdr(activeSession.opening_cash)}</span>
 						</div>
-						<p class="text-muted-foreground">
-							Expected cash includes completed sales, refunds, and completed cash drawer movements.
-						</p>
+						<p class="text-muted-foreground">{t('pos.registerSession.expectedCashDesc')}</p>
 					</div>
 
 					<div class="grid gap-2">
-						<Label for="closing-notes">Closing Notes</Label>
+						<Label for="closing-notes">{t('pos.registerSession.closingNotes')}</Label>
 						<Textarea
 							id="closing-notes"
-							placeholder="Optional notes"
+							placeholder={t('pos.registerSession.closingNotesPlaceholder')}
 							disabled={isClosing}
 							bind:value={closingNotes}
 						/>
 					</div>
 
 					{#if closeErrorMessage}
-						<ErrorAlert title="Failed to close register." message={closeErrorMessage} />
+						<ErrorAlert title={t('pos.registerSession.errorClose')} message={closeErrorMessage} />
 					{/if}
 
 					<Button type="submit" disabled={isClosing}>
@@ -384,7 +387,7 @@
 							<CircleDollarSignIcon class="size-5" />
 						</div>
 						<div class="min-w-0">
-							<h2 class="text-base font-semibold">No Active Register</h2>
+							<h2 class="text-base font-semibold">{t('pos.registerSession.noActiveRegister')}</h2>
 							<p class="text-sm text-muted-foreground">
 								{t('pos.registerSession.noActiveRegisterDesc')}
 							</p>
@@ -416,11 +419,11 @@
 				<form class="grid content-start gap-4 rounded-md border p-5" onsubmit={handleOpenSession}>
 					<div class="flex items-center gap-2">
 						<UnlockIcon class="size-5 text-muted-foreground" />
-						<h2 class="text-base font-semibold">Open Register</h2>
+						<h2 class="text-base font-semibold">{t('pos.registerSession.openBtn')}</h2>
 					</div>
 
 					<div class="grid gap-2">
-						<Label>Cash Register</Label>
+						<Label>{t('pos.registerSession.cashRegister')}</Label>
 						<Select.Root
 							allowDeselect={false}
 							type="single"
@@ -445,7 +448,7 @@
 					</div>
 
 					<div class="grid gap-2">
-						<Label for="opening-cash">Opening Cash</Label>
+						<Label for="opening-cash">{t('pos.registerSession.openingCash')}</Label>
 						<Input
 							id="opening-cash"
 							type="number"
@@ -458,10 +461,10 @@
 					</div>
 
 					<div class="grid gap-2">
-						<Label for="opening-notes">Opening Notes</Label>
+						<Label for="opening-notes">{t('pos.registerSession.openingNotes')}</Label>
 						<Textarea
 							id="opening-notes"
-							placeholder="Optional notes"
+							placeholder={t('pos.registerSession.openingNotesPlaceholder')}
 							disabled={isOpening}
 							bind:value={openingNotes}
 						/>
@@ -474,7 +477,7 @@
 						/>
 					{/if}
 					{#if openErrorMessage}
-						<ErrorAlert title="Failed to open register." message={openErrorMessage} />
+						<ErrorAlert title={t('pos.registerSession.errorOpen')} message={openErrorMessage} />
 					{/if}
 
 					<Button type="submit" disabled={isOpening || activeRegisters.length === 0}>

@@ -338,7 +338,7 @@
 	<div class="grid min-h-0 gap-5 lg:grid-cols-[1fr_420px]">
 		<section
 			class="flex min-h-0 flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)] lg:h-[calc(100dvh-120px)] dark:border-slate-800 dark:bg-slate-950"
-			aria-label="Product selection"
+			aria-label={t('pos.newSale.productSelection')}
 		>
 			<div class="shrink-0 space-y-3 border-b border-slate-100 p-4 dark:border-slate-800">
 				<div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">

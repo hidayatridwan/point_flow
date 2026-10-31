@@ -173,7 +173,7 @@
 </script>
 
 <svelte:head>
-	<title>Product Categories | PointFlow</title>
+	<title>{t('master.productCategories.title')} | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
@@ -186,7 +186,7 @@
 			<Card.Action>
 				<Button class="w-full sm:w-auto" onclick={openCreateDialog}>
 					<PlusIcon />
-					Add Category
+					{t('master.productCategories.addBtn')}
 				</Button>
 			</Card.Action>
 		</Card.Header>

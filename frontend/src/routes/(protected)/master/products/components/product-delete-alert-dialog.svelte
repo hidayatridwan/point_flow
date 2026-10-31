@@ -38,7 +38,7 @@
 			await deleteProduct(product.id);
 			await onDeleted?.(product.id);
 			toast.success(t('master.products.deletedToast'), {
-				description: `${product.name} and related SKUs were removed.`
+				description: `${product.name} ${t('master.products.deletedToastDesc')}`
 			});
 			open = false;
 		} catch (error) {
@@ -58,17 +58,16 @@
 <AlertDialog.Root bind:open>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>Delete Product?</AlertDialog.Title>
+			<AlertDialog.Title>{t('master.products.deleteTitle')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				This action will delete <span class="font-medium text-foreground">{product.name}</span>
-				and its related product SKUs.
+				{t('master.products.deleteDesc').replace('{name}', product.name)}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 
 		{#if errorMessage}
 			<Alert.Root variant="destructive">
 				<CircleAlertIcon />
-				<Alert.Title>Delete failed.</Alert.Title>
+				<Alert.Title>{t('common.deleteFailed')}</Alert.Title>
 				<Alert.Description>{errorMessage}</Alert.Description>
 			</Alert.Root>
 		{/if}

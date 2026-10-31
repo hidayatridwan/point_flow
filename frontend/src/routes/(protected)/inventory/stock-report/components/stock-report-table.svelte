@@ -9,6 +9,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatIdr, formatNumber } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import StockReportStatusBadge from './stock-report-status-badge.svelte';
 
 	let {
@@ -26,40 +27,40 @@
 
 	const columns = [
 		columnHelper.accessor('product_name', {
-			header: 'Product',
+			header: () => t('common.colProduct'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('sku', {
-			header: 'SKU',
+			header: () => t('common.colSku'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('barcode', {
-			header: 'Barcode',
+			header: () => t('inventory.stockReport.colBarcode'),
 			cell: (info) => info.getValue() ?? '-'
 		}),
 		columnHelper.accessor('category_name', {
-			header: 'Category',
+			header: () => t('inventory.stockReport.colCategory'),
 			cell: (info) => info.getValue() ?? '-'
 		}),
 		columnHelper.accessor('stock', {
-			header: 'Current Stock',
+			header: () => t('inventory.stockReport.colCurrentStock'),
 			cell: (info) => `${formatNumber(info.getValue())} ${info.row.original.unit}`
 		}),
 		columnHelper.accessor('minimum_stock', {
-			header: 'Minimum Stock',
+			header: () => t('inventory.stockReport.colMinimumStock'),
 			cell: (info) => `${formatNumber(info.getValue())} ${info.row.original.unit}`
 		}),
 		columnHelper.accessor('quantity_on_order', {
-			header: 'On Order',
+			header: () => t('inventory.stockReport.colOnOrder'),
 			cell: (info) => `${formatNumber(info.getValue())} ${info.row.original.unit}`
 		}),
 		columnHelper.accessor('selling_price', {
-			header: 'Selling Price',
+			header: () => t('inventory.stockReport.colSellingPrice'),
 			cell: (info) => formatIdr(info.getValue())
 		}),
 		columnHelper.display({
 			id: 'status',
-			header: 'Status',
+			header: () => t('common.status'),
 			cell: (info) => renderComponent(StockReportStatusBadge, { item: info.row.original })
 		})
 	];

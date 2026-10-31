@@ -9,6 +9,7 @@
 	import UnitDeleteAlertDialog from './unit-delete-alert-dialog.svelte';
 	import UnitDetailDialog from './unit-detail-dialog.svelte';
 	import UnitEditDialog from './unit-edit-dialog.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		unit,
@@ -34,8 +35,8 @@
 					variant="ghost"
 					size="icon-sm"
 					class="size-8"
-					aria-label={`Open actions for ${unit.name}`}
-					title="Actions"
+					aria-label={`${t('common.action')}: ${unit.name}`}
+					title={t('common.action')}
 				>
 					<EllipsisIcon />
 				</Button>
@@ -44,15 +45,15 @@
 		<DropdownMenu.Content align="end" class="min-w-36">
 			<DropdownMenu.Item onSelect={() => (isDetailOpen = true)}>
 				<EyeIcon />
-				Detail
+				{t('common.detail')}
 			</DropdownMenu.Item>
 			<DropdownMenu.Item onSelect={() => (isEditOpen = true)}>
 				<PencilIcon />
-				Edit
+				{t('common.edit')}
 			</DropdownMenu.Item>
 			<DropdownMenu.Item variant="destructive" onSelect={() => (isDeleteOpen = true)}>
 				<TrashIcon />
-				Delete
+				{t('common.delete')}
 			</DropdownMenu.Item>
 		</DropdownMenu.Content>
 	</DropdownMenu.Root>

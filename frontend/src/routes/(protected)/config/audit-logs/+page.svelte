@@ -306,9 +306,9 @@
 
 	function getDateRangeLabel() {
 		if (query.from && query.to) return `${formatDate(query.from)} - ${formatDate(query.to)}`;
-		if (query.from) return `From ${formatDate(query.from)}`;
-		if (query.to) return `Until ${formatDate(query.to)}`;
-		return 'Select date range';
+		if (query.from) return `${t('common.from')} ${formatDate(query.from)}`;
+		if (query.to) return `${t('common.until')} ${formatDate(query.to)}`;
+		return t('common.selectDateRange');
 	}
 
 	function parseActorId(value: string) {
@@ -352,7 +352,7 @@
 </script>
 
 <svelte:head>
-	<title>Audit Logs | PointFlow</title>
+	<title>{t('config.auditLogs.title')} | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
@@ -388,21 +388,21 @@
 						onValueChange={updateSearchValue}
 					/>
 					<DataTableFacetedFilter
-						title="Outcome"
+						title={t('config.auditLogs.filterOutcome')}
 						options={outcomeFilterOptions}
 						value={query.outcome}
 						disabled={isLoading}
 						onValueChange={updateOutcomeFilter}
 					/>
 					<DataTableFacetedFilter
-						title="Action"
+						title={t('config.auditLogs.filterAction')}
 						options={actionFilterOptions}
 						value={query.action}
 						disabled={isLoading}
 						onValueChange={updateActionFilter}
 					/>
 					<DataTableFacetedFilter
-						title="Resource"
+						title={t('config.auditLogs.filterResource')}
 						options={resourceFilterOptions}
 						value={query.resource_type}
 						disabled={isLoading}
@@ -411,7 +411,7 @@
 					<Input
 						value={requestIdValue}
 						placeholder={t('config.auditLogs.requestIdPlaceholder')}
-						aria-label="Filter audit logs by request ID"
+						aria-label={t('config.auditLogs.filterRequestId')}
 						class="h-9 sm:w-64"
 						disabled={isLoading}
 						oninput={(event) => updateRequestIdValue(event.currentTarget.value)}
@@ -422,7 +422,7 @@
 						min="1"
 						step="1"
 						placeholder={t('config.auditLogs.actorIdPlaceholder')}
-						aria-label="Filter audit logs by actor ID"
+						aria-label={t('config.auditLogs.filterActorId')}
 						class="h-9 sm:w-32"
 						disabled={isLoading}
 						oninput={(event) => updateActorIdValue(event.currentTarget.value)}
@@ -437,7 +437,7 @@
 							!query.from && !query.to && 'text-muted-foreground'
 						)}
 						disabled={isLoading}
-						aria-label="Filter audit logs by date range"
+						aria-label={t('common.filterByDateRange')}
 					>
 						<CalendarIcon class="size-4" />
 						<span class="truncate">{getDateRangeLabel()}</span>
@@ -452,7 +452,7 @@
 							<div class="flex justify-end border-t bg-popover p-2">
 								<Button type="button" variant="ghost" size="sm" onclick={clearDateRangeFilter}>
 									<XIcon />
-									Clear
+									{t('common.clear')}
 								</Button>
 							</div>
 						{/if}

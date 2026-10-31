@@ -9,6 +9,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDate, formatDateTime, formatIdr } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import PurchaseOrderActions from './purchase-order-actions.svelte';
 	import PurchaseOrderStatusBadge from './purchase-order-status-badge.svelte';
 
@@ -29,36 +30,36 @@
 
 	const columns = [
 		columnHelper.accessor('po_no', {
-			header: 'PO No',
+			header: () => t('procurement.purchaseOrders.colPoNo'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('supplier_name', {
-			header: 'Supplier',
+			header: () => t('procurement.purchaseOrders.colSupplier'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('order_date', {
-			header: 'Order Date',
+			header: () => t('procurement.purchaseOrders.colOrderDate'),
 			cell: (info) => formatDate(info.getValue())
 		}),
 		columnHelper.accessor('expected_date', {
-			header: 'Expected Date',
+			header: () => t('procurement.purchaseOrders.colExpectedDate'),
 			cell: (info) => formatDate(info.getValue())
 		}),
 		columnHelper.accessor('status', {
-			header: 'Status',
+			header: () => t('procurement.purchaseOrders.colStatus'),
 			cell: (info) => renderComponent(PurchaseOrderStatusBadge, { status: info.getValue() })
 		}),
 		columnHelper.accessor('subtotal_amount', {
-			header: 'Subtotal',
+			header: () => t('procurement.purchaseOrders.colSubtotal'),
 			cell: (info) => formatIdr(info.getValue())
 		}),
 		columnHelper.accessor('updated_at', {
-			header: 'Updated At',
+			header: () => t('procurement.purchaseOrders.colUpdatedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.display({
 			id: 'actions',
-			header: () => 'Action',
+			header: () => t('procurement.purchaseOrders.colAction'),
 			cell: (info) =>
 				renderComponent(PurchaseOrderActions, {
 					purchaseOrder: info.row.original,

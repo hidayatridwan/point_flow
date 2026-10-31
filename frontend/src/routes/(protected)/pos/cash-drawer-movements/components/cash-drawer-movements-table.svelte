@@ -9,6 +9,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDateTime, formatIdr } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import CashDrawerMovementActions from './cash-drawer-movement-actions.svelte';
 	import CashDrawerMovementStatusBadge from './cash-drawer-movement-status-badge.svelte';
 	import CashDrawerMovementTypeBadge from './cash-drawer-movement-type-badge.svelte';
@@ -30,44 +31,47 @@
 
 	const columns = [
 		columnHelper.accessor('movement_no', {
-			header: 'Movement No',
+			header: () => t('common.movementNo'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('occurred_at', {
-			header: 'Occurred At',
+			header: () => t('common.occurredAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.accessor('movement_type', {
-			header: 'Type',
+			header: () => t('pos.cashMovements.filterType'),
 			cell: (info) => renderComponent(CashDrawerMovementTypeBadge, { type: info.getValue() })
 		}),
 		columnHelper.accessor('direction', {
-			header: 'Direction',
-			cell: (info) => (info.getValue() === 'in' ? 'In' : 'Out')
+			header: () => t('common.direction'),
+			cell: (info) =>
+				info.getValue() === 'in'
+					? t('inventory.stockMovements.directionIn')
+					: t('inventory.stockMovements.directionOut')
 		}),
 		columnHelper.accessor('amount', {
-			header: 'Amount',
+			header: () => t('pos.cashMovements.amount'),
 			cell: (info) => formatIdr(info.getValue())
 		}),
 		columnHelper.accessor('session_no', {
-			header: 'Session',
+			header: () => t('pos.cashMovements.colSession'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('cash_register_code', {
-			header: 'Register',
+			header: () => t('common.register'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('created_by_name', {
-			header: 'Created By',
+			header: () => t('common.createdBy'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('status', {
-			header: 'Status',
+			header: () => t('common.status'),
 			cell: (info) => renderComponent(CashDrawerMovementStatusBadge, { status: info.getValue() })
 		}),
 		columnHelper.display({
 			id: 'actions',
-			header: () => 'Action',
+			header: () => t('common.action'),
 			cell: (info) =>
 				renderComponent(CashDrawerMovementActions, {
 					movement: info.row.original,

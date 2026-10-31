@@ -85,7 +85,7 @@
 
 			await onSaved?.(savedUser);
 			toast.success(isEditing ? t('config.users.updatedToast') : t('config.users.createdToast'), {
-				description: `${savedUser.name} can use the assigned role.`
+				description: t('config.users.savedToastDesc').replace('{name}', savedUser.name)
 			});
 			open = false;
 		} catch (error) {
@@ -126,16 +126,24 @@
 		const roleId = Number(data.role_id);
 		const selectedRole = selectableRoles.find((role) => role.id === roleId);
 
-		if (!name) return 'Name is required.';
-		if (name.length > 120) return 'Name must be at most 120 characters.';
-		if (!email) return 'Email is required.';
-		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Email must be valid.';
-		if (!user && !password) return 'Password is required.';
-		if (password && password.length < 8) return 'Password must be at least 8 characters.';
-		if (!selectedRole) return 'Role must be selected.';
-		if (!user && selectedRole.code === 'admin') return 'Admin role cannot be selected.';
+		if (!name) return t('common.validation.required').replace('{field}', t('common.name'));
+		if (name.length > 120)
+			return t('common.validation.maxChars')
+				.replace('{field}', t('common.name'))
+				.replace('{min}', '120');
+		if (!email) return t('common.validation.required').replace('{field}', t('common.email'));
+		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return t('common.validation.emailInvalid');
+		if (!user && !password)
+			return t('common.validation.required').replace('{field}', t('login.password'));
+		if (password && password.length < 8)
+			return t('common.validation.minChars')
+				.replace('{field}', t('login.password'))
+				.replace('{min}', '8');
+		if (!selectedRole)
+			return t('common.validation.required').replace('{field}', t('config.users.role'));
+		if (!user && selectedRole.code === 'admin') return t('config.users.adminRoleForbidden');
 		if (user?.role_code !== 'admin' && selectedRole.code === 'admin') {
-			return 'Admin role cannot be selected.';
+			return t('config.users.adminRoleForbidden');
 		}
 		return null;
 	}

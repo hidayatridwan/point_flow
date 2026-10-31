@@ -8,6 +8,7 @@
 	import * as Command from '$lib/components/ui/command/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import { cn } from '$lib/utils.js';
 
 	type FacetedFilterOption = {
@@ -63,7 +64,7 @@
 					<div class="hidden gap-1 lg:flex">
 						{#if selectedValues.size > 2}
 							<Badge variant="secondary" class="rounded-sm px-1 font-normal">
-								{selectedValues.size} selected
+								{t('common.selectedCount').replace('{count}', String(selectedValues.size))}
 							</Badge>
 						{:else}
 							{#each options.filter( (option) => selectedValues.has(option.value) ) as option (option.value)}
@@ -79,9 +80,9 @@
 	</Popover.Trigger>
 	<Popover.Content class="w-56 p-0" align="start">
 		<Command.Root>
-			<Command.Input placeholder={`Filter ${title.toLowerCase()}...`} />
+			<Command.Input placeholder={`${t('common.filter')} ${title.toLowerCase()}...`} />
 			<Command.List>
-				<Command.Empty>No results found.</Command.Empty>
+				<Command.Empty>{t('common.noResults')}</Command.Empty>
 				<Command.Group>
 					{#each options as option (option.value)}
 						{@const isSelected = selectedValues.has(option.value)}
@@ -106,7 +107,7 @@
 					<Command.Separator />
 					<Command.Group>
 						<Command.Item onSelect={clearFilters} class="justify-center text-center">
-							Clear filters
+							{t('common.clear')}
 						</Command.Item>
 					</Command.Group>
 				{/if}

@@ -38,7 +38,7 @@
 			await deleteProductCategory(category.id);
 			await onDeleted?.(category.id);
 			toast.success(t('master.productCategories.deletedToast'), {
-				description: `${category.name} was removed.`
+				description: `${category.name} ${t('common.wasRemoved')}`
 			});
 			open = false;
 		} catch (error) {
@@ -58,17 +58,16 @@
 <AlertDialog.Root bind:open>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>Delete Product Category?</AlertDialog.Title>
+			<AlertDialog.Title>{t('master.productCategories.deleteTitle')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				This action will delete <span class="font-medium text-foreground">{category.name}</span>.
-				This category will no longer appear in the product category list.
+				{t('master.productCategories.deleteDesc').replace('{name}', category.name)}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 
 		{#if errorMessage}
 			<Alert.Root variant="destructive">
 				<CircleAlertIcon />
-				<Alert.Title>Delete failed.</Alert.Title>
+				<Alert.Title>{t('common.deleteFailed')}</Alert.Title>
 				<Alert.Description>{errorMessage}</Alert.Description>
 			</Alert.Root>
 		{/if}

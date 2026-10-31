@@ -4,6 +4,7 @@
 	import type { PayrollSlip } from '$lib/api/payroll.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import PayrollSlipDetailDialog from './payroll-slip-detail-dialog.svelte';
 
 	let {
@@ -28,8 +29,8 @@
 					variant="ghost"
 					size="icon-sm"
 					class="size-8"
-					aria-label={`Open actions for ${payrollSlip.slip_no}`}
-					title="Actions"
+					aria-label={t('common.openActions').replace('{docNo}', payrollSlip.slip_no)}
+					title={t('common.action')}
 				>
 					<EllipsisIcon />
 				</Button>
@@ -38,7 +39,7 @@
 		<DropdownMenu.Content align="end" class="min-w-44">
 			<DropdownMenu.Item onSelect={openDetail}>
 				<EyeIcon />
-				<span class="min-w-0 flex-1 whitespace-nowrap">Detail</span>
+				<span class="min-w-0 flex-1 whitespace-nowrap">{t('common.detail')}</span>
 			</DropdownMenu.Item>
 		</DropdownMenu.Content>
 	</DropdownMenu.Root>

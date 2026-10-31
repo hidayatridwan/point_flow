@@ -41,7 +41,7 @@
 </script>
 
 <svelte:head>
-	<title>Dashboard | PointFlow</title>
+	<title>{t('dashboard.title')} | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

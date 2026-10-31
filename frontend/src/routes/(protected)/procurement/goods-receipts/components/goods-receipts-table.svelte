@@ -9,6 +9,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDateTime } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import GoodsReceiptActions from './goods-receipt-actions.svelte';
 	import GoodsReceiptStatusBadge from './goods-receipt-status-badge.svelte';
 
@@ -29,32 +30,32 @@
 
 	const columns = [
 		columnHelper.accessor('gr_no', {
-			header: 'GR No',
+			header: () => t('procurement.goodsReceipts.colGrNo'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('po_no', {
-			header: 'PO No',
+			header: () => t('procurement.goodsReceipts.colPoNo'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('received_at', {
-			header: 'Received At',
+			header: () => t('procurement.goodsReceipts.colReceivedDate'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.accessor('status', {
-			header: 'Status',
+			header: () => t('procurement.goodsReceipts.colStatus'),
 			cell: (info) => renderComponent(GoodsReceiptStatusBadge, { status: info.getValue() })
 		}),
 		columnHelper.accessor('posted_at', {
-			header: 'Posted At',
+			header: () => t('common.postedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.accessor('updated_at', {
-			header: 'Updated At',
+			header: () => t('common.updatedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.display({
 			id: 'actions',
-			header: () => 'Action',
+			header: () => t('procurement.goodsReceipts.colAction'),
 			cell: (info) =>
 				renderComponent(GoodsReceiptActions, {
 					goodsReceipt: info.row.original,

@@ -6,6 +6,7 @@
 	import type { Permission, Role } from '$lib/api/roles.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import RoleDeleteAlertDialog from './role-delete-alert-dialog.svelte';
 	import RoleDetailDialog from './role-detail-dialog.svelte';
 	import RoleFormDialog from './role-form-dialog.svelte';
@@ -36,8 +37,8 @@
 					variant="ghost"
 					size="icon-sm"
 					class="size-8"
-					aria-label={`Open actions for ${role.name}`}
-					title="Actions"
+					aria-label={t('common.openActions').replace('{docNo}', role.name)}
+					title={t('common.action')}
 				>
 					<EllipsisIcon />
 				</Button>
@@ -46,11 +47,11 @@
 		<DropdownMenu.Content align="end" class="min-w-36">
 			<DropdownMenu.Item onSelect={() => (isDetailOpen = true)}>
 				<EyeIcon />
-				Detail
+				{t('common.detail')}
 			</DropdownMenu.Item>
 			<DropdownMenu.Item onSelect={() => (isEditOpen = true)}>
 				<PencilIcon />
-				Edit
+				{t('common.edit')}
 			</DropdownMenu.Item>
 			<DropdownMenu.Item
 				variant="destructive"
@@ -60,7 +61,7 @@
 				}}
 			>
 				<TrashIcon />
-				Delete
+				{t('common.delete')}
 			</DropdownMenu.Item>
 		</DropdownMenu.Content>
 	</DropdownMenu.Root>

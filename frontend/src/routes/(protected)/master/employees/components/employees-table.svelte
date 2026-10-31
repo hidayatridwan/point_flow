@@ -15,7 +15,7 @@
 
 	let {
 		employees,
-		emptyMessage = 'No employees.',
+		emptyMessage = t('master.employees.emptyDefault'),
 		isLoading = false,
 		onEmployeeDeleted,
 		onEmployeeUpdated

@@ -22,6 +22,7 @@
 	import { toast } from 'svelte-sonner';
 	import { z } from 'zod';
 	import { t } from '$lib/i18n/locale.svelte.js';
+	import { tf } from '$lib/i18n/format.js';
 
 	const normalizeStringInput = (value: unknown) => {
 		if (value === null || value === undefined) return '';
@@ -49,9 +50,9 @@
 			z
 				.string()
 				.trim()
-				.min(1, `${label} is required.`)
+				.min(1, tf('validation.required', { field: label }))
 				.refine((value) => Number.isInteger(Number(value)) && Number(value) > 0, {
-					message: `${label} must be selected.`
+					message: tf('validation.invalidValue', { field: label })
 				})
 		);
 
@@ -61,12 +62,12 @@
 			z
 				.string()
 				.trim()
-				.min(1, `${label} is required.`)
+				.min(1, tf('validation.required', { field: label }))
 				.refine((value) => Number.isFinite(Number(value)), {
-					message: `${label} must be a valid number.`
+					message: tf('validation.decimal', { field: label })
 				})
 				.refine((value) => Number(value) > 0, {
-					message: `${label} must be greater than zero.`
+					message: tf('validation.positiveNumber', { field: label })
 				})
 		);
 
@@ -76,36 +77,42 @@
 			z
 				.string()
 				.trim()
-				.min(1, `${label} is required.`)
+				.min(1, tf('validation.required', { field: label }))
 				.refine((value) => Number.isFinite(Number(value)), {
-					message: `${label} must be a valid number.`
+					message: tf('validation.decimal', { field: label })
 				})
 				.refine((value) => Number(value) >= 0, {
-					message: `${label} must be zero or greater.`
+					message: tf('validation.nonNegativeNumber', { field: label })
 				})
 		);
 
 	const purchaseOrderItemSchema = z.object({
 		client_id: z.string(),
-		product_sku_id: requiredIdSchema('Product SKU'),
-		quantity_ordered: positiveNumberSchema('Quantity'),
-		unit_cost: nonNegativeNumberSchema('Unit cost')
+		product_sku_id: requiredIdSchema(t('procurement.purchaseOrders.productSku')),
+		quantity_ordered: positiveNumberSchema(t('procurement.purchaseOrders.quantity')),
+		unit_cost: nonNegativeNumberSchema(t('procurement.purchaseOrders.unitCost'))
 	});
 
 	const createPurchaseOrderSchema = z
 		.object({
-			supplier_id: requiredIdSchema('Supplier'),
-			order_date: z.string().trim().min(1, 'Order date is required.'),
+			supplier_id: requiredIdSchema(t('procurement.purchaseOrders.supplier')),
+			order_date: z
+				.string()
+				.trim()
+				.min(1, tf('validation.required', { field: t('procurement.purchaseOrders.orderDate') })),
 			expected_date: z.string().trim(),
-			notes: z.string().trim().max(500, 'Notes must be at most 500 characters.'),
-			items: z.array(purchaseOrderItemSchema).min(1, 'At least one line item is required.')
+			notes: z
+				.string()
+				.trim()
+				.max(500, tf('validation.maxChars', { field: t('common.notes'), max: 500 })),
+			items: z.array(purchaseOrderItemSchema).min(1, t('validation.atLeastOne'))
 		})
 		.superRefine((data, context) => {
 			if (data.expected_date && data.expected_date < data.order_date) {
 				context.addIssue({
 					code: 'custom',
 					path: ['expected_date'],
-					message: 'Expected date must be greater than or equal to order date.'
+					message: t('procurement.purchaseOrders.validationExpectedDate')
 				});
 			}
 
@@ -114,7 +121,7 @@
 				context.addIssue({
 					code: 'custom',
 					path: ['items'],
-					message: 'Each line item must use a unique product SKU.'
+					message: t('procurement.purchaseOrders.validationUniqueItems')
 				});
 			}
 		});
@@ -191,7 +198,10 @@
 			if (requestId !== latestOptionsRequestId) return;
 			suppliers = [];
 			productSkus = [];
-			optionsErrorMessage = getErrorMessage(error, 'Failed to load purchase order options.');
+			optionsErrorMessage = getErrorMessage(
+				error,
+				t('procurement.purchaseOrders.errorLoadOptions')
+			);
 		} finally {
 			if (requestId === latestOptionsRequestId) {
 				isLoadingOptions = false;
@@ -226,7 +236,7 @@
 			});
 			await onCreated?.(createdPurchaseOrder);
 			toast.success(t('procurement.purchaseOrders.createdToast'), {
-				description: `${createdPurchaseOrder.po_no} was created as draft.`
+				description: `${createdPurchaseOrder.po_no} ${t('common.wasCreatedAsDraft')}`
 			});
 			open = false;
 		} catch (error) {
@@ -267,8 +277,11 @@
 
 	function getLineMeta(item: PurchaseOrderFormItem) {
 		const productSku = getProductSkuById(item.product_sku_id);
-		if (!productSku) return 'Select a product SKU.';
-		return `${productSku.unit_name} (${productSku.unit_code}) - stock ${productSku.stock}`;
+		if (!productSku) return t('common.selectProductSku');
+		return `${productSku.unit_name} (${productSku.unit_code}) - ${tf(
+			'procurement.purchaseOrders.lineStock',
+			{ stock: productSku.stock }
+		)}`;
 	}
 
 	function getLineTotal(item: PurchaseOrderFormItem) {
@@ -370,9 +383,9 @@
 			<Drawer.Header
 				class="shrink-0 border-b px-6 py-5 text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left"
 			>
-				<Drawer.Title>Add Purchase Order</Drawer.Title>
+				<Drawer.Title>{t('procurement.purchaseOrders.addTitle')}</Drawer.Title>
 				<Drawer.Description>
-					Create a draft purchase order with supplier and product SKU line items.
+					{t('procurement.purchaseOrders.addDesc')}
 				</Drawer.Description>
 			</Drawer.Header>
 
@@ -380,7 +393,9 @@
 				<div class="grid gap-5">
 					<div class="grid grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2">
 						<div class="space-y-2">
-							<Label for="purchase-order-supplier" class="whitespace-nowrap">Supplier</Label>
+							<Label for="purchase-order-supplier" class="whitespace-nowrap">
+								{t('procurement.purchaseOrders.supplier')}
+							</Label>
 							<Select.Root
 								allowDeselect={false}
 								type="single"
@@ -393,7 +408,7 @@
 								}}
 							>
 								<Select.Trigger id="purchase-order-supplier" class="w-full">
-									<Select.Value placeholder="Select supplier" />
+									<Select.Value placeholder={t('procurement.purchaseOrders.selectSupplier')} />
 								</Select.Trigger>
 								<Select.Content>
 									{#each suppliers as supplier (supplier.id)}
@@ -409,7 +424,9 @@
 						</div>
 
 						<div class="space-y-2">
-							<Label for="purchase-order-order-date" class="whitespace-nowrap">Order Date</Label>
+							<Label for="purchase-order-order-date" class="whitespace-nowrap">
+								{t('procurement.purchaseOrders.orderDate')}
+							</Label>
 							<Popover.Root bind:open={isOrderDateOpen}>
 								<Popover.Trigger
 									id="purchase-order-order-date"
@@ -422,7 +439,9 @@
 								>
 									<CalendarIcon class="size-4" />
 									<span class="truncate">
-										{formData.order_date ? formatDate(formData.order_date) : 'Select order date'}
+										{formData.order_date
+											? formatDate(formData.order_date)
+											: t('procurement.purchaseOrders.selectOrderDate')}
 									</span>
 								</Popover.Trigger>
 								<Popover.Content align="start" class="w-auto p-0">
@@ -440,7 +459,7 @@
 
 						<div class="space-y-2">
 							<Label for="purchase-order-expected-date" class="whitespace-nowrap">
-								Expected Date
+								{t('procurement.purchaseOrders.expectedDate')}
 							</Label>
 							<Popover.Root bind:open={isExpectedDateOpen}>
 								<Popover.Trigger
@@ -456,7 +475,7 @@
 									<span class="truncate">
 										{formData.expected_date
 											? formatDate(formData.expected_date)
-											: 'Select expected date'}
+											: t('procurement.purchaseOrders.selectExpectedDate')}
 									</span>
 								</Popover.Trigger>
 								<Popover.Content align="start" class="w-auto p-0">
@@ -468,7 +487,7 @@
 									{#if formData.expected_date}
 										<div class="flex justify-end border-t bg-popover p-2">
 											<Button type="button" variant="ghost" size="sm" onclick={clearExpectedDate}>
-												Clear
+												{t('common.clear')}
 											</Button>
 										</div>
 									{/if}
@@ -480,10 +499,11 @@
 						</div>
 
 						<div class="space-y-2">
-							<Label for="purchase-order-notes" class="whitespace-nowrap">Notes</Label>
+							<Label for="purchase-order-notes" class="whitespace-nowrap">{t('common.notes')}</Label
+							>
 							<Textarea
 								id="purchase-order-notes"
-								placeholder="Initial stock order"
+								placeholder={t('procurement.purchaseOrders.notesPlaceholder')}
 								class="min-h-9 resize-none"
 								disabled={isSubmitting}
 								bind:value={formData.notes}
@@ -497,9 +517,9 @@
 					<div class="flex flex-col gap-3">
 						<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 							<div>
-								<h3 class="text-sm font-medium">Line Items</h3>
+								<h3 class="text-sm font-medium">{t('procurement.purchaseOrders.lineItems')}</h3>
 								<p class="text-sm text-muted-foreground">
-									Select product SKUs, quantities, and unit costs for this order.
+									{t('procurement.purchaseOrders.lineItemsDesc')}
 								</p>
 							</div>
 							<Button
@@ -510,7 +530,7 @@
 								onclick={addLineItem}
 							>
 								<PlusIcon />
-								Add item
+								{t('common.addItem')}
 							</Button>
 						</div>
 
@@ -525,7 +545,7 @@
 							{#each formData.items as item, index (item.client_id)}
 								<div class="grid gap-4 rounded-md border bg-muted/10 p-4">
 									<div class="flex items-center justify-between gap-3">
-										<p class="text-sm font-medium">Item {index + 1}</p>
+										<p class="text-sm font-medium">{tf('common.itemNo', { index: index + 1 })}</p>
 										<Button
 											type="button"
 											variant="ghost"
@@ -533,10 +553,10 @@
 											class="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
 											disabled={isSubmitting || formData.items.length === 1}
 											onclick={() => removeLineItem(item.client_id)}
-											title="Remove item"
+											title={t('common.removeItem')}
 										>
 											<TrashIcon />
-											<span class="sr-only">Remove item</span>
+											<span class="sr-only">{t('common.removeItem')}</span>
 										</Button>
 									</div>
 
@@ -546,7 +566,7 @@
 												for={`purchase-order-item-sku-${item.client_id}`}
 												class="whitespace-nowrap"
 											>
-												Product SKU
+												{t('procurement.purchaseOrders.productSku')}
 											</Label>
 											<Select.Root
 												allowDeselect={false}
@@ -563,7 +583,7 @@
 													id={`purchase-order-item-sku-${item.client_id}`}
 													class="w-full"
 												>
-													<Select.Value placeholder="Select product SKU" />
+													<Select.Value placeholder={t('common.selectProductSku')} />
 												</Select.Trigger>
 												<Select.Content>
 													{#each productSkus as productSku (productSku.id)}
@@ -589,7 +609,7 @@
 												for={`purchase-order-item-quantity-${item.client_id}`}
 												class="whitespace-nowrap"
 											>
-												Quantity
+												{t('procurement.purchaseOrders.quantity')}
 											</Label>
 											<Input
 												id={`purchase-order-item-quantity-${item.client_id}`}
@@ -611,7 +631,7 @@
 												for={`purchase-order-item-unit-cost-${item.client_id}`}
 												class="whitespace-nowrap"
 											>
-												Unit Cost
+												{t('procurement.purchaseOrders.unitCost')}
 											</Label>
 											<Input
 												id={`purchase-order-item-unit-cost-${item.client_id}`}
@@ -630,7 +650,9 @@
 									</div>
 
 									<div class="flex justify-end text-sm">
-										<span class="text-muted-foreground">Line total:</span>
+										<span class="text-muted-foreground"
+											>{t('procurement.purchaseOrders.lineTotal')}</span
+										>
 										<span class="ml-2 font-medium">{formatIdr(getLineTotal(item))}</span>
 									</div>
 								</div>
@@ -640,18 +662,26 @@
 
 					<div class="flex justify-end border-t pt-4">
 						<div class="text-right">
-							<p class="text-sm text-muted-foreground">Subtotal</p>
+							<p class="text-sm text-muted-foreground">
+								{t('procurement.purchaseOrders.subtotal')}
+							</p>
 							<p class="text-lg font-semibold">{formatIdr(subtotal)}</p>
 						</div>
 					</div>
 
 					<div class="grid gap-3">
 						{#if optionsErrorMessage}
-							<ErrorAlert title="Failed to load options." message={optionsErrorMessage} />
+							<ErrorAlert
+								title={t('procurement.purchaseOrders.errorLoadOptions')}
+								message={optionsErrorMessage}
+							/>
 						{/if}
 
 						{#if errorMessage}
-							<ErrorAlert title="Failed to create purchase order." message={errorMessage} />
+							<ErrorAlert
+								title={t('procurement.purchaseOrders.errorCreate')}
+								message={errorMessage}
+							/>
 						{/if}
 					</div>
 				</div>
@@ -663,7 +693,7 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
+					{t('common.cancel')}
 				</Drawer.Close>
 				<Button type="submit" disabled={isSubmitting || isLoadingOptions}>
 					{#if isSubmitting}

@@ -71,8 +71,8 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
 		<Dialog.Header>
-			<Dialog.Title>Stock Adjustment Details</Dialog.Title>
-			<Dialog.Description>Adjustment status, reason, and stock line items.</Dialog.Description>
+			<Dialog.Title>{t('inventory.stockAdjustments.detail.title')}</Dialog.Title>
+			<Dialog.Description>{t('inventory.stockAdjustments.detail.desc')}</Dialog.Description>
 		</Dialog.Header>
 
 		{#if isLoading}
@@ -87,24 +87,48 @@
 		{:else if stockAdjustment}
 			<div class="grid gap-5">
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					<DetailField label="Adjustment No" value={stockAdjustment.adjustment_no} />
-					<DetailField label="Status">
+					<DetailField
+						label={t('inventory.stockAdjustments.colAdjustmentNo')}
+						value={stockAdjustment.adjustment_no}
+					/>
+					<DetailField label={t('common.status')}>
 						<StockAdjustmentStatusBadge status={stockAdjustment.status} />
 					</DetailField>
-					<DetailField label="Adjusted At" value={formatDateTime(stockAdjustment.adjusted_at)} />
-					<DetailField label="Posted At" value={formatDateTime(stockAdjustment.posted_at)} />
-					<DetailField label="Cancelled At" value={formatDateTime(stockAdjustment.cancelled_at)} />
-					<DetailField label="Updated At" value={formatDateTime(stockAdjustment.updated_at)} />
+					<DetailField
+						label={t('inventory.stockAdjustments.adjustedAt')}
+						value={formatDateTime(stockAdjustment.adjusted_at)}
+					/>
+					<DetailField
+						label={t('common.postedAt')}
+						value={formatDateTime(stockAdjustment.posted_at)}
+					/>
+					<DetailField
+						label={t('common.cancelledAt')}
+						value={formatDateTime(stockAdjustment.cancelled_at)}
+					/>
+					<DetailField
+						label={t('common.updatedAt')}
+						value={formatDateTime(stockAdjustment.updated_at)}
+					/>
 				</div>
 
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailField label="Reason" value={stockAdjustment.reason} />
+					<DetailField
+						label={t('inventory.stockAdjustments.reason')}
+						value={stockAdjustment.reason}
+					/>
 					<DetailField
 						label={t('inventory.stockAdjustments.detail.colNotes')}
 						value={stockAdjustment.notes || '-'}
 					/>
-					<DetailField label="Cancel Reason" value={stockAdjustment.cancel_reason || '-'} />
-					<DetailField label="Created At" value={formatDateTime(stockAdjustment.created_at)} />
+					<DetailField
+						label={t('inventory.stockAdjustments.cancel.cancelReason')}
+						value={stockAdjustment.cancel_reason || '-'}
+					/>
+					<DetailField
+						label={t('common.createdAt')}
+						value={formatDateTime(stockAdjustment.created_at)}
+					/>
 				</div>
 
 				<div class="overflow-hidden rounded-md border">
@@ -112,13 +136,13 @@
 						<Table.Root>
 							<Table.Header>
 								<Table.Row>
-									<Table.Head>Product</Table.Head>
-									<Table.Head>SKU</Table.Head>
-									<Table.Head>Unit</Table.Head>
-									<Table.Head>Before</Table.Head>
-									<Table.Head>After</Table.Head>
-									<Table.Head>Delta</Table.Head>
-									<Table.Head>Notes</Table.Head>
+									<Table.Head>{t('inventory.stockAdjustments.detail.colProduct')}</Table.Head>
+									<Table.Head>{t('inventory.stockAdjustments.detail.colSku')}</Table.Head>
+									<Table.Head>{t('inventory.stockAdjustments.detail.colUnit')}</Table.Head>
+									<Table.Head>{t('inventory.stockAdjustments.detail.colBefore')}</Table.Head>
+									<Table.Head>{t('inventory.stockAdjustments.detail.colAfter')}</Table.Head>
+									<Table.Head>{t('inventory.stockAdjustments.detail.colDelta')}</Table.Head>
+									<Table.Head>{t('inventory.stockAdjustments.detail.colNotes')}</Table.Head>
 								</Table.Row>
 							</Table.Header>
 							<Table.Body>

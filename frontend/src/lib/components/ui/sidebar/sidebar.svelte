@@ -3,6 +3,7 @@
 	import { cn, type WithElementRef } from '$lib/utils.js';
 	import { SIDEBAR_WIDTH_MOBILE } from './constants.js';
 	import { useSidebar } from './context.svelte.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 
 	let {
@@ -48,8 +49,8 @@
 			{side}
 		>
 			<Sheet.Header class="sr-only">
-				<Sheet.Title>Sidebar</Sheet.Title>
-				<Sheet.Description>Displays the mobile sidebar.</Sheet.Description>
+				<Sheet.Title>{t('common.sidebarTitle')}</Sheet.Title>
+				<Sheet.Description>{t('common.sidebarDesc')}</Sheet.Description>
 			</Sheet.Header>
 			<div class="flex h-full w-full flex-col">
 				{@render children?.()}

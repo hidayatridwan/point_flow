@@ -9,6 +9,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDateTime } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import StockConversionActions from './stock-conversion-actions.svelte';
 	import StockConversionStatusBadge from './stock-conversion-status-badge.svelte';
 
@@ -29,28 +30,28 @@
 
 	const columns = [
 		columnHelper.accessor('conversion_no', {
-			header: 'Conversion No',
+			header: () => t('inventory.stockConversions.colConversionNo'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('converted_at', {
-			header: 'Converted At',
+			header: () => t('inventory.stockConversions.convertedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.accessor('status', {
-			header: 'Status',
+			header: () => t('common.status'),
 			cell: (info) => renderComponent(StockConversionStatusBadge, { status: info.getValue() })
 		}),
 		columnHelper.accessor('posted_at', {
-			header: 'Posted At',
+			header: () => t('common.postedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.accessor('updated_at', {
-			header: 'Updated At',
+			header: () => t('common.updatedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.display({
 			id: 'actions',
-			header: () => 'Action',
+			header: () => t('common.action'),
 			cell: (info) =>
 				renderComponent(StockConversionActions, {
 					stockConversion: info.row.original,

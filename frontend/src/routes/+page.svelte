@@ -78,7 +78,7 @@
 </script>
 
 <svelte:head>
-	<title>Sign In | PointFlow</title>
+	<title>{t('login.title')} | PointFlow</title>
 </svelte:head>
 
 {#if isCheckingSession || transitionMessage}

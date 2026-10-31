@@ -36,7 +36,7 @@
 			await deleteSupplier(supplier.id);
 			await onDeleted?.(supplier.id);
 			toast.success(t('master.suppliers.deletedToast'), {
-				description: `${supplier.name} was removed.`
+				description: `${supplier.name} ${t('common.wasRemoved')}`
 			});
 			open = false;
 		} catch (error) {
@@ -56,10 +56,9 @@
 <AlertDialog.Root bind:open>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>Delete Supplier?</AlertDialog.Title>
+			<AlertDialog.Title>{t('master.suppliers.deleteTitle')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				This action will delete <span class="font-medium text-foreground">{supplier.name}</span>.
-				This supplier will no longer appear in the supplier list.
+				{t('master.suppliers.deleteDesc').replace('{name}', supplier.name)}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 

@@ -9,6 +9,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDateTime } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import AuditLogActions from './audit-log-actions.svelte';
 	import AuditLogActorCell from './audit-log-actor-cell.svelte';
 	import AuditLogOutcomeBadge from './audit-log-outcome-badge.svelte';
@@ -28,22 +29,53 @@
 	const skeletonRows = [...Array(10).keys()];
 	const columnHelper = createColumnHelper<AuditLog>();
 
+	function getActionLabel(action: string) {
+		switch (action) {
+			case 'auth.login':
+				return t('config.auditLogs.actionLogin');
+			case 'auth.logout':
+				return t('config.auditLogs.actionLogout');
+			case 'auth.bootstrap_admin':
+				return t('config.auditLogs.actionBootstrapAdmin');
+			case 'auth.change_password':
+				return t('config.auditLogs.actionChangePassword');
+			case 'cash_register_session.open':
+				return t('config.auditLogs.actionOpenRegister');
+			case 'cash_register_session.close':
+				return t('config.auditLogs.actionCloseRegister');
+			case 'cash_drawer_movement.create':
+				return t('config.auditLogs.actionCreateCashMovement');
+			case 'cash_drawer_movement.cancel':
+				return t('config.auditLogs.actionCancelCashMovement');
+			case 'sale.create':
+				return t('config.auditLogs.actionCreateSale');
+			case 'sale.cancel':
+				return t('config.auditLogs.actionCancelSale');
+			case 'sale_return.create':
+				return t('config.auditLogs.actionCreateReturn');
+			case 'sale_return.cancel':
+				return t('config.auditLogs.actionCancelReturn');
+			default:
+				return action;
+		}
+	}
+
 	const columns = [
 		columnHelper.accessor('occurred_at', {
-			header: 'Occurred At',
+			header: () => t('common.occurredAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.accessor('outcome', {
-			header: 'Outcome',
+			header: () => t('config.auditLogs.filterOutcome'),
 			cell: (info) => renderComponent(AuditLogOutcomeBadge, { outcome: info.getValue() })
 		}),
 		columnHelper.accessor('action', {
-			header: 'Action',
-			cell: (info) => info.getValue()
+			header: () => t('config.auditLogs.filterAction'),
+			cell: (info) => getActionLabel(info.getValue())
 		}),
 		columnHelper.display({
 			id: 'resource',
-			header: () => 'Resource',
+			header: () => t('config.auditLogs.filterResource'),
 			cell: (info) =>
 				renderComponent(AuditLogResourceCell, {
 					resourceType: info.row.original.resource_type,
@@ -53,7 +85,7 @@
 		}),
 		columnHelper.display({
 			id: 'actor',
-			header: () => 'Actor',
+			header: () => t('config.auditLogs.actor'),
 			cell: (info) =>
 				renderComponent(AuditLogActorCell, {
 					name: info.row.original.actor_name,
@@ -62,12 +94,12 @@
 				})
 		}),
 		columnHelper.accessor('request_id', {
-			header: 'Request ID',
+			header: () => t('config.auditLogs.requestIdPlaceholder'),
 			cell: (info) => renderComponent(AuditLogRequestIdCell, { requestId: info.getValue() })
 		}),
 		columnHelper.display({
 			id: 'actions',
-			header: () => 'Action',
+			header: () => t('common.action'),
 			cell: (info) => renderComponent(AuditLogActions, { auditLog: info.row.original })
 		})
 	];

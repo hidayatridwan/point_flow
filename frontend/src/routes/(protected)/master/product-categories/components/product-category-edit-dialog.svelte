@@ -90,7 +90,7 @@
 			});
 			onUpdated?.(updatedCategory);
 			toast.success(t('master.productCategories.updatedToast'), {
-				description: `Changes for ${updatedCategory.name} have been saved.`
+				description: t('common.updatedToastDesc').replace('{name}', updatedCategory.name)
 			});
 			open = false;
 		} catch (error) {
@@ -119,9 +119,9 @@
 	<Dialog.Content class="p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Edit Product Category</Dialog.Title>
+				<Dialog.Title>{t('master.productCategories.editTitle')}</Dialog.Title>
 				<Dialog.Description>
-					Update product category details, then save the changes to the server.
+					{t('master.productCategories.editDesc')}
 				</Dialog.Description>
 			</Dialog.Header>
 
@@ -129,7 +129,7 @@
 				<Form.Field {form} name="name">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Name</Form.Label>
+							<Form.Label>{t('common.name')}</Form.Label>
 							<Input
 								{...props}
 								placeholder={t('master.productCategories.namePlaceholder')}
@@ -144,7 +144,7 @@
 				<Form.Field {form} name="description">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Description</Form.Label>
+							<Form.Label>{t('common.description')}</Form.Label>
 							<Textarea
 								{...props}
 								placeholder={t('master.productCategories.descriptionPlaceholder')}
@@ -159,7 +159,7 @@
 				<Form.Field {form} name="is_active">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Status</Form.Label>
+							<Form.Label>{t('common.status')}</Form.Label>
 							<Select.Root
 								allowDeselect={false}
 								type="single"
@@ -175,8 +175,12 @@
 									<Select.Value placeholder={t('common.selectStatus')} />
 								</Select.Trigger>
 								<Select.Content>
-									<Select.Item value="true" label="Active">{t('status.active')}</Select.Item>
-									<Select.Item value="false" label="Inactive">{t('status.inactive')}</Select.Item>
+									<Select.Item value="true" label={t('status.active')}
+										>{t('status.active')}</Select.Item
+									>
+									<Select.Item value="false" label={t('status.inactive')}
+										>{t('status.inactive')}</Select.Item
+									>
 								</Select.Content>
 							</Select.Root>
 						{/snippet}
@@ -195,7 +199,7 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
+					{t('common.cancel')}
 				</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting}>
 					{#if isSubmitting}

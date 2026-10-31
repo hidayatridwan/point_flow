@@ -522,10 +522,8 @@
 			<Drawer.Header
 				class="shrink-0 border-b px-6 py-5 text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left"
 			>
-				<Drawer.Title>Add Stock Conversion</Drawer.Title>
-				<Drawer.Description>
-					Create a draft conversion to move stock between SKUs of the same product.
-				</Drawer.Description>
+				<Drawer.Title>{t('inventory.stockConversions.addTitle')}</Drawer.Title>
+				<Drawer.Description>{t('inventory.stockConversions.addDesc')}</Drawer.Description>
 			</Drawer.Header>
 
 			<div class="flex-1 overflow-y-auto px-6 py-5">
@@ -533,7 +531,7 @@
 					<div class="grid grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2">
 						<div class="space-y-2">
 							<Label for="stock-conversion-converted-date" class="whitespace-nowrap">
-								Converted Date
+								{t('inventory.stockConversions.convertedDate')}
 							</Label>
 							<Popover.Root bind:open={isConvertedDateOpen}>
 								<Popover.Trigger
@@ -549,7 +547,7 @@
 									<span class="truncate">
 										{formData.converted_date
 											? formatDate(formData.converted_date)
-											: 'Select converted date'}
+											: t('inventory.stockConversions.selectConvertedDate')}
 									</span>
 								</Popover.Trigger>
 								<Popover.Content align="start" class="w-auto p-0">
@@ -566,10 +564,12 @@
 						</div>
 
 						<div class="space-y-2 md:col-span-2">
-							<Label for="stock-conversion-notes" class="whitespace-nowrap">Notes</Label>
+							<Label for="stock-conversion-notes" class="whitespace-nowrap"
+								>{t('common.notes')}</Label
+							>
 							<Textarea
 								id="stock-conversion-notes"
-								placeholder="Conversion notes"
+								placeholder={t('inventory.stockConversions.notesPlaceholder')}
 								class="min-h-9 resize-none"
 								disabled={isSubmitting}
 								bind:value={formData.notes}
@@ -583,9 +583,11 @@
 					<div class="flex flex-col gap-3">
 						<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 							<div>
-								<h3 class="text-sm font-medium">Conversion Items</h3>
+								<h3 class="text-sm font-medium">
+									{t('inventory.stockConversions.conversionItems')}
+								</h3>
 								<p class="text-sm text-muted-foreground">
-									Select source and target SKUs from the same product.
+									{t('inventory.stockConversions.conversionItemsDesc')}
 								</p>
 							</div>
 							<Button
@@ -596,7 +598,7 @@
 								onclick={addLineItem}
 							>
 								<PlusIcon />
-								Add item
+								{t('common.addItem')}
 							</Button>
 						</div>
 
@@ -612,9 +614,13 @@
 								<div class="grid gap-4 rounded-md border bg-muted/10 p-4">
 									<div class="flex items-start justify-between gap-3">
 										<div>
-											<p class="text-sm font-medium">Item {index + 1}</p>
+											<p class="text-sm font-medium">
+												{t('common.itemNo').replace('{index}', String(index + 1))}
+											</p>
 											<p class="text-xs text-muted-foreground">
-												{item.from_product_name || item.to_product_name || 'Select product SKUs'}
+												{item.from_product_name ||
+													item.to_product_name ||
+													t('inventory.stockConversions.selectProductSkus')}
 											</p>
 										</div>
 										<Button
@@ -624,10 +630,10 @@
 											class="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
 											disabled={isSubmitting || formData.items.length === 1}
 											onclick={() => removeLineItem(item.client_id)}
-											title="Remove item"
+											title={t('common.removeItem')}
 										>
 											<TrashIcon />
-											<span class="sr-only">Remove item</span>
+											<span class="sr-only">{t('common.removeItem')}</span>
 										</Button>
 									</div>
 
@@ -637,7 +643,7 @@
 												for={`stock-conversion-item-from-sku-${item.client_id}`}
 												class="whitespace-nowrap"
 											>
-												Source SKU
+												{t('inventory.stockConversions.sourceSku')}
 											</Label>
 											<Select.Root
 												allowDeselect={false}
@@ -654,7 +660,9 @@
 													id={`stock-conversion-item-from-sku-${item.client_id}`}
 													class="w-full"
 												>
-													<Select.Value placeholder="Select source SKU" />
+													<Select.Value
+														placeholder={t('inventory.stockConversions.selectSourceSku')}
+													/>
 												</Select.Trigger>
 												<Select.Content>
 													{#each getSourceProductSkus(item) as productSku (productSku.id)}
@@ -675,13 +683,16 @@
 										</div>
 
 										<div class="space-y-1 rounded-md bg-background p-3">
-											<p class="text-xs text-muted-foreground">Source Stock</p>
+											<p class="text-xs text-muted-foreground">
+												{t('inventory.stockConversions.sourceStock')}
+											</p>
 											<p class="text-sm font-medium">
 												{formatNumber(item.from_stock_before)}
 												{item.from_unit}
 											</p>
 											<p class="text-xs text-muted-foreground">
-												After {formatNumber(getSourceStockAfter(item))}
+												{t('common.colAfter')}
+												{formatNumber(getSourceStockAfter(item))}
 												{item.from_unit}
 											</p>
 										</div>
@@ -691,7 +702,7 @@
 												for={`stock-conversion-item-from-quantity-${item.client_id}`}
 												class="whitespace-nowrap"
 											>
-												Source Qty
+												{t('inventory.stockConversions.sourceQty')}
 											</Label>
 											<Input
 												id={`stock-conversion-item-from-quantity-${item.client_id}`}
@@ -715,7 +726,7 @@
 												for={`stock-conversion-item-to-sku-${item.client_id}`}
 												class="whitespace-nowrap"
 											>
-												Target SKU
+												{t('inventory.stockConversions.targetSku')}
 											</Label>
 											<Select.Root
 												allowDeselect={false}
@@ -732,7 +743,9 @@
 													id={`stock-conversion-item-to-sku-${item.client_id}`}
 													class="w-full"
 												>
-													<Select.Value placeholder="Select target SKU" />
+													<Select.Value
+														placeholder={t('inventory.stockConversions.selectTargetSku')}
+													/>
 												</Select.Trigger>
 												<Select.Content>
 													{#each getTargetProductSkus(item) as productSku (productSku.id)}
@@ -753,13 +766,16 @@
 										</div>
 
 										<div class="space-y-1 rounded-md bg-background p-3">
-											<p class="text-xs text-muted-foreground">Target Stock</p>
+											<p class="text-xs text-muted-foreground">
+												{t('inventory.stockConversions.targetStock')}
+											</p>
 											<p class="text-sm font-medium">
 												{formatNumber(item.to_stock_before)}
 												{item.to_unit}
 											</p>
 											<p class="text-xs text-muted-foreground">
-												After {formatNumber(getTargetStockAfter(item))}
+												{t('common.colAfter')}
+												{formatNumber(getTargetStockAfter(item))}
 												{item.to_unit}
 											</p>
 										</div>
@@ -769,7 +785,7 @@
 												for={`stock-conversion-item-to-quantity-${item.client_id}`}
 												class="whitespace-nowrap"
 											>
-												Target Qty
+												{t('inventory.stockConversions.targetQty')}
 											</Label>
 											<Input
 												id={`stock-conversion-item-to-quantity-${item.client_id}`}
@@ -797,11 +813,11 @@
 												for={`stock-conversion-item-notes-${item.client_id}`}
 												class="whitespace-nowrap"
 											>
-												Item Notes
+												{t('inventory.stockConversions.itemNotes')}
 											</Label>
 											<Textarea
 												id={`stock-conversion-item-notes-${item.client_id}`}
-												placeholder="Optional item notes"
+												placeholder={t('common.optionalNotes')}
 												class="min-h-9 resize-none"
 												disabled={isSubmitting}
 												bind:value={item.notes}
@@ -820,11 +836,17 @@
 
 					<div class="grid gap-3">
 						{#if optionsErrorMessage}
-							<ErrorAlert title="Failed to load options." message={optionsErrorMessage} />
+							<ErrorAlert
+								title={t('inventory.stockConversions.errorLoadOptions')}
+								message={optionsErrorMessage}
+							/>
 						{/if}
 
 						{#if errorMessage}
-							<ErrorAlert title="Failed to create stock conversion." message={errorMessage} />
+							<ErrorAlert
+								title={t('inventory.stockConversions.errorCreate')}
+								message={errorMessage}
+							/>
 						{/if}
 					</div>
 				</div>
@@ -836,7 +858,7 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
+					{t('common.cancel')}
 				</Drawer.Close>
 				<Button type="submit" disabled={isSubmitting || isLoadingOptions}>
 					{#if isSubmitting}

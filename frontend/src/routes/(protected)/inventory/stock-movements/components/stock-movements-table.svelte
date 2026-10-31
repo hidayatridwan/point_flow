@@ -9,6 +9,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDateTime, formatNumber } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import StockMovementDirectionBadge from './stock-movement-direction-badge.svelte';
 	import StockMovementTypeBadge from './stock-movement-type-badge.svelte';
 
@@ -27,48 +28,48 @@
 
 	const columns = [
 		columnHelper.accessor('created_at', {
-			header: 'Date',
+			header: () => t('inventory.stockMovements.colDate'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.accessor('product_name', {
-			header: 'Product',
+			header: () => t('common.colProduct'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('sku', {
-			header: 'SKU',
+			header: () => t('common.colSku'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('movement_type', {
-			header: 'Type',
+			header: () => t('inventory.stockMovements.filterType'),
 			cell: (info) => renderComponent(StockMovementTypeBadge, { type: info.getValue() })
 		}),
 		columnHelper.accessor('direction', {
-			header: 'Direction',
+			header: () => t('common.direction'),
 			cell: (info) => renderComponent(StockMovementDirectionBadge, { direction: info.getValue() })
 		}),
 		columnHelper.accessor('quantity', {
-			header: 'Quantity',
+			header: () => t('inventory.stockMovements.colQuantity'),
 			cell: (info) => `${formatNumber(info.getValue())} ${info.row.original.unit}`
 		}),
 		columnHelper.accessor('stock_before', {
-			header: 'Before',
+			header: () => t('common.colBefore'),
 			cell: (info) => `${formatNumber(info.getValue())} ${info.row.original.unit}`
 		}),
 		columnHelper.accessor('stock_after', {
-			header: 'After',
+			header: () => t('common.colAfter'),
 			cell: (info) => `${formatNumber(info.getValue())} ${info.row.original.unit}`
 		}),
 		columnHelper.accessor('quantity_delta', {
-			header: 'Delta',
+			header: () => t('common.colDelta'),
 			cell: (info) => formatSignedQuantity(info.getValue(), info.row.original.unit)
 		}),
 		columnHelper.display({
 			id: 'reference',
-			header: 'Reference',
+			header: () => t('inventory.stockMovements.colReference'),
 			cell: (info) => getReferenceLabel(info.row.original)
 		}),
 		columnHelper.accessor('notes', {
-			header: 'Notes',
+			header: () => t('common.colNotes'),
 			cell: (info) => info.getValue() ?? '-'
 		})
 	];
@@ -94,13 +95,18 @@
 	}
 
 	function getReferenceTypeLabel(value: string) {
-		const labels: Record<string, string> = {
-			sale: 'Sale',
-			goods_receipt: 'GR',
-			stock_adjustment: 'Adjustment',
-			stock_conversion: 'Conversion'
-		};
-		return labels[value] ?? 'Reference';
+		switch (value) {
+			case 'sale':
+				return t('inventory.stockMovements.typeSale');
+			case 'goods_receipt':
+				return t('inventory.stockMovements.typePurchaseReceipt');
+			case 'stock_adjustment':
+				return t('inventory.stockMovements.typeAdjustment');
+			case 'stock_conversion':
+				return t('inventory.stockMovements.refConversion');
+			default:
+				return t('inventory.stockMovements.colReference');
+		}
 	}
 
 	function getSkeletonClass(columnIndex: number) {

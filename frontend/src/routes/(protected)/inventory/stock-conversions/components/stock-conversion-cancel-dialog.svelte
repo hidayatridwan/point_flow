@@ -44,7 +44,7 @@
 			});
 			await onCancelled?.(cancelledStockConversion);
 			toast.success(t('inventory.stockConversions.cancel.cancelledToast'), {
-				description: `${cancelledStockConversion.conversion_no} was cancelled.`
+				description: `${cancelledStockConversion.conversion_no} ${t('common.wasCancelled')}`
 			});
 			open = false;
 		} catch (error) {
@@ -70,7 +70,7 @@
 	<Dialog.Content class="p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Cancel Stock Conversion</Dialog.Title>
+				<Dialog.Title>{t('inventory.stockConversions.cancel.title')}</Dialog.Title>
 				<Dialog.Description>
 					Cancel {stockConversion.conversion_no}. Add a reason if this needs audit context.
 				</Dialog.Description>
@@ -82,7 +82,7 @@
 						for={`stock-conversion-cancel-reason-${stockConversion.id}`}
 						class="text-sm font-medium"
 					>
-						Cancel Reason
+						{t('inventory.stockConversions.cancel.cancelReason')}
 					</label>
 					<Textarea
 						id={`stock-conversion-cancel-reason-${stockConversion.id}`}
@@ -106,7 +106,7 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Keep conversion
+					{t('inventory.stockConversions.cancel.keepConversion')}
 				</Dialog.Close>
 				<Button type="submit" variant="destructive" disabled={isSubmitting}>
 					{#if isSubmitting}

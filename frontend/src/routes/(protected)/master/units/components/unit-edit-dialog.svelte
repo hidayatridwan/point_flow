@@ -94,7 +94,7 @@
 			});
 			onUpdated?.(updatedUnit);
 			toast.success(t('master.units.updatedToast'), {
-				description: `Changes for ${updatedUnit.name} have been saved.`
+				description: t('common.updatedToastDesc').replace('{name}', updatedUnit.name)
 			});
 			open = false;
 		} catch (error) {
@@ -124,17 +124,15 @@
 	<Dialog.Content class="p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Edit Unit</Dialog.Title>
-				<Dialog.Description
-					>Update measurement unit details and save the changes.</Dialog.Description
-				>
+				<Dialog.Title>{t('master.units.editDialogTitle')}</Dialog.Title>
+				<Dialog.Description>{t('master.units.editDialogDesc')}</Dialog.Description>
 			</Dialog.Header>
 
 			<div class="grid gap-4 px-6">
 				<Form.Field {form} name="code">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Code</Form.Label>
+							<Form.Label>{t('master.units.code')}</Form.Label>
 							<Input
 								{...props}
 								placeholder="pcs"
@@ -149,7 +147,7 @@
 				<Form.Field {form} name="name">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Name</Form.Label>
+							<Form.Label>{t('common.name')}</Form.Label>
 							<Input
 								{...props}
 								placeholder="Pieces"
@@ -165,7 +163,7 @@
 					<Form.Field {form} name="allow_decimal">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label>Decimal Quantity</Form.Label>
+								<Form.Label>{t('master.units.decimalQty')}</Form.Label>
 								<Select.Root
 									allowDeselect={false}
 									type="single"
@@ -182,11 +180,11 @@
 									</Select.Trigger>
 									<Select.Content>
 										<Select.Item value="false" label={t('master.units.decimalWholeOnly')}>
-											Whole numbers only
+											{t('master.units.decimalWholeOnly')}
 										</Select.Item>
-										<Select.Item value="true" label={t('master.units.decimalAllowed')}
-											>Allow decimals</Select.Item
-										>
+										<Select.Item value="true" label={t('master.units.decimalAllowed')}>
+											{t('master.units.decimalAllowed')}
+										</Select.Item>
 									</Select.Content>
 								</Select.Root>
 							{/snippet}
@@ -197,7 +195,7 @@
 					<Form.Field {form} name="is_active">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label>Status</Form.Label>
+								<Form.Label>{t('common.status')}</Form.Label>
 								<Select.Root
 									allowDeselect={false}
 									type="single"
@@ -213,8 +211,12 @@
 										<Select.Value placeholder={t('common.selectStatus')} />
 									</Select.Trigger>
 									<Select.Content>
-										<Select.Item value="true" label="Active">{t('status.active')}</Select.Item>
-										<Select.Item value="false" label="Inactive">{t('status.inactive')}</Select.Item>
+										<Select.Item value="true" label={t('status.active')}
+											>{t('status.active')}</Select.Item
+										>
+										<Select.Item value="false" label={t('status.inactive')}
+											>{t('status.inactive')}</Select.Item
+										>
 									</Select.Content>
 								</Select.Root>
 							{/snippet}
@@ -234,7 +236,7 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
+					{t('common.cancel')}
 				</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting}>
 					{#if isSubmitting}

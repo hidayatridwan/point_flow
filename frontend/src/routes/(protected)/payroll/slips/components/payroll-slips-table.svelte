@@ -9,6 +9,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDate, formatDateTime, formatIdr } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import PayrollSlipActions from './payroll-slip-actions.svelte';
 
 	let {
@@ -26,36 +27,36 @@
 
 	const columns = [
 		columnHelper.accessor('slip_no', {
-			header: 'Slip No',
+			header: () => t('payroll.slips.colSlipNo'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('employee_name', {
-			header: 'Employee',
+			header: () => t('payroll.slips.employee'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('employee_position', {
-			header: 'Position',
+			header: () => t('master.employees.position'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('period_start', {
-			header: 'Period Start',
+			header: () => t('payroll.slips.periodStart'),
 			cell: (info) => formatDate(info.getValue())
 		}),
 		columnHelper.accessor('period_end', {
-			header: 'Period End',
+			header: () => t('payroll.slips.periodEnd'),
 			cell: (info) => formatDate(info.getValue())
 		}),
 		columnHelper.accessor('net_salary', {
-			header: 'Net Salary',
+			header: () => t('payroll.slips.netSalary'),
 			cell: (info) => formatIdr(info.getValue())
 		}),
 		columnHelper.accessor('updated_at', {
-			header: 'Updated At',
+			header: () => t('common.updatedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.display({
 			id: 'actions',
-			header: () => 'Action',
+			header: () => t('common.action'),
 			cell: (info) =>
 				renderComponent(PayrollSlipActions, {
 					payrollSlip: info.row.original

@@ -131,7 +131,7 @@
 			if (requestId !== latestOptionsRequestId) return;
 			products = [];
 			units = [];
-			optionsErrorMessage = getErrorMessage(error, 'Failed to load product SKU options.');
+			optionsErrorMessage = getErrorMessage(error, t('master.productSkus.errorLoadOptions'));
 		} finally {
 			if (requestId === latestOptionsRequestId) {
 				isLoadingOptions = false;
@@ -163,7 +163,7 @@
 			});
 			await onCreated?.(createdProductSku);
 			toast.success(t('master.productSkus.createdToast'), {
-				description: `${createdProductSku.sku} was added.`
+				description: `${createdProductSku.sku} ${t('common.wasAdded')}`
 			});
 			open = false;
 		} catch (error) {
@@ -194,9 +194,9 @@
 			<Drawer.Header
 				class="shrink-0 border-b px-6 py-5 text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left"
 			>
-				<Drawer.Title>Add Product SKU</Drawer.Title>
+				<Drawer.Title>{t('master.productSkus.addTitle')}</Drawer.Title>
 				<Drawer.Description>
-					Create a sellable SKU with unit, barcode, price, and stock settings.
+					{t('master.productSkus.addDesc')}
 				</Drawer.Description>
 			</Drawer.Header>
 
@@ -205,7 +205,7 @@
 					<Form.Field {form} name="product_id" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">Product</Form.Label>
+								<Form.Label class="whitespace-nowrap">{t('master.productSkus.product')}</Form.Label>
 								<Select.Root
 									allowDeselect={false}
 									type="single"
@@ -218,7 +218,7 @@
 									}}
 								>
 									<Select.Trigger {...props} class="w-full">
-										<Select.Value placeholder="Select product" />
+										<Select.Value placeholder={t('master.productSkus.selectProduct')} />
 									</Select.Trigger>
 									<Select.Content>
 										{#each products as product (product.id)}
@@ -236,7 +236,7 @@
 					<Form.Field {form} name="unit_id" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">Unit</Form.Label>
+								<Form.Label class="whitespace-nowrap">{t('master.productSkus.unit')}</Form.Label>
 								<Select.Root
 									allowDeselect={false}
 									type="single"
@@ -249,7 +249,7 @@
 									}}
 								>
 									<Select.Trigger {...props} class="w-full">
-										<Select.Value placeholder="Select unit" />
+										<Select.Value placeholder={t('master.productSkus.selectUnit')} />
 									</Select.Trigger>
 									<Select.Content>
 										{#each units as unit (unit.id)}
@@ -267,7 +267,7 @@
 					<Form.Field {form} name="sku" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">SKU</Form.Label>
+								<Form.Label class="whitespace-nowrap">{t('master.productSkus.sku')}</Form.Label>
 								<Input
 									{...props}
 									placeholder="WTR-001-PCS"
@@ -282,7 +282,7 @@
 					<Form.Field {form} name="barcode" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">Barcode</Form.Label>
+								<Form.Label class="whitespace-nowrap">{t('master.productSkus.barcode')}</Form.Label>
 								<Input
 									{...props}
 									placeholder="8990000000011"
@@ -297,7 +297,9 @@
 					<Form.Field {form} name="contents_qty" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">Contents Qty</Form.Label>
+								<Form.Label class="whitespace-nowrap"
+									>{t('master.productSkus.contentsQty')}</Form.Label
+								>
 								<Input
 									{...props}
 									type="number"
@@ -315,7 +317,7 @@
 					<Form.Field {form} name="stock" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">Stock</Form.Label>
+								<Form.Label class="whitespace-nowrap">{t('master.productSkus.stock')}</Form.Label>
 								<Input
 									{...props}
 									type="number"
@@ -333,7 +335,9 @@
 					<Form.Field {form} name="minimum_stock" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">Minimum Stock</Form.Label>
+								<Form.Label class="whitespace-nowrap"
+									>{t('master.productSkus.minimumStock')}</Form.Label
+								>
 								<Input
 									{...props}
 									type="number"
@@ -351,7 +355,7 @@
 					<Form.Field {form} name="is_active" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">Status</Form.Label>
+								<Form.Label class="whitespace-nowrap">{t('common.status')}</Form.Label>
 								<Select.Root
 									allowDeselect={false}
 									type="single"
@@ -364,11 +368,15 @@
 									}}
 								>
 									<Select.Trigger {...props} class="w-full">
-										<Select.Value placeholder="Select status" />
+										<Select.Value placeholder={t('common.selectStatus')} />
 									</Select.Trigger>
 									<Select.Content>
-										<Select.Item value="true" label="Active">Active</Select.Item>
-										<Select.Item value="false" label="Inactive">Inactive</Select.Item>
+										<Select.Item value="true" label={t('status.active')}
+											>{t('status.active')}</Select.Item
+										>
+										<Select.Item value="false" label={t('status.inactive')}
+											>{t('status.inactive')}</Select.Item
+										>
 									</Select.Content>
 								</Select.Root>
 							{/snippet}
@@ -379,7 +387,9 @@
 					<Form.Field {form} name="purchase_price" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">Purchase Price</Form.Label>
+								<Form.Label class="whitespace-nowrap"
+									>{t('master.productSkus.purchasePrice')}</Form.Label
+								>
 								<Input
 									{...props}
 									type="number"
@@ -397,7 +407,9 @@
 					<Form.Field {form} name="selling_price" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">Selling Price</Form.Label>
+								<Form.Label class="whitespace-nowrap"
+									>{t('master.productSkus.sellingPrice')}</Form.Label
+								>
 								<Input
 									{...props}
 									type="number"
@@ -433,7 +445,7 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
+					{t('common.cancel')}
 				</Drawer.Close>
 				<Button type="submit" disabled={isSubmitting || isLoadingOptions}>
 					{#if isSubmitting}

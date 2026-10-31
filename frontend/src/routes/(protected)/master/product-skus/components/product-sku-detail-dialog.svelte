@@ -57,8 +57,8 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="sm:max-w-2xl">
 		<Dialog.Header>
-			<Dialog.Title>Product SKU Details</Dialog.Title>
-			<Dialog.Description>Latest product SKU, pricing, and stock information.</Dialog.Description>
+			<Dialog.Title>{t('master.productSkus.detailDialogTitle')}</Dialog.Title>
+			<Dialog.Description>{t('master.productSkus.detailDialogDesc')}</Dialog.Description>
 		</Dialog.Header>
 
 		{#if isLoading}
@@ -73,28 +73,55 @@
 		{:else if productSku}
 			<div class="grid gap-4">
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailField label="Product" value={productSku.product_name} />
-					<DetailField label="Category" value={productSku.category_name || 'No category'} />
-					<DetailField label="SKU" value={productSku.sku} />
-					<DetailField label="Barcode" value={productSku.barcode || '-'} />
-					<DetailField label="Unit" value={`${productSku.unit_name} (${productSku.unit_code})`} />
-					<DetailField label="Contents Qty" value={formatNumber(productSku.contents_qty)} />
+					<DetailField label={t('master.productSkus.product')} value={productSku.product_name} />
+					<DetailField
+						label={t('master.products.category')}
+						value={productSku.category_name || t('master.products.noCategory')}
+					/>
+					<DetailField label={t('master.productSkus.sku')} value={productSku.sku} />
+					<DetailField label={t('master.productSkus.barcode')} value={productSku.barcode || '-'} />
+					<DetailField
+						label={t('master.productSkus.unit')}
+						value={`${productSku.unit_name} (${productSku.unit_code})`}
+					/>
+					<DetailField
+						label={t('master.productSkus.contentsQty')}
+						value={formatNumber(productSku.contents_qty)}
+					/>
 				</div>
 
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailField label="Purchase Price" value={formatIdr(productSku.purchase_price)} />
-					<DetailField label="Selling Price" value={formatIdr(productSku.selling_price)} />
-					<DetailField label="Stock" value={formatNumber(productSku.stock)} />
-					<DetailField label="Minimum Stock" value={formatNumber(productSku.minimum_stock)} />
+					<DetailField
+						label={t('master.productSkus.purchasePrice')}
+						value={formatIdr(productSku.purchase_price)}
+					/>
+					<DetailField
+						label={t('master.productSkus.sellingPrice')}
+						value={formatIdr(productSku.selling_price)}
+					/>
+					<DetailField
+						label={t('master.productSkus.stock')}
+						value={formatNumber(productSku.stock)}
+					/>
+					<DetailField
+						label={t('master.productSkus.minimumStock')}
+						value={formatNumber(productSku.minimum_stock)}
+					/>
 				</div>
 
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailField label="Status">
+					<DetailField label={t('common.status')}>
 						<StatusBadge active={productSku.is_active} />
 					</DetailField>
-					<DetailField label="ID" value={productSku.id} />
-					<DetailField label="Created At" value={formatDateTime(productSku.created_at)} />
-					<DetailField label="Updated At" value={formatDateTime(productSku.updated_at)} />
+					<DetailField label={t('common.id')} value={productSku.id} />
+					<DetailField
+						label={t('common.createdAt')}
+						value={formatDateTime(productSku.created_at)}
+					/>
+					<DetailField
+						label={t('common.updatedAt')}
+						value={formatDateTime(productSku.updated_at)}
+					/>
 				</div>
 			</div>
 		{/if}

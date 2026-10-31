@@ -44,7 +44,7 @@
 			});
 			await onCancelled?.(cancelledSale);
 			toast.success(t('pos.sales.cancel.cancelledToast'), {
-				description: `${cancelledSale.transaction_no} was cancelled.`
+				description: `${cancelledSale.transaction_no} ${t('common.wasCancelled')}`
 			});
 			open = false;
 		} catch (error) {
@@ -70,17 +70,16 @@
 	<Dialog.Content class="p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Cancel Sale</Dialog.Title>
+				<Dialog.Title>{t('pos.sales.cancel.title')}</Dialog.Title>
 				<Dialog.Description>
-					Cancel {sale.transaction_no}. This follows the current backend behavior and does not
-					restore stock automatically.
+					{t('pos.sales.cancel.desc').replace('{tx}', sale.transaction_no)}
 				</Dialog.Description>
 			</Dialog.Header>
 
 			<div class="grid gap-4 px-6">
 				<div class="space-y-2">
 					<label for={`sale-cancel-reason-${sale.id}`} class="text-sm font-medium">
-						Cancel Reason
+						{t('pos.sales.cancel.cancelReason')}
 					</label>
 					<Textarea
 						id={`sale-cancel-reason-${sale.id}`}
@@ -101,7 +100,7 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Keep sale
+					{t('pos.sales.cancel.keepSale')}
 				</Dialog.Close>
 				<Button type="submit" variant="destructive" disabled={isSubmitting}>
 					{#if isSubmitting}

@@ -36,7 +36,7 @@
 			await deleteRole(role.id);
 			await onDeleted?.(role.id);
 			toast.success(t('config.roles.deletedToast'), {
-				description: `${role.name} was removed.`
+				description: `${role.name} ${t('common.wasRemoved')}`
 			});
 			open = false;
 		} catch (error) {
@@ -56,10 +56,10 @@
 <AlertDialog.Root bind:open>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>Delete Role?</AlertDialog.Title>
+			<AlertDialog.Title>{t('config.roles.deleteTitle')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				This action will delete <span class="font-medium text-foreground">{role.name}</span>. This
-				role will no longer appear in role selection lists.
+				{t('config.roles.deleteDesc').replace('{name}', role.name)}
+				{t('config.roles.deleteDescExtra')}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 

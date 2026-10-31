@@ -6,6 +6,7 @@
 	import type { GoodsReceipt } from '$lib/api/goods-receipts.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import GoodsReceiptCancelDialog from './goods-receipt-cancel-dialog.svelte';
 	import GoodsReceiptDetailDialog from './goods-receipt-detail-dialog.svelte';
 	import GoodsReceiptPostAlertDialog from './goods-receipt-post-alert-dialog.svelte';
@@ -47,8 +48,8 @@
 					variant="ghost"
 					size="icon-sm"
 					class="size-8"
-					aria-label={`Open actions for ${goodsReceipt.gr_no}`}
-					title="Actions"
+					aria-label={t('common.openActions').replace('{docNo}', goodsReceipt.gr_no)}
+					title={t('common.action')}
 				>
 					<EllipsisIcon />
 				</Button>
@@ -57,18 +58,18 @@
 		<DropdownMenu.Content align="end" class="min-w-44">
 			<DropdownMenu.Item onSelect={openDetail}>
 				<EyeIcon />
-				Detail
+				{t('common.detail')}
 			</DropdownMenu.Item>
 			{#if canPost}
 				<DropdownMenu.Item onSelect={openPost}>
 					<CheckCircleIcon />
-					Post receipt
+					{t('procurement.goodsReceipts.post.postBtn')}
 				</DropdownMenu.Item>
 			{/if}
 			{#if canCancel}
 				<DropdownMenu.Item variant="destructive" onSelect={openCancel}>
 					<BanIcon />
-					Cancel receipt
+					{t('procurement.goodsReceipts.cancel.title')}
 				</DropdownMenu.Item>
 			{/if}
 		</DropdownMenu.Content>

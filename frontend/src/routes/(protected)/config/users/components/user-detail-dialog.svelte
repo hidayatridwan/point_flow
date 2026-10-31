@@ -7,6 +7,7 @@
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { formatDateTime } from '$lib/formatters.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import UserPermissions from './user-permissions.svelte';
 
 	let {
@@ -50,15 +51,15 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load user details.';
+		return t('config.users.loadFailed');
 	}
 </script>
 
 <Dialog.Root bind:open>
 	<Dialog.Content class="sm:max-w-2xl">
 		<Dialog.Header>
-			<Dialog.Title>User Details</Dialog.Title>
-			<Dialog.Description>Latest information from the user record.</Dialog.Description>
+			<Dialog.Title>{t('config.users.detailTitle')}</Dialog.Title>
+			<Dialog.Description>{t('config.users.detailDesc')}</Dialog.Description>
 		</Dialog.Header>
 
 		{#if isLoading}
@@ -69,23 +70,26 @@
 				<Skeleton class="h-5 w-64" />
 			</div>
 		{:else if errorMessage}
-			<ErrorAlert title="Failed to load details." message={errorMessage} />
+			<ErrorAlert title={t('common.loadFailed')} message={errorMessage} />
 		{:else if user}
 			<div class="grid gap-4">
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailField label="Name" value={user.name} />
-					<DetailField label="Email" value={user.email} />
-					<DetailField label="Role" value={user.role_name} />
-					<DetailField label="Status">
+					<DetailField label={t('common.name')} value={user.name} />
+					<DetailField label={t('common.email')} value={user.email} />
+					<DetailField label={t('config.users.role')} value={user.role_name} />
+					<DetailField label={t('common.status')}>
 						<StatusBadge active={user.is_active} />
 					</DetailField>
-					<DetailField label="User ID" value={user.id} />
-					<DetailField label="Role Code" value={user.role_code} />
-					<DetailField label="Last Login" value={formatDateTime(user.last_login_at)} />
-					<DetailField label="Created At" value={formatDateTime(user.created_at)} />
-					<DetailField label="Updated At" value={formatDateTime(user.updated_at)} />
+					<DetailField label={t('config.users.userId')} value={user.id} />
+					<DetailField label={t('config.users.roleCode')} value={user.role_code} />
+					<DetailField
+						label={t('config.users.lastLogin')}
+						value={formatDateTime(user.last_login_at)}
+					/>
+					<DetailField label={t('common.createdAt')} value={formatDateTime(user.created_at)} />
+					<DetailField label={t('common.updatedAt')} value={formatDateTime(user.updated_at)} />
 				</div>
-				<DetailField label="Permissions">
+				<DetailField label={t('config.users.colPermissions')}>
 					<UserPermissions permissions={user.permissions} limit={100} />
 				</DetailField>
 			</div>

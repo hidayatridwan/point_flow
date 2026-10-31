@@ -57,8 +57,8 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="sm:max-w-lg">
 		<Dialog.Header>
-			<Dialog.Title>Product Category Details</Dialog.Title>
-			<Dialog.Description>Latest information from the product category record.</Dialog.Description>
+			<Dialog.Title>{t('master.productCategories.detailDialogTitle')}</Dialog.Title>
+			<Dialog.Description>{t('master.productCategories.detailDialogDesc')}</Dialog.Description>
 		</Dialog.Header>
 
 		{#if isLoading}
@@ -72,19 +72,19 @@
 			<ErrorAlert title={t('common.loadFailed')} message={errorMessage} />
 		{:else if category}
 			<div class="grid gap-4">
-				<DetailField label="Name" value={category.name} />
+				<DetailField label={t('common.name')} value={category.name} />
 
-				<DetailField label="Description">
+				<DetailField label={t('common.description')}>
 					<p class="text-sm leading-relaxed">{category.description || '-'}</p>
 				</DetailField>
 
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailField label="Status">
+					<DetailField label={t('common.status')}>
 						<StatusBadge active={category.is_active} />
 					</DetailField>
-					<DetailField label="ID" value={category.id} />
-					<DetailField label="Created At" value={formatDateTime(category.created_at)} />
-					<DetailField label="Updated At" value={formatDateTime(category.updated_at)} />
+					<DetailField label={t('common.id')} value={category.id} />
+					<DetailField label={t('common.createdAt')} value={formatDateTime(category.created_at)} />
+					<DetailField label={t('common.updatedAt')} value={formatDateTime(category.updated_at)} />
 				</div>
 			</div>
 		{/if}

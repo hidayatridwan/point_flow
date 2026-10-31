@@ -44,7 +44,7 @@
 			});
 			await onCancelled?.(cancelledMovement);
 			toast.success(t('pos.cashMovements.cancel.cancelledToast'), {
-				description: `${cancelledMovement.movement_no} was cancelled.`
+				description: `${cancelledMovement.movement_no} ${t('common.wasCancelled')}`
 			});
 			open = false;
 		} catch (error) {
@@ -70,17 +70,16 @@
 	<Dialog.Content class="p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Cancel Cash Movement</Dialog.Title>
+				<Dialog.Title>{t('pos.cashMovements.cancel.title')}</Dialog.Title>
 				<Dialog.Description>
-					Cancel {movement.movement_no}. This is only allowed while the related register session is
-					still open.
+					{t('pos.cashMovements.cancel.desc').replace('{no}', movement.movement_no)}
 				</Dialog.Description>
 			</Dialog.Header>
 
 			<div class="grid gap-4 px-6">
 				<div class="space-y-2">
 					<label for={`cash-movement-cancel-reason-${movement.id}`} class="text-sm font-medium">
-						Cancel Reason
+						{t('pos.cashMovements.cancel.cancelReason')}
 					</label>
 					<Textarea
 						id={`cash-movement-cancel-reason-${movement.id}`}
@@ -101,7 +100,7 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Keep movement
+					{t('pos.cashMovements.cancel.keepMovement')}
 				</Dialog.Close>
 				<Button type="submit" variant="destructive" disabled={isSubmitting}>
 					{#if isSubmitting}

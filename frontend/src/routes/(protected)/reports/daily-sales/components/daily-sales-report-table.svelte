@@ -5,6 +5,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDate, formatIdr, formatNumber } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		reports,
@@ -21,19 +22,19 @@
 
 	const columns = [
 		columnHelper.accessor('sales_date', {
-			header: 'Sales Date',
+			header: () => t('reports.dailySales.colSalesDate'),
 			cell: (info) => formatDate(info.getValue())
 		}),
 		columnHelper.accessor('transaction_count', {
-			header: 'Transactions',
+			header: () => t('reports.dailySales.colTransactions'),
 			cell: (info) => formatNumber(info.getValue())
 		}),
 		columnHelper.accessor('subtotal_amount', {
-			header: 'Subtotal',
+			header: () => t('reports.dailySales.colSubtotal'),
 			cell: (info) => formatIdr(info.getValue())
 		}),
 		columnHelper.accessor('total_amount', {
-			header: 'Total Sales',
+			header: () => t('reports.dailySales.colTotalSales'),
 			cell: (info) => formatIdr(info.getValue())
 		})
 	];

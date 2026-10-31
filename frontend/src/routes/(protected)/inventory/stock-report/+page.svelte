@@ -182,7 +182,7 @@
 </script>
 
 <svelte:head>
-	<title>Stock Report | PointFlow</title>
+	<title>{t('inventory.stockReport.title')} | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
@@ -205,7 +205,7 @@
 					onValueChange={updateSearchValue}
 				/>
 				<DataTableFacetedFilter
-					title="Status"
+					title={t('inventory.stockReport.filterStatus')}
 					options={statusFilterOptions}
 					value={query.status}
 					disabled={isLoading}

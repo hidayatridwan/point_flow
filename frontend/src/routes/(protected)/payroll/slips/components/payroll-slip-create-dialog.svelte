@@ -313,9 +313,9 @@
 	<Dialog.Content class="max-h-[90vh] overflow-hidden p-0 sm:max-w-lg">
 		<form class="grid max-h-[90vh] grid-rows-[auto_minmax(0,1fr)_auto]" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Add Payroll Slip</Dialog.Title>
+				<Dialog.Title>{t('payroll.slips.addTitle')}</Dialog.Title>
 				<Dialog.Description>
-					Create a payroll slip from an active employee base salary.
+					{t('payroll.slips.addDesc')}
 				</Dialog.Description>
 			</Dialog.Header>
 
@@ -323,7 +323,9 @@
 				<div class="grid gap-5">
 					<div class="grid grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2">
 						<div class="space-y-2 md:col-span-2">
-							<Label for="payroll-slip-employee" class="whitespace-nowrap">Employee</Label>
+							<Label for="payroll-slip-employee" class="whitespace-nowrap"
+								>{t('payroll.slips.employee')}</Label
+							>
 							<Select.Root
 								allowDeselect={false}
 								type="single"
@@ -336,7 +338,7 @@
 								}}
 							>
 								<Select.Trigger id="payroll-slip-employee" class="w-full">
-									<Select.Value placeholder="Select employee" />
+									<Select.Value placeholder={t('payroll.slips.selectEmployee')} />
 								</Select.Trigger>
 								<Select.Content>
 									{#each employees as employee (employee.id)}
@@ -352,7 +354,9 @@
 						</div>
 
 						<div class="space-y-2">
-							<Label for="payroll-slip-period-start" class="whitespace-nowrap">Period Start</Label>
+							<Label for="payroll-slip-period-start" class="whitespace-nowrap"
+								>{t('payroll.slips.periodStart')}</Label
+							>
 							<Popover.Root bind:open={isPeriodStartOpen}>
 								<Popover.Trigger
 									id="payroll-slip-period-start"
@@ -384,7 +388,9 @@
 						</div>
 
 						<div class="space-y-2">
-							<Label for="payroll-slip-period-end" class="whitespace-nowrap">Period End</Label>
+							<Label for="payroll-slip-period-end" class="whitespace-nowrap"
+								>{t('payroll.slips.periodEnd')}</Label
+							>
 							<Popover.Root bind:open={isPeriodEndOpen}>
 								<Popover.Trigger
 									id="payroll-slip-period-end"
@@ -414,7 +420,9 @@
 						</div>
 
 						<div class="space-y-2">
-							<Label for="payroll-slip-bonus" class="whitespace-nowrap">Bonus</Label>
+							<Label for="payroll-slip-bonus" class="whitespace-nowrap"
+								>{t('payroll.slips.bonus')}</Label
+							>
 							<Input
 								id="payroll-slip-bonus"
 								type="number"
@@ -430,7 +438,9 @@
 						</div>
 
 						<div class="space-y-2">
-							<Label for="payroll-slip-deduction" class="whitespace-nowrap">Deduction</Label>
+							<Label for="payroll-slip-deduction" class="whitespace-nowrap"
+								>{t('payroll.slips.deduction')}</Label
+							>
 							<Input
 								id="payroll-slip-deduction"
 								type="number"
@@ -448,21 +458,29 @@
 
 					<div class="grid gap-3 rounded-lg border bg-muted/20 p-4 sm:grid-cols-2">
 						<div>
-							<p class="text-xs font-medium text-muted-foreground">Base Salary</p>
+							<p class="text-xs font-medium text-muted-foreground">
+								{t('payroll.slips.baseSalary')}
+							</p>
 							<p class="mt-1 font-semibold">
 								{selectedEmployee ? formatIdr(selectedEmployee.base_salary) : '-'}
 							</p>
 						</div>
 						<div>
-							<p class="text-xs font-medium text-muted-foreground">Bonus</p>
+							<p class="text-xs font-medium text-muted-foreground">
+								{t('payroll.slips.bonus')}
+							</p>
 							<p class="mt-1 font-semibold">{formatIdr(parseMoneyInput(formData.bonus))}</p>
 						</div>
 						<div>
-							<p class="text-xs font-medium text-muted-foreground">Deduction</p>
+							<p class="text-xs font-medium text-muted-foreground">
+								{t('payroll.slips.deduction')}
+							</p>
 							<p class="mt-1 font-semibold">{formatIdr(parseMoneyInput(formData.deduction))}</p>
 						</div>
 						<div>
-							<p class="text-xs font-medium text-muted-foreground">Net Salary Preview</p>
+							<p class="text-xs font-medium text-muted-foreground">
+								{t('payroll.slips.netSalaryPreview')}
+							</p>
 							<p class="mt-1 font-semibold">
 								{selectedEmployee ? formatIdr(previewNetSalary) : '-'}
 							</p>

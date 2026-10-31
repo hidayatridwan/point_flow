@@ -3,6 +3,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { cn } from '$lib/utils.js';
 	import { useSidebar } from './context.svelte.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import type { ComponentProps } from 'svelte';
 
 	let {
@@ -32,5 +33,5 @@
 	{...restProps}
 >
 	<PanelLeftIcon class="cn-rtl-flip" />
-	<span class="sr-only">Toggle Sidebar</span>
+	<span class="sr-only">{t('common.toggleSidebar')}</span>
 </Button>

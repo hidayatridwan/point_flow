@@ -82,7 +82,7 @@
 			});
 			await onCreated?.(createdUnit);
 			toast.success(t('master.units.createdToast'), {
-				description: `${createdUnit.name} is ready to use.`
+				description: `${createdUnit.name} ${t('common.createdToastDesc')}`
 			});
 			open = false;
 		} catch (error) {
@@ -103,9 +103,9 @@
 	<Dialog.Content class="p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Add Unit</Dialog.Title>
+				<Dialog.Title>{t('master.units.addTitle')}</Dialog.Title>
 				<Dialog.Description>
-					Create a measurement unit for product packaging and stock calculations.
+					{t('master.units.addDesc')}
 				</Dialog.Description>
 			</Dialog.Header>
 
@@ -113,7 +113,7 @@
 				<Form.Field {form} name="code">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Code</Form.Label>
+							<Form.Label>{t('master.units.code')}</Form.Label>
 							<Input
 								{...props}
 								placeholder="pcs"
@@ -128,7 +128,7 @@
 				<Form.Field {form} name="name">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Name</Form.Label>
+							<Form.Label>{t('common.name')}</Form.Label>
 							<Input
 								{...props}
 								placeholder="Pieces"
@@ -144,7 +144,7 @@
 					<Form.Field {form} name="allow_decimal">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label>Decimal Quantity</Form.Label>
+								<Form.Label>{t('master.units.decimalQty')}</Form.Label>
 								<Select.Root
 									allowDeselect={false}
 									type="single"
@@ -157,13 +157,15 @@
 									}}
 								>
 									<Select.Trigger {...props} class="w-full">
-										<Select.Value placeholder="Select decimal rule" />
+										<Select.Value placeholder={t('master.units.selectDecimalRule')} />
 									</Select.Trigger>
 									<Select.Content>
-										<Select.Item value="false" label="Whole numbers only">
-											Whole numbers only
+										<Select.Item value="false" label={t('master.units.decimalWholeOnly')}>
+											{t('master.units.decimalWholeOnly')}
 										</Select.Item>
-										<Select.Item value="true" label="Allow decimals">Allow decimals</Select.Item>
+										<Select.Item value="true" label={t('master.units.decimalAllowed')}>
+											{t('master.units.decimalAllowed')}
+										</Select.Item>
 									</Select.Content>
 								</Select.Root>
 							{/snippet}
@@ -174,7 +176,7 @@
 					<Form.Field {form} name="is_active">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label>Status</Form.Label>
+								<Form.Label>{t('common.status')}</Form.Label>
 								<Select.Root
 									allowDeselect={false}
 									type="single"
@@ -187,11 +189,15 @@
 									}}
 								>
 									<Select.Trigger {...props} class="w-full">
-										<Select.Value placeholder="Select status" />
+										<Select.Value placeholder={t('common.selectStatus')} />
 									</Select.Trigger>
 									<Select.Content>
-										<Select.Item value="true" label="Active">Active</Select.Item>
-										<Select.Item value="false" label="Inactive">Inactive</Select.Item>
+										<Select.Item value="true" label={t('status.active')}
+											>{t('status.active')}</Select.Item
+										>
+										<Select.Item value="false" label={t('status.inactive')}
+											>{t('status.inactive')}</Select.Item
+										>
 									</Select.Content>
 								</Select.Root>
 							{/snippet}

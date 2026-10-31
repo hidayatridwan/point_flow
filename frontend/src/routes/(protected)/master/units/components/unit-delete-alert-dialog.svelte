@@ -36,7 +36,7 @@
 			await deleteUnit(unit.id);
 			await onDeleted?.(unit.id);
 			toast.success(t('master.units.deletedToast'), {
-				description: `${unit.name} was removed.`
+				description: `${unit.name} ${t('common.wasRemoved')}`
 			});
 			open = false;
 		} catch (error) {
@@ -56,10 +56,9 @@
 <AlertDialog.Root bind:open>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>Delete Unit?</AlertDialog.Title>
+			<AlertDialog.Title>{t('master.units.deleteTitle')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				This action will delete <span class="font-medium text-foreground">{unit.name}</span>. This
-				unit will no longer appear in the unit list.
+				{t('master.units.deleteDesc').replace('{name}', unit.name)}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 

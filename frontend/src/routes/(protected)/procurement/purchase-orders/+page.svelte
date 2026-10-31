@@ -254,9 +254,9 @@
 
 	function getDateRangeLabel() {
 		if (query.from && query.to) return `${formatDate(query.from)} - ${formatDate(query.to)}`;
-		if (query.from) return `From ${formatDate(query.from)}`;
-		if (query.to) return `Until ${formatDate(query.to)}`;
-		return 'Select date range';
+		if (query.from) return `${t('common.from')} ${formatDate(query.from)}`;
+		if (query.to) return `${t('common.until')} ${formatDate(query.to)}`;
+		return t('common.selectDateRange');
 	}
 
 	function parseStatusQuery(value: string): PurchaseOrderStatus[] {
@@ -277,7 +277,7 @@
 </script>
 
 <svelte:head>
-	<title>Purchase Orders | PointFlow</title>
+	<title>{t('procurement.purchaseOrders.title')} | {t('app.name')}</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
@@ -301,13 +301,13 @@
 					<SearchField
 						value={searchValue}
 						disabled={isLoading}
-						ariaLabel="Search purchase orders"
+						ariaLabel={t('procurement.purchaseOrders.searchAriaLabel')}
 						placeholder={t('procurement.purchaseOrders.searchPlaceholder')}
 						class="sm:max-w-sm"
 						onValueChange={updateSearchValue}
 					/>
 					<DataTableFacetedFilter
-						title="Status"
+						title={t('common.status')}
 						options={statusFilterOptions}
 						value={query.status}
 						disabled={isLoading}
@@ -323,7 +323,7 @@
 							!query.from && !query.to && 'text-muted-foreground'
 						)}
 						disabled={isLoading}
-						aria-label="Filter purchase orders by date range"
+						aria-label={`${t('common.selectDateRange')}: ${t('procurement.purchaseOrders.title')}`}
 					>
 						<CalendarIcon class="size-4" />
 						<span class="truncate">{getDateRangeLabel()}</span>
@@ -338,7 +338,7 @@
 							<div class="flex justify-end border-t bg-popover p-2">
 								<Button type="button" variant="ghost" size="sm" onclick={clearDateRangeFilter}>
 									<XIcon />
-									Clear
+									{t('common.clear')}
 								</Button>
 							</div>
 						{/if}

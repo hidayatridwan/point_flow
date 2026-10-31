@@ -66,8 +66,8 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
 		<Dialog.Header>
-			<Dialog.Title>Purchase Order Details</Dialog.Title>
-			<Dialog.Description>Supplier, status, and line item information.</Dialog.Description>
+			<Dialog.Title>{t('procurement.purchaseOrders.detail.title')}</Dialog.Title>
+			<Dialog.Description>{t('procurement.purchaseOrders.detail.desc')}</Dialog.Description>
 		</Dialog.Header>
 
 		{#if isLoading}
@@ -82,23 +82,53 @@
 		{:else if purchaseOrder}
 			<div class="grid gap-5">
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					<DetailField label="PO No" value={purchaseOrder.po_no} />
-					<DetailField label="Supplier" value={purchaseOrder.supplier_name} />
-					<DetailField label="Status">
+					<DetailField
+						label={t('procurement.purchaseOrders.colPoNo')}
+						value={purchaseOrder.po_no}
+					/>
+					<DetailField
+						label={t('procurement.purchaseOrders.supplier')}
+						value={purchaseOrder.supplier_name}
+					/>
+					<DetailField label={t('common.status')}>
 						<PurchaseOrderStatusBadge status={purchaseOrder.status} />
 					</DetailField>
-					<DetailField label="Order Date" value={formatDate(purchaseOrder.order_date)} />
-					<DetailField label="Expected Date" value={formatDate(purchaseOrder.expected_date)} />
-					<DetailField label="Subtotal" value={formatIdr(purchaseOrder.subtotal_amount)} />
+					<DetailField
+						label={t('procurement.purchaseOrders.orderDate')}
+						value={formatDate(purchaseOrder.order_date)}
+					/>
+					<DetailField
+						label={t('procurement.purchaseOrders.expectedDate')}
+						value={formatDate(purchaseOrder.expected_date)}
+					/>
+					<DetailField
+						label={t('procurement.purchaseOrders.subtotal')}
+						value={formatIdr(purchaseOrder.subtotal_amount)}
+					/>
 				</div>
 
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailField label="Notes" value={purchaseOrder.notes || '-'} />
-					<DetailField label="Cancel Reason" value={purchaseOrder.cancel_reason || '-'} />
-					<DetailField label="Ordered At" value={formatDateTime(purchaseOrder.ordered_at)} />
-					<DetailField label="Cancelled At" value={formatDateTime(purchaseOrder.cancelled_at)} />
-					<DetailField label="Created At" value={formatDateTime(purchaseOrder.created_at)} />
-					<DetailField label="Updated At" value={formatDateTime(purchaseOrder.updated_at)} />
+					<DetailField label={t('common.notes')} value={purchaseOrder.notes || '-'} />
+					<DetailField
+						label={t('procurement.purchaseOrders.cancelReason')}
+						value={purchaseOrder.cancel_reason || '-'}
+					/>
+					<DetailField
+						label={t('procurement.purchaseOrders.detail.orderedAt')}
+						value={formatDateTime(purchaseOrder.ordered_at)}
+					/>
+					<DetailField
+						label={t('common.cancelledAt')}
+						value={formatDateTime(purchaseOrder.cancelled_at)}
+					/>
+					<DetailField
+						label={t('common.createdAt')}
+						value={formatDateTime(purchaseOrder.created_at)}
+					/>
+					<DetailField
+						label={t('common.updatedAt')}
+						value={formatDateTime(purchaseOrder.updated_at)}
+					/>
 				</div>
 
 				<div class="overflow-hidden rounded-md border">
@@ -106,14 +136,14 @@
 						<Table.Root>
 							<Table.Header>
 								<Table.Row>
-									<Table.Head>Product</Table.Head>
-									<Table.Head>SKU</Table.Head>
-									<Table.Head>Unit</Table.Head>
-									<Table.Head>Ordered</Table.Head>
-									<Table.Head>Received</Table.Head>
-									<Table.Head>Remaining</Table.Head>
-									<Table.Head>Unit Cost</Table.Head>
-									<Table.Head>Line Total</Table.Head>
+									<Table.Head>{t('procurement.purchaseOrders.detail.colProduct')}</Table.Head>
+									<Table.Head>{t('procurement.purchaseOrders.detail.colSku')}</Table.Head>
+									<Table.Head>{t('procurement.purchaseOrders.detail.colUnit')}</Table.Head>
+									<Table.Head>{t('procurement.purchaseOrders.detail.colOrdered')}</Table.Head>
+									<Table.Head>{t('procurement.purchaseOrders.detail.colReceived')}</Table.Head>
+									<Table.Head>{t('procurement.purchaseOrders.detail.colRemaining')}</Table.Head>
+									<Table.Head>{t('procurement.purchaseOrders.detail.colUnitCost')}</Table.Head>
+									<Table.Head>{t('procurement.purchaseOrders.detail.colLineTotal')}</Table.Head>
 								</Table.Row>
 							</Table.Header>
 							<Table.Body>

@@ -91,7 +91,7 @@
 			});
 			await onCreated?.(createdSupplier);
 			toast.success(t('master.suppliers.createdToast'), {
-				description: `${createdSupplier.name} was added.`
+				description: `${createdSupplier.name} ${t('common.wasAdded')}`
 			});
 			open = false;
 		} catch (error) {
@@ -117,9 +117,9 @@
 	<Dialog.Content class="p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Add Supplier</Dialog.Title>
+				<Dialog.Title>{t('master.suppliers.addTitle')}</Dialog.Title>
 				<Dialog.Description>
-					Create a supplier contact for purchase orders and goods receipts.
+					{t('master.suppliers.addDesc')}
 				</Dialog.Description>
 			</Dialog.Header>
 
@@ -127,7 +127,7 @@
 				<Form.Field {form} name="name">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Name</Form.Label>
+							<Form.Label>{t('common.name')}</Form.Label>
 							<Input
 								{...props}
 								placeholder="PT Sumber Barang"
@@ -143,7 +143,7 @@
 					<Form.Field {form} name="contact_name">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label>Contact Name</Form.Label>
+								<Form.Label>{t('master.suppliers.contactName')}</Form.Label>
 								<Input
 									{...props}
 									placeholder="Budi"
@@ -158,7 +158,7 @@
 					<Form.Field {form} name="phone">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label>Phone</Form.Label>
+								<Form.Label>{t('common.phone')}</Form.Label>
 								<Input
 									{...props}
 									placeholder="08123456789"
@@ -174,7 +174,7 @@
 				<Form.Field {form} name="email">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Email</Form.Label>
+							<Form.Label>{t('common.email')}</Form.Label>
 							<Input
 								{...props}
 								type="email"
@@ -190,10 +190,10 @@
 				<Form.Field {form} name="address">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Address</Form.Label>
+							<Form.Label>{t('common.address')}</Form.Label>
 							<Textarea
 								{...props}
-								placeholder="Enter supplier address"
+								placeholder={t('master.suppliers.addressPlaceholder')}
 								disabled={isSubmitting}
 								bind:value={$formData.address}
 							/>
@@ -205,7 +205,7 @@
 				<Form.Field {form} name="is_active">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Status</Form.Label>
+							<Form.Label>{t('common.status')}</Form.Label>
 							<Select.Root
 								allowDeselect={false}
 								type="single"
@@ -218,11 +218,15 @@
 								}}
 							>
 								<Select.Trigger {...props} class="w-full">
-									<Select.Value placeholder="Select status" />
+									<Select.Value placeholder={t('common.selectStatus')} />
 								</Select.Trigger>
 								<Select.Content>
-									<Select.Item value="true" label="Active">Active</Select.Item>
-									<Select.Item value="false" label="Inactive">Inactive</Select.Item>
+									<Select.Item value="true" label={t('status.active')}
+										>{t('status.active')}</Select.Item
+									>
+									<Select.Item value="false" label={t('status.inactive')}
+										>{t('status.inactive')}</Select.Item
+									>
 								</Select.Content>
 							</Select.Root>
 						{/snippet}

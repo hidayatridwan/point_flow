@@ -11,10 +11,11 @@
 	import { formatDateTime } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
 	import ProductActions from './product-actions.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		products,
-		emptyMessage = 'No products.',
+		emptyMessage = t('master.products.emptyDefault'),
 		isLoading = false,
 		onProductDeleted,
 		onProductUpdated
@@ -31,28 +32,28 @@
 
 	const columns = [
 		columnHelper.accessor('name', {
-			header: 'Name',
+			header: () => t('master.products.colName'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('category_name', {
-			header: 'Category',
+			header: () => t('master.products.colCategory'),
 			cell: (info) => info.getValue() || '-'
 		}),
 		columnHelper.accessor('is_active', {
-			header: 'Status',
+			header: () => t('master.products.colStatus'),
 			cell: (info) => renderComponent(StatusBadge, { active: info.getValue() })
 		}),
 		columnHelper.accessor('created_at', {
-			header: 'Created At',
+			header: () => t('master.products.colCreatedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.accessor('updated_at', {
-			header: 'Updated At',
+			header: () => t('master.products.colUpdatedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.display({
 			id: 'actions',
-			header: () => 'Action',
+			header: () => t('master.products.colAction'),
 			cell: (info) =>
 				renderComponent(ProductActions, {
 					product: info.row.original,

@@ -11,10 +11,11 @@
 	import { formatDateTime, formatIdr, formatNumber } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
 	import ProductSkuActions from './product-sku-actions.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		productSkus,
-		emptyMessage = 'No product SKUs.',
+		emptyMessage = t('master.productSkus.emptyDefault'),
 		isLoading = false,
 		onProductSkuDeleted,
 		onProductSkuUpdated
@@ -31,37 +32,37 @@
 
 	const columns = [
 		columnHelper.accessor('product_name', {
-			header: 'Product',
+			header: () => t('master.productSkus.product'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('sku', {
-			header: 'SKU',
+			header: () => t('master.productSkus.sku'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('unit_name', {
-			header: 'Unit',
+			header: () => t('master.productSkus.unit'),
 			cell: (info) => `${info.row.original.unit_name} (${info.row.original.unit_code})`
 		}),
 		columnHelper.accessor('selling_price', {
-			header: 'Selling Price',
+			header: () => t('master.productSkus.sellingPrice'),
 			cell: (info) => formatIdr(info.getValue())
 		}),
 		columnHelper.accessor('stock', {
-			header: 'Stock',
+			header: () => t('master.productSkus.stock'),
 			cell: (info) =>
 				`${formatNumber(info.getValue())} / min ${formatNumber(info.row.original.minimum_stock)}`
 		}),
 		columnHelper.accessor('is_active', {
-			header: 'Status',
+			header: () => t('common.status'),
 			cell: (info) => renderComponent(StatusBadge, { active: info.getValue() })
 		}),
 		columnHelper.accessor('updated_at', {
-			header: 'Updated At',
+			header: () => t('common.updatedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.display({
 			id: 'actions',
-			header: () => 'Action',
+			header: () => t('common.action'),
 			cell: (info) =>
 				renderComponent(ProductSkuActions, {
 					productSku: info.row.original,

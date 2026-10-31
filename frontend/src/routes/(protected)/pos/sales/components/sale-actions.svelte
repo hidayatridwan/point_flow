@@ -7,6 +7,7 @@
 	import type { Sale } from '$lib/api/sales.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import SaleCancelDialog from './sale-cancel-dialog.svelte';
 	import SaleDetailDialog from './sale-detail-dialog.svelte';
 	import SaleReceiptDialog from './sale-receipt-dialog.svelte';
@@ -55,8 +56,8 @@
 					variant="ghost"
 					size="icon-sm"
 					class="size-8"
-					aria-label={`Open actions for ${sale.transaction_no}`}
-					title="Actions"
+					aria-label={t('common.openActions').replace('{docNo}', sale.transaction_no)}
+					title={t('common.action')}
 				>
 					<EllipsisIcon />
 				</Button>
@@ -65,24 +66,24 @@
 		<DropdownMenu.Content align="end" class="min-w-44">
 			<DropdownMenu.Item onSelect={openDetail}>
 				<EyeIcon />
-				Detail
+				{t('common.detail')}
 			</DropdownMenu.Item>
 			{#if canPrint}
 				<DropdownMenu.Item onSelect={openReceipt}>
 					<PrinterIcon />
-					Print receipt
+					{t('pos.sales.printReceipt')}
 				</DropdownMenu.Item>
 			{/if}
 			{#if canReturn}
 				<DropdownMenu.Item onSelect={openReturn}>
 					<Undo2Icon />
-					Return / refund
+					{t('pos.sales.createReturn')}
 				</DropdownMenu.Item>
 			{/if}
 			{#if canCancel}
 				<DropdownMenu.Item variant="destructive" onSelect={openCancel}>
 					<BanIcon />
-					Cancel sale
+					{t('pos.sales.cancel.title')}
 				</DropdownMenu.Item>
 			{/if}
 		</DropdownMenu.Content>

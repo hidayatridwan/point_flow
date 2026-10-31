@@ -167,7 +167,7 @@
 			});
 			onUpdated?.(updatedProductSku);
 			toast.success(t('master.productSkus.updatedToast'), {
-				description: `Changes for ${updatedProductSku.sku} have been saved.`
+				description: t('common.updatedToastDesc').replace('{name}', updatedProductSku.sku)
 			});
 			open = false;
 		} catch (error) {
@@ -212,14 +212,16 @@
 			<Drawer.Header
 				class="shrink-0 border-b px-6 py-5 text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left"
 			>
-				<Drawer.Title>Edit Product SKU</Drawer.Title>
-				<Drawer.Description>Update SKU details, pricing, and stock thresholds.</Drawer.Description>
+				<Drawer.Title>{t('master.productSkus.editDialogTitle')}</Drawer.Title>
+				<Drawer.Description>{t('master.productSkus.editDialogDesc')}</Drawer.Description>
 			</Drawer.Header>
 
 			<div class="flex-1 overflow-y-auto px-6 py-5">
 				<div class="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
 					<div class="space-y-2">
-						<Label for={productNameInputId} class="whitespace-nowrap">Product</Label>
+						<Label for={productNameInputId} class="whitespace-nowrap"
+							>{t('master.productSkus.product')}</Label
+						>
 						<Input
 							id={productNameInputId}
 							value={productSku.product_name}
@@ -231,7 +233,7 @@
 					<Form.Field {form} name="unit_id" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">Unit</Form.Label>
+								<Form.Label class="whitespace-nowrap">{t('master.productSkus.unit')}</Form.Label>
 								<Select.Root
 									allowDeselect={false}
 									type="single"
@@ -262,7 +264,7 @@
 					<Form.Field {form} name="sku" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">SKU</Form.Label>
+								<Form.Label class="whitespace-nowrap">{t('master.productSkus.sku')}</Form.Label>
 								<Input
 									{...props}
 									placeholder="WTR-001-PCS"
@@ -277,7 +279,7 @@
 					<Form.Field {form} name="barcode" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">Barcode</Form.Label>
+								<Form.Label class="whitespace-nowrap">{t('master.productSkus.barcode')}</Form.Label>
 								<Input
 									{...props}
 									placeholder="8990000000011"
@@ -292,7 +294,9 @@
 					<Form.Field {form} name="contents_qty" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">Contents Qty</Form.Label>
+								<Form.Label class="whitespace-nowrap"
+									>{t('master.productSkus.contentsQty')}</Form.Label
+								>
 								<Input
 									{...props}
 									type="number"
@@ -309,7 +313,7 @@
 					<Form.Field {form} name="stock" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">Stock</Form.Label>
+								<Form.Label class="whitespace-nowrap">{t('master.productSkus.stock')}</Form.Label>
 								<Input
 									{...props}
 									type="number"
@@ -326,7 +330,9 @@
 					<Form.Field {form} name="minimum_stock" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">Minimum Stock</Form.Label>
+								<Form.Label class="whitespace-nowrap"
+									>{t('master.productSkus.minimumStock')}</Form.Label
+								>
 								<Input
 									{...props}
 									type="number"
@@ -343,7 +349,7 @@
 					<Form.Field {form} name="is_active" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">Status</Form.Label>
+								<Form.Label class="whitespace-nowrap">{t('common.status')}</Form.Label>
 								<Select.Root
 									allowDeselect={false}
 									type="single"
@@ -359,8 +365,12 @@
 										<Select.Value placeholder={t('common.selectStatus')} />
 									</Select.Trigger>
 									<Select.Content>
-										<Select.Item value="true" label="Active">{t('status.active')}</Select.Item>
-										<Select.Item value="false" label="Inactive">{t('status.inactive')}</Select.Item>
+										<Select.Item value="true" label={t('status.active')}
+											>{t('status.active')}</Select.Item
+										>
+										<Select.Item value="false" label={t('status.inactive')}
+											>{t('status.inactive')}</Select.Item
+										>
 									</Select.Content>
 								</Select.Root>
 							{/snippet}
@@ -371,7 +381,9 @@
 					<Form.Field {form} name="purchase_price" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">Purchase Price</Form.Label>
+								<Form.Label class="whitespace-nowrap"
+									>{t('master.productSkus.purchasePrice')}</Form.Label
+								>
 								<Input
 									{...props}
 									type="number"
@@ -388,7 +400,9 @@
 					<Form.Field {form} name="selling_price" class="space-y-2">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label class="whitespace-nowrap">Selling Price</Form.Label>
+								<Form.Label class="whitespace-nowrap"
+									>{t('master.productSkus.sellingPrice')}</Form.Label
+								>
 								<Input
 									{...props}
 									type="number"
@@ -423,7 +437,7 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
+					{t('common.cancel')}
 				</Drawer.Close>
 				<Button type="submit" disabled={isSubmitting || isLoadingUnits}>
 					{#if isSubmitting}

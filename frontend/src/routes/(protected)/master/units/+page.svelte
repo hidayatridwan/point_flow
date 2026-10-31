@@ -169,7 +169,7 @@
 </script>
 
 <svelte:head>
-	<title>Units | PointFlow</title>
+	<title>{t('master.units.title')} | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

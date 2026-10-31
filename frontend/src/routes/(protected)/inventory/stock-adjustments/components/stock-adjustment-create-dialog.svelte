@@ -373,10 +373,8 @@
 			<Drawer.Header
 				class="shrink-0 border-b px-6 py-5 text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left"
 			>
-				<Drawer.Title>Add Stock Adjustment</Drawer.Title>
-				<Drawer.Description>
-					Create a draft adjustment to correct product SKU stock quantities.
-				</Drawer.Description>
+				<Drawer.Title>{t('inventory.stockAdjustments.addTitle')}</Drawer.Title>
+				<Drawer.Description>{t('inventory.stockAdjustments.addDesc')}</Drawer.Description>
 			</Drawer.Header>
 
 			<div class="flex-1 overflow-y-auto px-6 py-5">
@@ -384,7 +382,7 @@
 					<div class="grid grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2">
 						<div class="space-y-2">
 							<Label for="stock-adjustment-adjusted-date" class="whitespace-nowrap">
-								Adjusted Date
+								{t('inventory.stockAdjustments.adjustedDate')}
 							</Label>
 							<Popover.Root bind:open={isAdjustedDateOpen}>
 								<Popover.Trigger
@@ -417,10 +415,12 @@
 						</div>
 
 						<div class="space-y-2">
-							<Label for="stock-adjustment-reason" class="whitespace-nowrap">Reason</Label>
+							<Label for="stock-adjustment-reason" class="whitespace-nowrap"
+								>{t('inventory.stockAdjustments.reason')}</Label
+							>
 							<Input
 								id="stock-adjustment-reason"
-								placeholder="Cycle count correction"
+								placeholder={t('inventory.stockAdjustments.reasonPlaceholder')}
 								disabled={isSubmitting}
 								bind:value={formData.reason}
 							/>
@@ -430,10 +430,12 @@
 						</div>
 
 						<div class="space-y-2 md:col-span-2">
-							<Label for="stock-adjustment-notes" class="whitespace-nowrap">Notes</Label>
+							<Label for="stock-adjustment-notes" class="whitespace-nowrap"
+								>{t('common.notes')}</Label
+							>
 							<Textarea
 								id="stock-adjustment-notes"
-								placeholder="Adjustment notes"
+								placeholder={t('inventory.stockAdjustments.notesPlaceholder')}
 								class="min-h-9 resize-none"
 								disabled={isSubmitting}
 								bind:value={formData.notes}
@@ -447,9 +449,11 @@
 					<div class="flex flex-col gap-3">
 						<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 							<div>
-								<h3 class="text-sm font-medium">Adjusted Items</h3>
+								<h3 class="text-sm font-medium">
+									{t('inventory.stockAdjustments.adjustedItems')}
+								</h3>
 								<p class="text-sm text-muted-foreground">
-									Select product SKUs and set the corrected stock quantity.
+									{t('inventory.stockAdjustments.adjustedItemsDesc')}
 								</p>
 							</div>
 							<Button
@@ -460,7 +464,7 @@
 								onclick={addLineItem}
 							>
 								<PlusIcon />
-								Add item
+								{t('common.addItem')}
 							</Button>
 						</div>
 
@@ -478,7 +482,7 @@
 										<div>
 											<p class="text-sm font-medium">Item {index + 1}</p>
 											<p class="text-xs text-muted-foreground">
-												{item.product_name || 'Select product SKU'}
+												{item.product_name || t('common.selectProductSku')}
 											</p>
 										</div>
 										<Button
@@ -488,10 +492,10 @@
 											class="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
 											disabled={isSubmitting || formData.items.length === 1}
 											onclick={() => removeLineItem(item.client_id)}
-											title="Remove item"
+											title={t('common.removeItem')}
 										>
 											<TrashIcon />
-											<span class="sr-only">Remove item</span>
+											<span class="sr-only">{t('common.removeItem')}</span>
 										</Button>
 									</div>
 
@@ -501,7 +505,7 @@
 												for={`stock-adjustment-item-sku-${item.client_id}`}
 												class="whitespace-nowrap"
 											>
-												Product SKU
+												{t('inventory.stockAdjustments.productSku')}
 											</Label>
 											<Select.Root
 												allowDeselect={false}
@@ -518,7 +522,7 @@
 													id={`stock-adjustment-item-sku-${item.client_id}`}
 													class="w-full"
 												>
-													<Select.Value placeholder="Select product SKU" />
+													<Select.Value placeholder={t('common.selectProductSku')} />
 												</Select.Trigger>
 												<Select.Content>
 													{#each productSkus.filter( (productSku) => isProductSkuAvailableForItem(productSku.id, item.client_id) ) as productSku (productSku.id)}
@@ -539,7 +543,9 @@
 										</div>
 
 										<div class="space-y-1 rounded-md bg-background p-3">
-											<p class="text-xs text-muted-foreground">Current Stock</p>
+											<p class="text-xs text-muted-foreground">
+												{t('inventory.stockAdjustments.currentStock')}
+											</p>
 											<p class="text-sm font-medium">
 												{formatNumber(item.stock_before)}
 												{item.unit}
@@ -551,7 +557,7 @@
 												for={`stock-adjustment-item-stock-after-${item.client_id}`}
 												class="whitespace-nowrap"
 											>
-												Stock After
+												{t('inventory.stockAdjustments.stockAfter')}
 											</Label>
 											<Input
 												id={`stock-adjustment-item-stock-after-${item.client_id}`}
@@ -562,7 +568,8 @@
 												bind:value={item.stock_after}
 											/>
 											<p class={cn('text-xs', getDeltaClass(getItemDelta(item)))}>
-												Delta {formatSignedNumber(getItemDelta(item))}
+												{t('inventory.stockAdjustments.detail.colDelta')}
+												{formatSignedNumber(getItemDelta(item))}
 											</p>
 											{#if getFieldError(`items.${index}.stock_after`)}
 												<p class="text-sm text-destructive">
@@ -576,11 +583,11 @@
 												for={`stock-adjustment-item-notes-${item.client_id}`}
 												class="whitespace-nowrap"
 											>
-												Item Notes
+												{t('inventory.stockAdjustments.itemNotes')}
 											</Label>
 											<Textarea
 												id={`stock-adjustment-item-notes-${item.client_id}`}
-												placeholder="Optional item notes"
+												placeholder={t('common.optionalNotes')}
 												class="min-h-9 resize-none"
 												disabled={isSubmitting}
 												bind:value={item.notes}
@@ -599,7 +606,9 @@
 
 					<div class="flex justify-end border-t pt-4">
 						<div class="text-right">
-							<p class="text-sm text-muted-foreground">Total Stock Delta</p>
+							<p class="text-sm text-muted-foreground">
+								{t('inventory.stockAdjustments.totalStockDelta')}
+							</p>
 							<p class={cn('text-lg font-semibold', getDeltaClass(totalDelta))}>
 								{formatSignedNumber(totalDelta)}
 							</p>
@@ -608,11 +617,17 @@
 
 					<div class="grid gap-3">
 						{#if optionsErrorMessage}
-							<ErrorAlert title="Failed to load options." message={optionsErrorMessage} />
+							<ErrorAlert
+								title={t('inventory.stockAdjustments.errorLoadOptions')}
+								message={optionsErrorMessage}
+							/>
 						{/if}
 
 						{#if errorMessage}
-							<ErrorAlert title="Failed to create stock adjustment." message={errorMessage} />
+							<ErrorAlert
+								title={t('inventory.stockAdjustments.errorCreate')}
+								message={errorMessage}
+							/>
 						{/if}
 					</div>
 				</div>
@@ -624,7 +639,7 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
+					{t('common.cancel')}
 				</Drawer.Close>
 				<Button type="submit" disabled={isSubmitting || isLoadingOptions}>
 					{#if isSubmitting}

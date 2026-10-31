@@ -9,6 +9,7 @@
 	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
 	import SheetOverlay from './sheet-overlay.svelte';
 	import SheetPortal from './sheet-portal.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import type { Snippet } from 'svelte';
 	import type { ComponentProps } from 'svelte';
 
@@ -46,7 +47,7 @@
 				{#snippet child({ props })}
 					<Button variant="ghost" class="absolute top-3 right-3" size="icon-sm" {...props}>
 						<XIcon />
-						<span class="sr-only">Close</span>
+						<span class="sr-only">{t('common.close')}</span>
 					</Button>
 				{/snippet}
 			</SheetPrimitive.Close>

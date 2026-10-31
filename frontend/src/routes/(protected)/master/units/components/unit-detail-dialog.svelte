@@ -57,8 +57,8 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="sm:max-w-lg">
 		<Dialog.Header>
-			<Dialog.Title>Unit Details</Dialog.Title>
-			<Dialog.Description>Latest information from the unit record.</Dialog.Description>
+			<Dialog.Title>{t('master.units.detailDialogTitle')}</Dialog.Title>
+			<Dialog.Description>{t('master.units.detailDialogDesc')}</Dialog.Description>
 		</Dialog.Header>
 
 		{#if isLoading}
@@ -73,17 +73,21 @@
 		{:else if unit}
 			<div class="grid gap-4">
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailField label="Code" value={unit.code} />
-					<DetailField label="Name" value={unit.name} />
-					<DetailField label="Decimal Quantity">
-						<StatusBadge active={unit.allow_decimal} activeLabel="Allowed" inactiveLabel="Whole" />
+					<DetailField label={t('master.units.code')} value={unit.code} />
+					<DetailField label={t('common.name')} value={unit.name} />
+					<DetailField label={t('master.units.decimalQty')}>
+						<StatusBadge
+							active={unit.allow_decimal}
+							activeLabel={t('master.units.decimalAllowedLabel')}
+							inactiveLabel={t('master.units.decimalWholeLabel')}
+						/>
 					</DetailField>
-					<DetailField label="Status">
+					<DetailField label={t('common.status')}>
 						<StatusBadge active={unit.is_active} />
 					</DetailField>
-					<DetailField label="ID" value={unit.id} />
-					<DetailField label="Created At" value={formatDateTime(unit.created_at)} />
-					<DetailField label="Updated At" value={formatDateTime(unit.updated_at)} />
+					<DetailField label={t('common.id')} value={unit.id} />
+					<DetailField label={t('common.createdAt')} value={formatDateTime(unit.created_at)} />
+					<DetailField label={t('common.updatedAt')} value={formatDateTime(unit.updated_at)} />
 				</div>
 			</div>
 		{/if}

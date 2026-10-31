@@ -44,7 +44,7 @@
 			});
 			await onCancelled?.(cancelledGoodsReceipt);
 			toast.success(t('procurement.goodsReceipts.cancel.cancelledToast'), {
-				description: `${cancelledGoodsReceipt.gr_no} was cancelled.`
+				description: `${cancelledGoodsReceipt.gr_no} ${t('common.wasCancelled')}`
 			});
 			open = false;
 		} catch (error) {
@@ -70,7 +70,7 @@
 	<Dialog.Content class="p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Cancel Goods Receipt</Dialog.Title>
+				<Dialog.Title>{t('procurement.goodsReceipts.cancel.title')}</Dialog.Title>
 				<Dialog.Description>
 					Cancel {goodsReceipt.gr_no}. Add a reason if this needs audit context.
 				</Dialog.Description>
@@ -79,7 +79,7 @@
 			<div class="grid gap-4 px-6">
 				<div class="space-y-2">
 					<label for={`goods-receipt-cancel-reason-${goodsReceipt.id}`} class="text-sm font-medium">
-						Cancel Reason
+						{t('procurement.goodsReceipts.cancel.cancelReason')}
 					</label>
 					<Textarea
 						id={`goods-receipt-cancel-reason-${goodsReceipt.id}`}
@@ -103,7 +103,7 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Keep receipt
+					{t('procurement.goodsReceipts.cancel.keepReceipt')}
 				</Dialog.Close>
 				<Button type="submit" variant="destructive" disabled={isSubmitting}>
 					{#if isSubmitting}

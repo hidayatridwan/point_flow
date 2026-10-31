@@ -118,7 +118,7 @@
 </script>
 
 <svelte:head>
-	<title>Current User | PointFlow</title>
+	<title>{t('account.title')} | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
@@ -200,7 +200,7 @@
 
 			<section
 				class="rounded-md border bg-background p-5 lg:col-span-2"
-				aria-label="Change password"
+				aria-label={t('account.changePassword')}
 			>
 				<form class="grid gap-5" onsubmit={handleChangePassword}>
 					<div class="flex items-center gap-3">

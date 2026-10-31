@@ -57,10 +57,9 @@
 <AlertDialog.Root bind:open>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>Post Goods Receipt?</AlertDialog.Title>
+			<AlertDialog.Title>{t('procurement.goodsReceipts.post.title')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				This action will post <span class="font-medium text-foreground">{goodsReceipt.gr_no}</span>
-				and increase product SKU stock from the received quantities.
+				{t('procurement.goodsReceipts.post.desc').replace('{grNo}', goodsReceipt.gr_no)}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 
@@ -69,7 +68,7 @@
 		{/if}
 
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel disabled={isSubmitting}>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel disabled={isSubmitting}>{t('common.cancel')}</AlertDialog.Cancel>
 			<AlertDialog.Action disabled={isSubmitting} onclick={handlePost}>
 				{#if isSubmitting}
 					<Spinner />

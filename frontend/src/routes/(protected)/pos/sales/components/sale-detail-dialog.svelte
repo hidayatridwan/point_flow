@@ -58,8 +58,8 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
 		<Dialog.Header>
-			<Dialog.Title>Sale Details</Dialog.Title>
-			<Dialog.Description>Transaction payment and line item information.</Dialog.Description>
+			<Dialog.Title>{t('pos.sales.detail.title')}</Dialog.Title>
+			<Dialog.Description>{t('pos.sales.detail.desc')}</Dialog.Description>
 		</Dialog.Header>
 
 		{#if isLoading}
@@ -110,12 +110,12 @@
 						<Table.Root>
 							<Table.Header>
 								<Table.Row>
-									<Table.Head>Product</Table.Head>
-									<Table.Head>SKU</Table.Head>
-									<Table.Head>Unit</Table.Head>
-									<Table.Head>Qty</Table.Head>
-									<Table.Head>Unit Price</Table.Head>
-									<Table.Head>Line Total</Table.Head>
+									<Table.Head>{t('pos.sales.detail.colProduct')}</Table.Head>
+									<Table.Head>{t('pos.sales.detail.colSku')}</Table.Head>
+									<Table.Head>{t('pos.sales.detail.colUnit')}</Table.Head>
+									<Table.Head>{t('pos.sales.detail.colQty')}</Table.Head>
+									<Table.Head>{t('pos.sales.detail.colUnitPrice')}</Table.Head>
+									<Table.Head>{t('pos.sales.detail.colLineTotal')}</Table.Head>
 								</Table.Row>
 							</Table.Header>
 							<Table.Body>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { StockReportItem } from '$lib/api/stock-report.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import { Badge, type BadgeVariant } from '$lib/components/ui/badge/index.js';
 
 	let { item }: { item: StockReportItem } = $props();
@@ -8,14 +9,14 @@
 
 	function getStockStatus(item: StockReportItem): { label: string; tone: BadgeVariant } {
 		if (!item.is_active) {
-			return { label: 'Inactive', tone: 'ghost' };
+			return { label: t('inventory.stockReport.statusInactive'), tone: 'ghost' };
 		}
 
 		if (item.is_low_stock) {
-			return { label: 'Low Stock', tone: 'destructive' };
+			return { label: t('inventory.stockReport.statusLowStock'), tone: 'destructive' };
 		}
 
-		return { label: 'In Stock', tone: 'default' };
+		return { label: t('inventory.stockReport.statusInStock'), tone: 'default' };
 	}
 </script>
 

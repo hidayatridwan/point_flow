@@ -57,10 +57,9 @@
 <AlertDialog.Root bind:open>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>Order Purchase Order?</AlertDialog.Title>
+			<AlertDialog.Title>{t('procurement.purchaseOrders.order.title')}</AlertDialog.Title>
 			<AlertDialog.Description>
-				This action will mark <span class="font-medium text-foreground">{purchaseOrder.po_no}</span>
-				as ordered. Ordered purchase orders can be used for goods receipts.
+				{t('procurement.purchaseOrders.order.desc').replace('{poNo}', purchaseOrder.po_no)}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 
@@ -72,7 +71,7 @@
 		{/if}
 
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel disabled={isSubmitting}>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel disabled={isSubmitting}>{t('common.cancel')}</AlertDialog.Cancel>
 			<AlertDialog.Action disabled={isSubmitting} onclick={handleOrder}>
 				{#if isSubmitting}
 					<Spinner />

@@ -176,7 +176,7 @@
 </script>
 
 <svelte:head>
-	<title>Roles | PointFlow</title>
+	<title>{t('config.roles.title')} | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

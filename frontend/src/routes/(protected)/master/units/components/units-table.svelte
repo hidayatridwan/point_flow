@@ -11,10 +11,11 @@
 	import { formatDateTime } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
 	import UnitActions from './unit-actions.svelte';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		units,
-		emptyMessage = 'No units.',
+		emptyMessage = t('master.units.emptyDefault'),
 		isLoading = false,
 		onUnitDeleted,
 		onUnitUpdated
@@ -31,33 +32,33 @@
 
 	const columns = [
 		columnHelper.accessor('code', {
-			header: 'Code',
+			header: () => t('master.units.code'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('name', {
-			header: 'Name',
+			header: () => t('common.name'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('allow_decimal', {
-			header: 'Decimal',
+			header: () => t('master.units.decimalQty'),
 			cell: (info) =>
 				renderComponent(StatusBadge, {
 					active: info.getValue(),
-					activeLabel: 'Allowed',
-					inactiveLabel: 'Whole'
+					activeLabel: t('master.units.decimalAllowedLabel'),
+					inactiveLabel: t('master.units.decimalWholeLabel')
 				})
 		}),
 		columnHelper.accessor('is_active', {
-			header: 'Status',
+			header: () => t('common.status'),
 			cell: (info) => renderComponent(StatusBadge, { active: info.getValue() })
 		}),
 		columnHelper.accessor('updated_at', {
-			header: 'Updated At',
+			header: () => t('common.updatedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		}),
 		columnHelper.display({
 			id: 'actions',
-			header: () => 'Action',
+			header: () => t('common.action'),
 			cell: (info) =>
 				renderComponent(UnitActions, {
 					unit: info.row.original,

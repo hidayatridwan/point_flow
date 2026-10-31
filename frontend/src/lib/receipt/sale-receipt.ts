@@ -1,4 +1,5 @@
 import type { SaleDetail, SaleItem } from '$lib/api/sales.js';
+import { getLocale, t } from '$lib/i18n/locale.svelte.js';
 
 const idrFormatter = new Intl.NumberFormat('id-ID', {
 	style: 'currency',
@@ -20,7 +21,7 @@ export function printSaleReceipt(sale: SaleDetail) {
 
 	const printWindow = window.open('', '_blank', 'popup,width=420,height=720');
 	if (!printWindow) {
-		throw new Error('Unable to open print window. Allow pop-ups and try again.');
+		throw new Error(t('pos.sales.receipt.printBlocked'));
 	}
 
 	printWindow.document.open();
@@ -36,10 +37,10 @@ function buildSaleReceiptHtml(sale: SaleDetail) {
 	const itemRows = sale.items.map(buildItemRow).join('');
 
 	return `<!doctype html>
-<html lang="id">
+<html lang="${getLocale()}">
 <head>
 	<meta charset="utf-8" />
-	<title>${escapeHtml(sale.transaction_no)} Receipt</title>
+	<title>${escapeHtml(sale.transaction_no)} ${escapeHtml(t('pos.sales.receipt.receiptLabel'))}</title>
 	<style>
 		@page {
 			size: 80mm auto;
@@ -131,17 +132,17 @@ function buildSaleReceiptHtml(sale: SaleDetail) {
 	<main class="receipt">
 		<section class="center">
 			<div class="store-name">POS SYSTEM</div>
-			<div class="muted">Receipt</div>
+			<div class="muted">${escapeHtml(t('pos.sales.receipt.receiptLabel'))}</div>
 		</section>
 
 		<hr class="divider" />
 
 		<section>
-			<div class="row"><span>No</span><span class="value">${escapeHtml(sale.transaction_no)}</span></div>
-			<div class="row"><span>Date</span><span class="value">${escapeHtml(formatDateTime(sale.sold_at))}</span></div>
-			<div class="row"><span>Cashier</span><span class="value">${escapeHtml(sale.cashier_name)}</span></div>
-			<div class="row"><span>Register</span><span class="value">${escapeHtml(sale.cash_register_code ?? '-')}</span></div>
-			<div class="row"><span>Status</span><span class="value">${escapeHtml(formatStatus(sale.status))}</span></div>
+			<div class="row"><span>${escapeHtml(t('pos.sales.receipt.no'))}</span><span class="value">${escapeHtml(sale.transaction_no)}</span></div>
+			<div class="row"><span>${escapeHtml(t('pos.sales.receipt.date'))}</span><span class="value">${escapeHtml(formatDateTime(sale.sold_at))}</span></div>
+			<div class="row"><span>${escapeHtml(t('pos.sales.receipt.cashier'))}</span><span class="value">${escapeHtml(sale.cashier_name)}</span></div>
+			<div class="row"><span>${escapeHtml(t('pos.sales.receipt.register'))}</span><span class="value">${escapeHtml(sale.cash_register_code ?? '-')}</span></div>
+			<div class="row"><span>${escapeHtml(t('common.status'))}</span><span class="value">${escapeHtml(formatStatus(sale.status))}</span></div>
 		</section>
 
 		<hr class="divider" />
@@ -153,19 +154,19 @@ function buildSaleReceiptHtml(sale: SaleDetail) {
 		<hr class="divider" />
 
 		<section>
-			<div class="row"><span>Subtotal</span><span class="value">${escapeHtml(formatIdr(sale.subtotal_amount))}</span></div>
-			<div class="row total"><span>Total</span><span class="value">${escapeHtml(formatIdr(sale.total_amount))}</span></div>
-			<div class="row"><span>Paid</span><span class="value">${escapeHtml(formatIdr(sale.paid_amount))}</span></div>
-			<div class="row"><span>Change</span><span class="value">${escapeHtml(formatIdr(sale.change_amount))}</span></div>
+			<div class="row"><span>${escapeHtml(t('pos.sales.receipt.subtotal'))}</span><span class="value">${escapeHtml(formatIdr(sale.subtotal_amount))}</span></div>
+			<div class="row total"><span>${escapeHtml(t('pos.sales.receipt.total'))}</span><span class="value">${escapeHtml(formatIdr(sale.total_amount))}</span></div>
+			<div class="row"><span>${escapeHtml(t('pos.sales.receipt.paid'))}</span><span class="value">${escapeHtml(formatIdr(sale.paid_amount))}</span></div>
+			<div class="row"><span>${escapeHtml(t('pos.sales.receipt.change'))}</span><span class="value">${escapeHtml(formatIdr(sale.change_amount))}</span></div>
 		</section>
 
-		${sale.notes ? `<hr class="divider" /><section><div>Notes</div><div>${escapeHtml(sale.notes)}</div></section>` : ''}
+		${sale.notes ? `<hr class="divider" /><section><div>${escapeHtml(t('pos.sales.receipt.notes'))}</div><div>${escapeHtml(sale.notes)}</div></section>` : ''}
 
 		<hr class="divider" />
 
 		<section class="footer">
-			<div>Terima kasih</div>
-			<div class="muted">Barang yang sudah dibeli mengikuti kebijakan toko.</div>
+			<div>${escapeHtml(t('pos.sales.receipt.thanks'))}</div>
+			<div class="muted">${escapeHtml(t('pos.sales.receipt.policy'))}</div>
 		</section>
 	</main>
 </body>
@@ -201,7 +202,9 @@ function formatNumber(value: number | null | undefined) {
 }
 
 function formatStatus(status: string) {
-	return status.charAt(0).toUpperCase() + status.slice(1);
+	if (status === 'completed') return t('pos.sales.statusCompleted');
+	if (status === 'cancelled') return t('pos.sales.statusCancelled');
+	return status;
 }
 
 function escapeHtml(value: string) {

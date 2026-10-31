@@ -58,8 +58,8 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
 		<Dialog.Header>
-			<Dialog.Title>Goods Receipt Details</Dialog.Title>
-			<Dialog.Description>Purchase order, status, and received line items.</Dialog.Description>
+			<Dialog.Title>{t('procurement.goodsReceipts.detail.title')}</Dialog.Title>
+			<Dialog.Description>{t('procurement.goodsReceipts.detail.desc')}</Dialog.Description>
 		</Dialog.Header>
 
 		{#if isLoading}
@@ -74,21 +74,39 @@
 		{:else if goodsReceipt}
 			<div class="grid gap-5">
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					<DetailField label="GR No" value={goodsReceipt.gr_no} />
-					<DetailField label="PO No" value={goodsReceipt.po_no} />
-					<DetailField label="Status">
+					<DetailField label={t('procurement.goodsReceipts.colGrNo')} value={goodsReceipt.gr_no} />
+					<DetailField label={t('procurement.goodsReceipts.poNo')} value={goodsReceipt.po_no} />
+					<DetailField label={t('common.status')}>
 						<GoodsReceiptStatusBadge status={goodsReceipt.status} />
 					</DetailField>
-					<DetailField label="Received At" value={formatDateTime(goodsReceipt.received_at)} />
-					<DetailField label="Posted At" value={formatDateTime(goodsReceipt.posted_at)} />
-					<DetailField label="Cancelled At" value={formatDateTime(goodsReceipt.cancelled_at)} />
+					<DetailField
+						label={t('procurement.goodsReceipts.receivedDate')}
+						value={formatDateTime(goodsReceipt.received_at)}
+					/>
+					<DetailField
+						label={t('common.postedAt')}
+						value={formatDateTime(goodsReceipt.posted_at)}
+					/>
+					<DetailField
+						label={t('common.cancelledAt')}
+						value={formatDateTime(goodsReceipt.cancelled_at)}
+					/>
 				</div>
 
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailField label="Notes" value={goodsReceipt.notes || '-'} />
-					<DetailField label="Cancel Reason" value={goodsReceipt.cancel_reason || '-'} />
-					<DetailField label="Created At" value={formatDateTime(goodsReceipt.created_at)} />
-					<DetailField label="Updated At" value={formatDateTime(goodsReceipt.updated_at)} />
+					<DetailField label={t('common.notes')} value={goodsReceipt.notes || '-'} />
+					<DetailField
+						label={t('procurement.goodsReceipts.cancel.cancelReason')}
+						value={goodsReceipt.cancel_reason || '-'}
+					/>
+					<DetailField
+						label={t('common.createdAt')}
+						value={formatDateTime(goodsReceipt.created_at)}
+					/>
+					<DetailField
+						label={t('common.updatedAt')}
+						value={formatDateTime(goodsReceipt.updated_at)}
+					/>
 				</div>
 
 				<div class="overflow-hidden rounded-md border">
@@ -96,12 +114,12 @@
 						<Table.Root>
 							<Table.Header>
 								<Table.Row>
-									<Table.Head>Product</Table.Head>
-									<Table.Head>SKU</Table.Head>
-									<Table.Head>Unit</Table.Head>
-									<Table.Head>Received</Table.Head>
-									<Table.Head>Unit Cost</Table.Head>
-									<Table.Head>Line Total</Table.Head>
+									<Table.Head>{t('procurement.goodsReceipts.detail.colProduct')}</Table.Head>
+									<Table.Head>{t('procurement.goodsReceipts.detail.colSku')}</Table.Head>
+									<Table.Head>{t('procurement.goodsReceipts.detail.colUnit')}</Table.Head>
+									<Table.Head>{t('procurement.goodsReceipts.detail.colReceived')}</Table.Head>
+									<Table.Head>{t('procurement.goodsReceipts.detail.colUnitCost')}</Table.Head>
+									<Table.Head>{t('procurement.goodsReceipts.detail.colLineTotal')}</Table.Head>
 								</Table.Row>
 							</Table.Header>
 							<Table.Body>

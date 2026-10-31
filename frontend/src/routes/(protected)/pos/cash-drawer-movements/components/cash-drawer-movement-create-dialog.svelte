@@ -131,9 +131,12 @@
 	}
 
 	function getValidationError() {
-		if (!activeSession) return 'Open a register session before creating a cash movement.';
+		if (!activeSession) return t('pos.cashMovements.noActiveRegisterAlertDesc');
 		if (!Number.isFinite(amountValue) || amountValue <= 0) {
-			return 'Amount must be a valid positive number.';
+			return t('common.validation.positiveNumber').replace(
+				'{field}',
+				t('pos.cashMovements.amount')
+			);
 		}
 		return null;
 	}
@@ -151,7 +154,7 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to create cash movement.';
+		return t('pos.cashMovements.errorCreate');
 	}
 </script>
 
@@ -161,7 +164,7 @@
 			<Dialog.Header class="px-6 pt-6">
 				<Dialog.Title>{t('pos.cashMovements.addTitle')}</Dialog.Title>
 				<Dialog.Description>
-					Record manual drawer cash outside sale and refund transactions.
+					{t('pos.cashMovements.addDesc')}
 				</Dialog.Description>
 			</Dialog.Header>
 
@@ -178,12 +181,12 @@
 				{:else}
 					<ErrorAlert
 						title={t('pos.cashMovements.noActiveRegisterAlert')}
-						message="Open a register session before recording cash movement."
+						message={t('pos.cashMovements.noActiveRegisterAlertDesc')}
 					/>
 				{/if}
 
 				<div class="grid gap-2">
-					<Label>Movement Type</Label>
+					<Label>{t('pos.cashMovements.movementType')}</Label>
 					<Select.Root
 						allowDeselect={false}
 						type="single"
@@ -192,7 +195,7 @@
 						onValueChange={handleMovementTypeChange}
 					>
 						<Select.Trigger class="w-full">
-							<Select.Value placeholder="Select movement type" />
+							<Select.Value placeholder={t('pos.cashMovements.selectMovementType')} />
 						</Select.Trigger>
 						<Select.Content>
 							{#each movementTypeOptions as option (option.value)}
@@ -204,7 +207,7 @@
 				</div>
 
 				<div class="grid gap-2">
-					<Label for="cash-movement-amount">Amount</Label>
+					<Label for="cash-movement-amount">{t('pos.cashMovements.amount')}</Label>
 					<Input
 						id="cash-movement-amount"
 						type="number"
@@ -218,17 +221,17 @@
 
 				<div class="grid gap-2 rounded-md bg-muted/30 p-3 text-sm">
 					<div class="flex justify-between gap-3">
-						<span class="text-muted-foreground">Closing impact</span>
+						<span class="text-muted-foreground">{t('pos.cashMovements.closingImpact')}</span>
 						<span class="font-medium">{directionLabel}</span>
 					</div>
 					<div class="flex justify-between gap-3">
-						<span class="text-muted-foreground">Amount</span>
+						<span class="text-muted-foreground">{t('pos.cashMovements.amount')}</span>
 						<span class="font-medium">{formatIdr(amountValue)}</span>
 					</div>
 				</div>
 
 				<div class="grid gap-2">
-					<Label for="cash-movement-reason">Reason</Label>
+					<Label for="cash-movement-reason">{t('pos.cashMovements.reason')}</Label>
 					<Input
 						id="cash-movement-reason"
 						placeholder={selectedTypeOption.reasonPlaceholder}
@@ -238,10 +241,10 @@
 				</div>
 
 				<div class="grid gap-2">
-					<Label for="cash-movement-notes">Notes</Label>
+					<Label for="cash-movement-notes">{t('pos.cashMovements.notes')}</Label>
 					<Textarea
 						id="cash-movement-notes"
-						placeholder="Optional notes"
+						placeholder={t('pos.cashMovements.notesPlaceholder')}
 						disabled={isSubmitting}
 						bind:value={notes}
 					/>

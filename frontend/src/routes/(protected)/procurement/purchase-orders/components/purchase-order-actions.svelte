@@ -6,6 +6,7 @@
 	import type { PurchaseOrder } from '$lib/api/purchase-orders.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import PurchaseOrderCancelDialog from './purchase-order-cancel-dialog.svelte';
 	import PurchaseOrderDetailDialog from './purchase-order-detail-dialog.svelte';
 	import PurchaseOrderOrderAlertDialog from './purchase-order-order-alert-dialog.svelte';
@@ -51,8 +52,8 @@
 					variant="ghost"
 					size="icon-sm"
 					class="size-8"
-					aria-label={`Open actions for ${purchaseOrder.po_no}`}
-					title="Actions"
+					aria-label={t('common.openActions').replace('{docNo}', purchaseOrder.po_no)}
+					title={t('common.action')}
 				>
 					<EllipsisIcon />
 				</Button>
@@ -61,18 +62,18 @@
 		<DropdownMenu.Content align="end" class="min-w-44">
 			<DropdownMenu.Item onSelect={openDetail}>
 				<EyeIcon />
-				Detail
+				{t('common.detail')}
 			</DropdownMenu.Item>
 			{#if canOrder}
 				<DropdownMenu.Item onSelect={openOrder}>
 					<SendIcon />
-					Mark as ordered
+					{t('procurement.purchaseOrders.order.orderBtn')}
 				</DropdownMenu.Item>
 			{/if}
 			{#if canCancel}
 				<DropdownMenu.Item variant="destructive" onSelect={openCancel}>
 					<BanIcon />
-					Cancel order
+					{t('procurement.purchaseOrders.cancelOrderBtn')}
 				</DropdownMenu.Item>
 			{/if}
 		</DropdownMenu.Content>

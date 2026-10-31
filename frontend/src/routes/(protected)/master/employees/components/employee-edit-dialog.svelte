@@ -120,7 +120,7 @@
 			});
 			onUpdated?.(updatedEmployee);
 			toast.success(t('master.employees.updatedToast'), {
-				description: `Changes for ${updatedEmployee.name} have been saved.`
+				description: t('common.updatedToastDesc').replace('{name}', updatedEmployee.name)
 			});
 			open = false;
 		} catch (error) {
@@ -165,7 +165,7 @@
 				<Form.Field {form} name="name">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Name</Form.Label>
+							<Form.Label>{t('common.name')}</Form.Label>
 							<Input
 								{...props}
 								placeholder="Siti Aminah"
@@ -181,7 +181,7 @@
 					<Form.Field {form} name="position">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label>Position</Form.Label>
+								<Form.Label>{t('master.employees.position')}</Form.Label>
 								<Input
 									{...props}
 									placeholder="Cashier"
@@ -196,7 +196,7 @@
 					<Form.Field {form} name="phone">
 						<Form.Control>
 							{#snippet children({ props })}
-								<Form.Label>Phone</Form.Label>
+								<Form.Label>{t('common.phone')}</Form.Label>
 								<Input
 									{...props}
 									placeholder="08123456780"
@@ -212,7 +212,7 @@
 				<Form.Field {form} name="base_salary">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Base Salary</Form.Label>
+							<Form.Label>{t('master.employees.baseSalary')}</Form.Label>
 							<Input
 								{...props}
 								type="number"
@@ -230,10 +230,10 @@
 				<Form.Field {form} name="address">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Address</Form.Label>
+							<Form.Label>{t('common.address')}</Form.Label>
 							<Textarea
 								{...props}
-								placeholder="Enter employee address"
+								placeholder={t('master.employees.addressPlaceholder')}
 								disabled={isSubmitting}
 								bind:value={$formData.address}
 							/>
@@ -245,7 +245,7 @@
 				<Form.Field {form} name="is_active">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Status</Form.Label>
+							<Form.Label>{t('common.status')}</Form.Label>
 							<Select.Root
 								allowDeselect={false}
 								type="single"
@@ -258,11 +258,15 @@
 								}}
 							>
 								<Select.Trigger {...props} class="w-full">
-									<Select.Value placeholder="Select status" />
+									<Select.Value placeholder={t('common.selectStatus')} />
 								</Select.Trigger>
 								<Select.Content>
-									<Select.Item value="true" label="Active">Active</Select.Item>
-									<Select.Item value="false" label="Inactive">Inactive</Select.Item>
+									<Select.Item value="true" label={t('status.active')}
+										>{t('status.active')}</Select.Item
+									>
+									<Select.Item value="false" label={t('status.inactive')}
+										>{t('status.inactive')}</Select.Item
+									>
 								</Select.Content>
 							</Select.Root>
 						{/snippet}
@@ -271,7 +275,7 @@
 				</Form.Field>
 
 				{#if errorMessage}
-					<ErrorAlert title="Save failed." message={errorMessage} />
+					<ErrorAlert title={t('common.saveFailed')} message={errorMessage} />
 				{/if}
 			</div>
 

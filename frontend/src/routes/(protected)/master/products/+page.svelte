@@ -171,7 +171,7 @@
 </script>
 
 <svelte:head>
-	<title>Products | PointFlow</title>
+	<title>{t('master.products.title')} | PointFlow</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

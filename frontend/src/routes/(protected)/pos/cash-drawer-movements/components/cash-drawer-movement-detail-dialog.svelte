@@ -57,17 +57,15 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load movement details.';
+		return t('pos.cashMovements.detail.loadFailed');
 	}
 </script>
 
 <Dialog.Root bind:open>
 	<Dialog.Content class="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
 		<Dialog.Header>
-			<Dialog.Title>Cash Movement Details</Dialog.Title>
-			<Dialog.Description
-				>Manual cash drawer movement and cancellation information.</Dialog.Description
-			>
+			<Dialog.Title>{t('pos.cashMovements.detail.title')}</Dialog.Title>
+			<Dialog.Description>{t('pos.cashMovements.detail.desc')}</Dialog.Description>
 		</Dialog.Header>
 
 		{#if isLoading}
@@ -98,7 +96,7 @@
 						label={t('common.occurredAt')}
 						value={formatDateTime(movement.occurred_at)}
 					/>
-					<DetailField label={t('common.session')} value={movement.session_no} />
+					<DetailField label={t('pos.cashMovements.drawerSession')} value={movement.session_no} />
 					<DetailField label={t('common.register')} value={movement.cash_register_code} />
 					<DetailField label={t('common.createdBy')} value={movement.created_by_name} />
 					<DetailField

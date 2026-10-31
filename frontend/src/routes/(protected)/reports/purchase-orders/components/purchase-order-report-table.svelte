@@ -9,6 +9,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatDate, formatDateTime, formatIdr, formatNumber } from '$lib/formatters.js';
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
+	import { t } from '$lib/i18n/locale.svelte.js';
 	import PurchaseOrderStatusBadge from '../../../procurement/purchase-orders/components/purchase-order-status-badge.svelte';
 
 	let {
@@ -26,47 +27,47 @@
 
 	const columns = [
 		columnHelper.accessor('po_no', {
-			header: 'PO No',
+			header: () => t('procurement.purchaseOrders.colPoNo'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('supplier_name', {
-			header: 'Supplier',
+			header: () => t('procurement.purchaseOrders.colSupplier'),
 			cell: (info) => info.getValue()
 		}),
 		columnHelper.accessor('order_date', {
-			header: 'Order Date',
+			header: () => t('procurement.purchaseOrders.colOrderDate'),
 			cell: (info) => formatDate(info.getValue())
 		}),
 		columnHelper.accessor('expected_date', {
-			header: 'Expected Date',
+			header: () => t('procurement.purchaseOrders.colExpectedDate'),
 			cell: (info) => formatDate(info.getValue())
 		}),
 		columnHelper.accessor('status', {
-			header: 'Status',
+			header: () => t('procurement.purchaseOrders.colStatus'),
 			cell: (info) => renderComponent(PurchaseOrderStatusBadge, { status: info.getValue() })
 		}),
 		columnHelper.accessor('item_count', {
-			header: 'Items',
+			header: () => t('common.colItems'),
 			cell: (info) => formatNumber(info.getValue())
 		}),
 		columnHelper.accessor('total_quantity_ordered', {
-			header: 'Ordered Qty',
+			header: () => t('common.colOrderedQty'),
 			cell: (info) => formatNumber(info.getValue())
 		}),
 		columnHelper.accessor('total_quantity_received', {
-			header: 'Received Qty',
+			header: () => t('common.colReceivedQty'),
 			cell: (info) => formatNumber(info.getValue())
 		}),
 		columnHelper.accessor('total_quantity_remaining', {
-			header: 'Remaining Qty',
+			header: () => t('common.colRemainingQty'),
 			cell: (info) => formatNumber(info.getValue())
 		}),
 		columnHelper.accessor('subtotal_amount', {
-			header: 'Subtotal',
+			header: () => t('procurement.purchaseOrders.colSubtotal'),
 			cell: (info) => formatIdr(info.getValue())
 		}),
 		columnHelper.accessor('updated_at', {
-			header: 'Updated At',
+			header: () => t('procurement.purchaseOrders.colUpdatedAt'),
 			cell: (info) => formatDateTime(info.getValue())
 		})
 	];

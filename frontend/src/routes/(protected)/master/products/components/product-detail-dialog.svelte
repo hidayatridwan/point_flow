@@ -7,6 +7,7 @@
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { formatDateTime } from '$lib/formatters.js';
+	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let {
 		productId,
@@ -49,15 +50,15 @@
 	function getErrorMessage(error: unknown) {
 		if (error instanceof ApiError) return error.message;
 		if (error instanceof Error) return error.message;
-		return 'Failed to load product details.';
+		return t('master.products.errorLoadDetail');
 	}
 </script>
 
 <Dialog.Root bind:open>
 	<Dialog.Content class="sm:max-w-lg">
 		<Dialog.Header>
-			<Dialog.Title>Product Details</Dialog.Title>
-			<Dialog.Description>Latest information from the product master record.</Dialog.Description>
+			<Dialog.Title>{t('master.products.detailTitle')}</Dialog.Title>
+			<Dialog.Description>{t('master.products.detailDesc')}</Dialog.Description>
 		</Dialog.Header>
 
 		{#if isLoading}
@@ -68,19 +69,22 @@
 				<Skeleton class="h-5 w-48" />
 			</div>
 		{:else if errorMessage}
-			<ErrorAlert title="Failed to load details." message={errorMessage} />
+			<ErrorAlert title={t('common.loadFailed')} message={errorMessage} />
 		{:else if product}
 			<div class="grid gap-4">
-				<DetailField label="Name" value={product.name} />
-				<DetailField label="Category" value={product.category_name || 'No category'} />
+				<DetailField label={t('common.name')} value={product.name} />
+				<DetailField
+					label={t('master.products.category')}
+					value={product.category_name || t('master.products.noCategory')}
+				/>
 
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailField label="Status">
+					<DetailField label={t('common.status')}>
 						<StatusBadge active={product.is_active} />
 					</DetailField>
-					<DetailField label="ID" value={product.id} />
-					<DetailField label="Created At" value={formatDateTime(product.created_at)} />
-					<DetailField label="Updated At" value={formatDateTime(product.updated_at)} />
+					<DetailField label={t('common.id')} value={product.id} />
+					<DetailField label={t('common.createdAt')} value={formatDateTime(product.created_at)} />
+					<DetailField label={t('common.updatedAt')} value={formatDateTime(product.updated_at)} />
 				</div>
 			</div>
 		{/if}

@@ -82,7 +82,7 @@
 
 			await onSaved?.(savedRole);
 			toast.success(isEditing ? t('config.roles.updatedToast') : t('config.roles.createdToast'), {
-				description: `${savedRole.name} is ready.`
+				description: t('config.roles.savedToastDesc').replace('{name}', savedRole.name)
 			});
 			open = false;
 		} catch (error) {
@@ -133,13 +133,19 @@
 		const code = data.code.trim();
 		const name = data.name.trim();
 
-		if (!code) return 'Code is required.';
+		if (!code) return t('common.validation.required').replace('{field}', t('config.roles.code'));
 		if (!/^[a-z0-9_]+$/.test(code)) {
-			return 'Code can only contain lowercase letters, numbers, and underscores.';
+			return t('config.roles.invalidCodeChars');
 		}
-		if (!name) return 'Name is required.';
-		if (!role?.is_system && code.length > 80) return 'Code must be at most 80 characters.';
-		if (name.length > 120) return 'Name must be at most 120 characters.';
+		if (!name) return t('common.validation.required').replace('{field}', t('common.name'));
+		if (!role?.is_system && code.length > 80)
+			return t('common.validation.maxChars')
+				.replace('{field}', t('config.roles.code'))
+				.replace('{min}', '80');
+		if (name.length > 120)
+			return t('common.validation.maxChars')
+				.replace('{field}', t('common.name'))
+				.replace('{min}', '120');
 		return null;
 	}
 
@@ -161,20 +167,20 @@
 			<div class="grid gap-5 overflow-y-auto px-6 py-5">
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div class="grid gap-2">
-						<Label for="role-code">Code</Label>
+						<Label for="role-code">{t('config.roles.code')}</Label>
 						<Input
 							id="role-code"
-							placeholder="inventory_manager"
+							placeholder={t('config.roles.codePlaceholder')}
 							disabled={isSubmitting || role?.is_system}
 							bind:value={formData.code}
 						/>
 					</div>
 
 					<div class="grid gap-2">
-						<Label for="role-name">Name</Label>
+						<Label for="role-name">{t('common.name')}</Label>
 						<Input
 							id="role-name"
-							placeholder="Inventory Manager"
+							placeholder={t('config.roles.namePlaceholder')}
 							disabled={isSubmitting}
 							bind:value={formData.name}
 						/>
@@ -182,10 +188,10 @@
 				</div>
 
 				<div class="grid gap-2">
-					<Label for="role-description">Description</Label>
+					<Label for="role-description">{t('common.description')}</Label>
 					<Textarea
 						id="role-description"
-						placeholder="Role description"
+						placeholder={t('config.roles.descriptionPlaceholder')}
 						disabled={isSubmitting}
 						bind:value={formData.description}
 					/>
@@ -193,7 +199,7 @@
 
 				<div class="grid gap-3">
 					<div>
-						<h3 class="text-sm font-medium">Permissions</h3>
+						<h3 class="text-sm font-medium">{t('config.roles.permissions')}</h3>
 					</div>
 					<div class="grid gap-2 rounded-md border p-3 sm:grid-cols-2">
 						{#each permissions as permission (permission.code)}

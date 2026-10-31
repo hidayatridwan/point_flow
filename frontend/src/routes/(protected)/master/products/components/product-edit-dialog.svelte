@@ -91,7 +91,7 @@
 		} catch (error) {
 			if (requestId !== latestCategoryRequestId) return;
 			categories = [];
-			categoryErrorMessage = getErrorMessage(error, 'Failed to load product categories.');
+			categoryErrorMessage = getErrorMessage(error, t('master.products.errorLoadOptions'));
 		} finally {
 			if (requestId === latestCategoryRequestId) {
 				isLoadingCategories = false;
@@ -116,7 +116,7 @@
 			});
 			onUpdated?.(updatedProduct);
 			toast.success(t('master.products.updatedToast'), {
-				description: `Changes for ${updatedProduct.name} have been saved.`
+				description: t('common.updatedToastDesc').replace('{name}', updatedProduct.name)
 			});
 			open = false;
 		} catch (error) {
@@ -151,17 +151,15 @@
 	<Dialog.Content class="p-0 sm:max-w-lg">
 		<form class="grid gap-6" onsubmit={handleSubmit}>
 			<Dialog.Header class="px-6 pt-6">
-				<Dialog.Title>Edit Product</Dialog.Title>
-				<Dialog.Description
-					>Update product master details, then save the changes.</Dialog.Description
-				>
+				<Dialog.Title>{t('master.products.editTitle')}</Dialog.Title>
+				<Dialog.Description>{t('master.products.editDesc')}</Dialog.Description>
 			</Dialog.Header>
 
 			<div class="grid gap-4 px-6">
 				<Form.Field {form} name="name">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Name</Form.Label>
+							<Form.Label>{t('common.name')}</Form.Label>
 							<Input
 								{...props}
 								placeholder="Mineral Water"
@@ -176,7 +174,7 @@
 				<Form.Field {form} name="category_id">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Category</Form.Label>
+							<Form.Label>{t('master.products.category')}</Form.Label>
 							<Select.Root
 								allowDeselect={false}
 								type="single"
@@ -189,11 +187,11 @@
 								}}
 							>
 								<Select.Trigger {...props} class="w-full">
-									<Select.Value placeholder="Select category" />
+									<Select.Value placeholder={t('master.products.selectCategory')} />
 								</Select.Trigger>
 								<Select.Content>
-									<Select.Item value={NO_CATEGORY_VALUE} label="No category">
-										No category
+									<Select.Item value={NO_CATEGORY_VALUE} label={t('master.products.noCategory')}>
+										{t('master.products.noCategory')}
 									</Select.Item>
 									{#each categories as category (category.id)}
 										<Select.Item value={String(category.id)} label={category.name}>
@@ -210,7 +208,7 @@
 				<Form.Field {form} name="is_active">
 					<Form.Control>
 						{#snippet children({ props })}
-							<Form.Label>Status</Form.Label>
+							<Form.Label>{t('common.status')}</Form.Label>
 							<Select.Root
 								allowDeselect={false}
 								type="single"
@@ -223,11 +221,15 @@
 								}}
 							>
 								<Select.Trigger {...props} class="w-full">
-									<Select.Value placeholder="Select status" />
+									<Select.Value placeholder={t('common.selectStatus')} />
 								</Select.Trigger>
 								<Select.Content>
-									<Select.Item value="true" label="Active">{t('status.active')}</Select.Item>
-									<Select.Item value="false" label="Inactive">{t('status.inactive')}</Select.Item>
+									<Select.Item value="true" label={t('status.active')}
+										>{t('status.active')}</Select.Item
+									>
+									<Select.Item value="false" label={t('status.inactive')}
+										>{t('status.inactive')}</Select.Item
+									>
 								</Select.Content>
 							</Select.Root>
 						{/snippet}
@@ -253,7 +255,7 @@
 					class={cn(buttonVariants({ variant: 'outline' }))}
 					disabled={isSubmitting}
 				>
-					Cancel
+					{t('common.cancel')}
 				</Dialog.Close>
 				<Button type="submit" disabled={isSubmitting}>
 					{#if isSubmitting}
