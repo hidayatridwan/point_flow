@@ -1,5 +1,4 @@
 <script lang="ts" module>
-	import favicon from '$lib/assets/favicon.svg';
 	import BadgeDollarSignIcon from '@lucide/svelte/icons/badge-dollar-sign';
 	import ChartColumnIcon from '@lucide/svelte/icons/chart-column';
 	import DatabaseIcon from '@lucide/svelte/icons/database';
@@ -13,11 +12,6 @@
 	import WarehouseIcon from '@lucide/svelte/icons/warehouse';
 
 	const data = {
-		user: {
-			name: 'Admin',
-			email: 'admin@example.com',
-			avatar: favicon
-		},
 		navGroups: [
 			{
 				titleKey: 'navGroup.overview',
@@ -206,14 +200,32 @@
 </script>
 
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import NavMain from './nav-main.svelte';
 	import NavUser from './nav-user.svelte';
+	import { getCurrentUser } from '$lib/api/session.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import CommandIcon from '@lucide/svelte/icons/command';
+	import favicon from '$lib/assets/favicon.svg';
 	import { t } from '$lib/i18n/locale.svelte.js';
 	import type { ComponentProps } from 'svelte';
 
 	let { ref = $bindable(null), ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
+
+	let sidebarUser = $state<{ name: string; email: string; avatar: string } | null>(null);
+
+	onMount(() => {
+		void loadCurrentUser();
+	});
+
+	async function loadCurrentUser() {
+		try {
+			const currentUser = await getCurrentUser();
+			sidebarUser = { name: currentUser.name, email: currentUser.email, avatar: favicon };
+		} catch {
+			sidebarUser = null;
+		}
+	}
 </script>
 
 <Sidebar.Root bind:ref variant="inset" {...restProps}>
@@ -242,6 +254,8 @@
 		<NavMain groups={data.navGroups} />
 	</Sidebar.Content>
 	<Sidebar.Footer>
-		<NavUser user={data.user} />
+		{#if sidebarUser}
+			<NavUser user={sidebarUser} />
+		{/if}
 	</Sidebar.Footer>
 </Sidebar.Root>
