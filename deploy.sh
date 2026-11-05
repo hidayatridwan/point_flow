@@ -18,7 +18,7 @@ COMPOSE="docker compose -f docker-compose.prod.yml"
 # Manual, opt-in schema helpers. These are never run by the deploy path below;
 # you invoke them by hand, one file at a time, e.g.:
 #   ./deploy.sh migrate 001_initial_pos_schema.sql
-#   ./deploy.sh seed dashboard_demo.sql
+#   ./deploy.sh seed dashboard_sample.sql
 # (No migration tracking table exists, so apply files individually and in order.)
 case "${1:-}" in
   migrate)

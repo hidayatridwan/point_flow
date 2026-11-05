@@ -1,4 +1,4 @@
--- Dashboard / full-coverage demo seed
+-- Dashboard / full-coverage sample seed
 -- ---------------------------------------------------------------------------
 -- Populates ~90 days of realistic, randomized data that exercises EVERY
 -- transaction type and EVERY lifecycle state in the system, so that the
@@ -19,23 +19,23 @@
 --   * Payroll slips ....... last 3 months per active employee
 --
 -- Self-contained: if the database has no usable master data it creates a small
--- demo catalog (categories, suppliers, products + SKUs, a multi-SKU product for
+-- sample catalog (categories, suppliers, products + SKUs, a multi-SKU product for
 -- conversions, employees). When real master data already exists it is reused,
--- and only the minimum demo scaffolding is added.
+-- and only the minimum sample scaffolding is added.
 --
--- Safe to run against an existing database: it only ADDS demo rows and is
--- guarded so it will not duplicate itself on re-run. Demo rows are tagged for
+-- Safe to run against an existing database: it only ADDS sample rows and is
+-- guarded so it will not duplicate itself on re-run. Sample rows are tagged for
 -- easy removal:
---   * notes / opening_notes = 'demo-seed' on documents that have such a column
---   * employees.phone       = 'demo-seed'
---   * suppliers.name        LIKE 'Demo Supplier%'
---   * products.name         LIKE '[DEMO]%'  (only the fallback catalog)
---   * product_skus.sku      LIKE 'DEMO-%'   (only the fallback catalog)
+--   * notes / opening_notes = 'sample-seed' on documents that have such a column
+--   * employees.phone       = 'sample-seed'
+--   * suppliers.name        LIKE 'Sample Supplier%'
+--   * products.name         LIKE '[SAMPLE]%'  (only the fallback catalog)
+--   * product_skus.sku      LIKE 'SAMPLE-%'   (only the fallback catalog)
 --   * cash_registers.code   = 'REG-01'
---   * demo cashier emails   dewi@/budi@/sari@example.com
+--   * sample cashier emails   dewi@/budi@/sari@example.com
 --
 -- Run:
---   docker compose exec -T postgres psql -U pos -d pos < backend/seeds/dashboard_demo.sql
+--   docker compose exec -T postgres psql -U pos -d pos < backend/seeds/dashboard_sample.sql
 --
 -- Re-seed from scratch: run the RESET block below first (uncomment), then re-run.
 -- ---------------------------------------------------------------------------
@@ -43,21 +43,21 @@
 -- === RESET (optional) ======================================================
 -- FK-safe order. Uncomment, run, then re-run the seed.
 -- BEGIN;
---   DELETE FROM stock_movements      WHERE notes = 'demo-seed';
---   DELETE FROM sale_returns         WHERE notes = 'demo-seed'; -- cascades sale_return_items
---   DELETE FROM sales                WHERE notes = 'demo-seed'; -- cascades sale_items
---   DELETE FROM cash_drawer_movements WHERE notes = 'demo-seed';
---   DELETE FROM goods_receipts       WHERE notes = 'demo-seed'; -- cascades goods_receipt_items
---   DELETE FROM purchase_orders      WHERE notes = 'demo-seed'; -- cascades purchase_order_items
---   DELETE FROM stock_adjustments    WHERE notes = 'demo-seed'; -- cascades items
---   DELETE FROM stock_conversions    WHERE notes = 'demo-seed'; -- cascades items
---   DELETE FROM payroll_slips        WHERE employee_id IN (SELECT id FROM employees WHERE phone = 'demo-seed');
---   DELETE FROM cash_register_sessions WHERE opening_notes = 'demo-seed';
+--   DELETE FROM stock_movements      WHERE notes = 'sample-seed';
+--   DELETE FROM sale_returns         WHERE notes = 'sample-seed'; -- cascades sale_return_items
+--   DELETE FROM sales                WHERE notes = 'sample-seed'; -- cascades sale_items
+--   DELETE FROM cash_drawer_movements WHERE notes = 'sample-seed';
+--   DELETE FROM goods_receipts       WHERE notes = 'sample-seed'; -- cascades goods_receipt_items
+--   DELETE FROM purchase_orders      WHERE notes = 'sample-seed'; -- cascades purchase_order_items
+--   DELETE FROM stock_adjustments    WHERE notes = 'sample-seed'; -- cascades items
+--   DELETE FROM stock_conversions    WHERE notes = 'sample-seed'; -- cascades items
+--   DELETE FROM payroll_slips        WHERE employee_id IN (SELECT id FROM employees WHERE phone = 'sample-seed');
+--   DELETE FROM cash_register_sessions WHERE opening_notes = 'sample-seed';
 --   DELETE FROM cash_registers       WHERE lower(code) = 'reg-01';
---   DELETE FROM employees            WHERE phone = 'demo-seed';
---   DELETE FROM product_skus         WHERE sku ILIKE 'DEMO-%';
---   DELETE FROM products             WHERE name ILIKE '[DEMO]%';
---   DELETE FROM suppliers            WHERE name ILIKE 'Demo Supplier%';
+--   DELETE FROM employees            WHERE phone = 'sample-seed';
+--   DELETE FROM product_skus         WHERE sku ILIKE 'SAMPLE-%';
+--   DELETE FROM products             WHERE name ILIKE '[SAMPLE]%';
+--   DELETE FROM suppliers            WHERE name ILIKE 'Sample Supplier%';
 --   DELETE FROM users                WHERE email IN ('dewi@example.com','budi@example.com','sari@example.com');
 -- COMMIT;
 -- ===========================================================================
@@ -111,8 +111,8 @@ DECLARE
 	j                int;
 	k                int;
 BEGIN
-	IF EXISTS (SELECT 1 FROM sales WHERE notes = 'demo-seed') THEN
-		RAISE NOTICE 'Demo data already present — skipping. Run the RESET block to re-seed.';
+	IF EXISTS (SELECT 1 FROM sales WHERE notes = 'sample-seed') THEN
+		RAISE NOTICE 'Sample data already present — skipping. Run the RESET block to re-seed.';
 		RETURN;
 	END IF;
 
@@ -120,12 +120,12 @@ BEGIN
 	FROM users WHERE role_id = 1 AND deleted_at IS NULL ORDER BY id LIMIT 1;
 
 	IF v_admin_id IS NULL THEN
-		RAISE EXCEPTION 'No admin user found to anchor demo data.';
+		RAISE EXCEPTION 'No admin user found to anchor sample data.';
 	END IF;
 
 	-- 0. Categories ----------------------------------------------------------
 	INSERT INTO product_categories (name, description)
-	SELECT x.name, 'demo-seed'
+	SELECT x.name, 'sample-seed'
 	FROM (VALUES ('Beverages'), ('Snacks'), ('Personal Care'), ('Household Supplies')) AS x(name)
 	WHERE NOT EXISTS (
 		SELECT 1 FROM product_categories c
@@ -141,10 +141,10 @@ BEGIN
 	INSERT INTO suppliers (name, contact_name, phone, email, is_active)
 	SELECT x.name, x.cn, x.ph, x.em, TRUE
 	FROM (VALUES
-		('Demo Supplier Sentosa', 'Andi', '0811000001', 'sentosa@demo.example'),
-		('Demo Supplier Makmur',  'Beni', '0811000002', 'makmur@demo.example'),
-		('Demo Supplier Jaya',    'Cici', '0811000003', 'jaya@demo.example'),
-		('Demo Supplier Abadi',   'Dodi', '0811000004', 'abadi@demo.example')
+		('Sample Supplier Sentosa', 'Andi', '0811000001', 'sentosa@sample.example'),
+		('Sample Supplier Makmur',  'Beni', '0811000002', 'makmur@sample.example'),
+		('Sample Supplier Jaya',    'Cici', '0811000003', 'jaya@sample.example'),
+		('Sample Supplier Abadi',   'Dodi', '0811000004', 'abadi@sample.example')
 	) AS x(name, cn, ph, em)
 	WHERE NOT EXISTS (
 		SELECT 1 FROM suppliers s WHERE lower(s.name) = lower(x.name) AND s.deleted_at IS NULL
@@ -191,7 +191,7 @@ BEGIN
 			INSERT INTO product_skus
 				(product_id, sku, unit_id, contents_qty, purchase_price, selling_price, stock, minimum_stock, is_active)
 			VALUES
-				(v_pid, 'DEMO-' || v_pid || '-1', v_unit_id, 1, v_rec.pprice, v_rec.sprice, v_rec.stk, 20, TRUE);
+				(v_pid, 'SAMPLE-' || v_pid || '-1', v_unit_id, 1, v_rec.pprice, v_rec.sprice, v_rec.stk, 20, TRUE);
 		END LOOP;
 	END IF;
 
@@ -212,11 +212,11 @@ BEGIN
 
 		SELECT id INTO v_unit_id FROM units WHERE lower(code) = 'box' AND deleted_at IS NULL LIMIT 1;
 		INSERT INTO product_skus (product_id, sku, unit_id, contents_qty, purchase_price, selling_price, stock, minimum_stock, is_active)
-		VALUES (v_conv_product, 'DEMO-' || v_conv_product || '-BOX', v_unit_id, 24, 60000, 84000, 50, 5, TRUE);
+		VALUES (v_conv_product, 'SAMPLE-' || v_conv_product || '-BOX', v_unit_id, 24, 60000, 84000, 50, 5, TRUE);
 
 		SELECT id INTO v_unit_id FROM units WHERE lower(code) = 'pcs' AND deleted_at IS NULL LIMIT 1;
 		INSERT INTO product_skus (product_id, sku, unit_id, contents_qty, purchase_price, selling_price, stock, minimum_stock, is_active)
-		VALUES (v_conv_product, 'DEMO-' || v_conv_product || '-PCS', v_unit_id, 1, 2500, 3500, 240, 24, TRUE);
+		VALUES (v_conv_product, 'SAMPLE-' || v_conv_product || '-PCS', v_unit_id, 1, 2500, 3500, 240, 24, TRUE);
 	END IF;
 
 	-- 3. Assign any uncategorized products so "sales by category" is meaningful -
@@ -234,7 +234,7 @@ BEGIN
 
 	-- 4. Employees (active + one inactive) -----------------------------------
 	INSERT INTO employees (name, position, phone, address, base_salary, is_active)
-	SELECT x.name, x.pos, 'demo-seed', x.addr, x.sal, x.active
+	SELECT x.name, x.pos, 'sample-seed', x.addr, x.sal, x.active
 	FROM (VALUES
 		('Dewi Lestari',  'Senior Cashier', 'Jl. Melati No. 1',  4000000, TRUE),
 		('Budi Santoso',  'Cashier',        'Jl. Mawar No. 2',   3500000, TRUE),
@@ -277,7 +277,7 @@ BEGIN
 		INSERT INTO cash_register_sessions
 			(cash_register_id, opened_at, opened_by, opening_cash, opening_notes, status, created_at)
 		VALUES
-			(v_register_id, v_opened_at, v_admin_id, 500000, 'demo-seed', 'open', v_opened_at)
+			(v_register_id, v_opened_at, v_admin_id, 500000, 'sample-seed', 'open', v_opened_at)
 		RETURNING id INTO v_session_id;
 	END IF;
 
@@ -291,13 +291,13 @@ BEGIN
 			v_register_id,
 			CURRENT_DATE - k * INTERVAL '1 day' + INTERVAL '8 hours',
 			v_cashiers[1 + floor(random() * array_length(v_cashiers, 1))::int],
-			500000, 'demo-seed',
+			500000, 'sample-seed',
 			CURRENT_DATE - k * INTERVAL '1 day' + INTERVAL '21 hours',
 			v_cashiers[1 + floor(random() * array_length(v_cashiers, 1))::int],
 			500000 + floor(random() * 2000000)::int,
 			500000 + floor(random() * 2000000)::int,
 			(floor(random() * 100000) - 50000)::int,
-			'demo-seed closing', 'closed',
+			'sample-seed closing', 'closed',
 			CURRENT_DATE - k * INTERVAL '1 day'
 		);
 	END LOOP;
@@ -321,7 +321,7 @@ BEGIN
 				(sold_at, cashier_id, cash_register_session_id, status, notes,
 				 subtotal_amount, total_amount, paid_amount, change_amount, created_at, updated_at)
 			VALUES
-				(v_sold_at, v_cashier, v_session_id, 'completed', 'demo-seed',
+				(v_sold_at, v_cashier, v_session_id, 'completed', 'sample-seed',
 				 0, 0, 0, 0, v_sold_at, v_sold_at)
 			RETURNING id INTO v_sale_id;
 
@@ -374,7 +374,7 @@ BEGIN
 			 subtotal_amount, total_amount, paid_amount, change_amount,
 			 cancelled_at, cancelled_by, cancel_reason, created_at, updated_at)
 		VALUES
-			(v_sold_at, v_cashier, v_session_id, 'cancelled', 'demo-seed',
+			(v_sold_at, v_cashier, v_session_id, 'cancelled', 'sample-seed',
 			 0, 0, 0, 0,
 			 v_sold_at + INTERVAL '10 minutes', v_admin_id, 'Customer changed mind', v_sold_at, v_sold_at)
 		RETURNING id INTO v_sale_id;
@@ -411,7 +411,7 @@ BEGIN
 	FOR v_rec IN
 		SELECT s.id AS sale_id, s.cashier_id, s.sold_at
 		FROM sales s
-		WHERE s.notes = 'demo-seed' AND s.status = 'completed'
+		WHERE s.notes = 'sample-seed' AND s.status = 'completed'
 			AND s.sold_at >= CURRENT_DATE - INTERVAL '25 days'
 		ORDER BY s.sold_at DESC
 		LIMIT 8
@@ -426,7 +426,7 @@ BEGIN
 			v_rec.sale_id, v_rec.sold_at + INTERVAL '1 day', v_rec.cashier_id, v_session_id,
 			0, 0,
 			(CASE WHEN i > 6 THEN 'cancelled' ELSE 'completed' END)::sale_return_status,
-			'Damaged item', 'demo-seed',
+			'Damaged item', 'sample-seed',
 			CASE WHEN i > 6 THEN v_rec.sold_at + INTERVAL '1 day 1 hour' END,
 			CASE WHEN i > 6 THEN v_admin_id END,
 			CASE WHEN i > 6 THEN 'Return voided' END,
@@ -462,17 +462,17 @@ BEGIN
 	INSERT INTO cash_drawer_movements
 		(cash_register_session_id, occurred_at, created_by, movement_type, direction, amount, reason, notes, status)
 	VALUES
-		(v_session_id, now() - INTERVAL '2 days', v_admin_id,     'cash_in',   'in',  200000, 'Add float',        'demo-seed', 'completed'),
-		(v_session_id, now() - INTERVAL '2 days', v_cashiers[1],  'cash_in',   'in',  100000, 'Change top-up',    'demo-seed', 'completed'),
-		(v_session_id, now() - INTERVAL '1 day',  v_admin_id,     'cash_out',  'out', 150000, 'Bank deposit',     'demo-seed', 'completed'),
-		(v_session_id, now() - INTERVAL '1 day',  v_cashiers[1],  'cash_drop', 'out', 300000, 'Safe drop',        'demo-seed', 'completed'),
-		(v_session_id, now() - INTERVAL '6 hours', v_admin_id,    'petty_cash','out', 75000,  'Office supplies',  'demo-seed', 'completed');
+		(v_session_id, now() - INTERVAL '2 days', v_admin_id,     'cash_in',   'in',  200000, 'Add float',        'sample-seed', 'completed'),
+		(v_session_id, now() - INTERVAL '2 days', v_cashiers[1],  'cash_in',   'in',  100000, 'Change top-up',    'sample-seed', 'completed'),
+		(v_session_id, now() - INTERVAL '1 day',  v_admin_id,     'cash_out',  'out', 150000, 'Bank deposit',     'sample-seed', 'completed'),
+		(v_session_id, now() - INTERVAL '1 day',  v_cashiers[1],  'cash_drop', 'out', 300000, 'Safe drop',        'sample-seed', 'completed'),
+		(v_session_id, now() - INTERVAL '6 hours', v_admin_id,    'petty_cash','out', 75000,  'Office supplies',  'sample-seed', 'completed');
 
 	INSERT INTO cash_drawer_movements
 		(cash_register_session_id, occurred_at, created_by, movement_type, direction, amount, reason, notes,
 		 status, cancelled_at, cancelled_by, cancel_reason)
 	VALUES
-		(v_session_id, now() - INTERVAL '3 hours', v_admin_id, 'cash_out', 'out', 50000, 'Wrong entry', 'demo-seed',
+		(v_session_id, now() - INTERVAL '3 hours', v_admin_id, 'cash_out', 'out', 50000, 'Wrong entry', 'sample-seed',
 		 'cancelled', now() - INTERVAL '2 hours', v_admin_id, 'Entered by mistake');
 
 	-- 11. Purchase orders with items, in every status -------------------------
@@ -494,7 +494,7 @@ BEGIN
 			v_supplier_ids[1 + floor(random() * array_length(v_supplier_ids, 1))::int],
 			CURRENT_DATE - floor(random() * 40)::int,
 			CURRENT_DATE + floor(random() * 10)::int,
-			v_status::purchase_order_status, 0, 'demo-seed', v_admin_id,
+			v_status::purchase_order_status, 0, 'sample-seed', v_admin_id,
 			CASE WHEN v_status IN ('ordered', 'partially_received', 'received') THEN v_admin_id END,
 			CASE WHEN v_status IN ('ordered', 'partially_received', 'received') THEN now() - INTERVAL '20 days' END,
 			CASE WHEN v_status = 'cancelled' THEN now() - INTERVAL '15 days' END,
@@ -553,7 +553,7 @@ BEGIN
 			(purchase_order_id, received_at, status, received_by, posted_at, posted_by, notes, created_at)
 		VALUES
 			(v_po_id, now() - INTERVAL '10 days', 'posted', v_admin_id, now() - INTERVAL '10 days', v_admin_id,
-			 'demo-seed', now() - INTERVAL '10 days')
+			 'sample-seed', now() - INTERVAL '10 days')
 		RETURNING id INTO v_gr_id;
 
 		FOR v_rec IN
@@ -575,7 +575,7 @@ BEGIN
 				 stock_before, stock_after, notes, created_by, created_at)
 			VALUES
 				(v_rec.product_id, v_rec.product_sku_id, v_gr_id, 'purchase_receipt', v_rec.qty,
-				 100, 100 + v_rec.qty, 'demo-seed', v_admin_id, now() - INTERVAL '10 days');
+				 100, 100 + v_rec.qty, 'sample-seed', v_admin_id, now() - INTERVAL '10 days');
 		END LOOP;
 	END LOOP;
 
@@ -589,7 +589,7 @@ BEGIN
 			VALUES
 				(v_po_id, now() - INTERVAL '5 days',
 				 CASE WHEN k = 1 THEN 'draft' ELSE 'cancelled' END::goods_receipt_status,
-				 v_admin_id, 'demo-seed', now() - INTERVAL '5 days',
+				 v_admin_id, 'sample-seed', now() - INTERVAL '5 days',
 				 CASE WHEN k = 2 THEN now() - INTERVAL '4 days' END,
 				 CASE WHEN k = 2 THEN v_admin_id END,
 				 CASE WHEN k = 2 THEN 'Wrong PO selected' END)
@@ -627,7 +627,7 @@ BEGIN
 			 cancelled_at, cancelled_by, cancel_reason, created_at)
 		VALUES (
 			now() - floor(random() * 50)::int * INTERVAL '1 day',
-			v_status::stock_adjustment_status, v_rec.reason, 'demo-seed', v_admin_id,
+			v_status::stock_adjustment_status, v_rec.reason, 'sample-seed', v_admin_id,
 			CASE WHEN v_status = 'posted'    THEN now() - INTERVAL '8 days' END,
 			CASE WHEN v_status = 'posted'    THEN v_admin_id END,
 			CASE WHEN v_status = 'cancelled' THEN now() - INTERVAL '7 days' END,
@@ -651,7 +651,7 @@ BEGIN
 			 unit, stock_before, stock_after, notes)
 		VALUES
 			(v_sa_id, v_sku.product_id, v_sku.sku_id, v_sku.product_name, v_sku.sku,
-			 v_sku.unit, v_qty, v_qty + 5, 'demo-seed'); -- always changes
+			 v_sku.unit, v_qty, v_qty + 5, 'sample-seed'); -- always changes
 
 		IF v_status = 'posted' THEN
 			INSERT INTO stock_movements
@@ -659,7 +659,7 @@ BEGIN
 				 stock_before, stock_after, notes, created_by, created_at)
 			VALUES
 				(v_sku.product_id, v_sku.sku_id, v_sa_id, 'adjustment', 5,
-				 v_qty, v_qty + 5, 'demo-seed', v_admin_id, now() - INTERVAL '8 days');
+				 v_qty, v_qty + 5, 'sample-seed', v_admin_id, now() - INTERVAL '8 days');
 		END IF;
 	END LOOP;
 
@@ -685,7 +685,7 @@ BEGIN
 			 cancelled_at, cancelled_by, cancel_reason, created_at)
 		VALUES (
 			now() - floor(random() * 40)::int * INTERVAL '1 day',
-			v_status::stock_conversion_status, 'demo-seed', v_admin_id,
+			v_status::stock_conversion_status, 'sample-seed', v_admin_id,
 			CASE WHEN v_status = 'posted'    THEN now() - INTERVAL '6 days' END,
 			CASE WHEN v_status = 'posted'    THEN v_admin_id END,
 			CASE WHEN v_status = 'cancelled' THEN now() - INTERVAL '5 days' END,
@@ -706,7 +706,7 @@ BEGIN
 			v_from_sku.product_id, v_from_sku.sku_id, v_from_sku.product_name, v_from_sku.sku, v_from_sku.unit,
 			10, 2, 8,
 			v_to_sku.product_id, v_to_sku.sku_id, v_to_sku.product_name, v_to_sku.sku, v_to_sku.unit,
-			20, 48, 68, 'demo-seed'); -- 2 boxes (24/box) -> 48 pcs
+			20, 48, 68, 'sample-seed'); -- 2 boxes (24/box) -> 48 pcs
 
 		IF v_status = 'posted' THEN
 			INSERT INTO stock_movements
@@ -714,9 +714,9 @@ BEGIN
 				 stock_before, stock_after, notes, created_by, created_at)
 			VALUES
 				(v_from_sku.product_id, v_from_sku.sku_id, v_sc_id, 'conversion_out', 2,
-				 10, 8, 'demo-seed', v_admin_id, now() - INTERVAL '6 days'),
+				 10, 8, 'sample-seed', v_admin_id, now() - INTERVAL '6 days'),
 				(v_to_sku.product_id, v_to_sku.sku_id, v_sc_id, 'conversion_in', 48,
-				 20, 68, 'demo-seed', v_admin_id, now() - INTERVAL '6 days');
+				 20, 68, 'sample-seed', v_admin_id, now() - INTERVAL '6 days');
 		END IF;
 	END LOOP;
 
@@ -727,7 +727,7 @@ BEGIN
 			si.quantity, s.sold_at, s.cashier_id
 		FROM sale_items si
 		JOIN sales s ON s.id = si.sale_id
-		WHERE s.notes = 'demo-seed' AND s.status = 'completed'
+		WHERE s.notes = 'sample-seed' AND s.status = 'completed'
 			AND s.sold_at >= CURRENT_DATE - INTERVAL '3 days'
 		ORDER BY s.sold_at DESC
 		LIMIT 50
@@ -737,7 +737,7 @@ BEGIN
 			 stock_before, stock_after, notes, created_by, created_at)
 		VALUES
 			(v_rec.product_id, v_rec.product_sku_id, v_rec.sale_id, v_rec.sale_item_id, 'sale',
-			 v_rec.quantity, v_rec.quantity + 50, 50, 'demo-seed', v_rec.cashier_id, v_rec.sold_at);
+			 v_rec.quantity, v_rec.quantity + 50, 50, 'sample-seed', v_rec.cashier_id, v_rec.sold_at);
 	END LOOP;
 
 	-- 'sale_return' movements for completed returns (restocked).
@@ -746,14 +746,14 @@ BEGIN
 			sr.id AS ret_id, sr.returned_at, sr.cashier_id
 		FROM sale_return_items sri
 		JOIN sale_returns sr ON sr.id = sri.sale_return_id
-		WHERE sr.notes = 'demo-seed' AND sr.status = 'completed' AND sri.restock = TRUE
+		WHERE sr.notes = 'sample-seed' AND sr.status = 'completed' AND sri.restock = TRUE
 	LOOP
 		INSERT INTO stock_movements
 			(product_id, product_sku_id, sale_return_id, sale_return_item_id, movement_type, quantity,
 			 stock_before, stock_after, notes, created_by, created_at)
 		VALUES
 			(v_rec.product_id, v_rec.product_sku_id, v_rec.ret_id, v_rec.sri_id, 'sale_return',
-			 v_rec.quantity, 50, 50 + v_rec.quantity, 'demo-seed', v_rec.cashier_id, v_rec.returned_at);
+			 v_rec.quantity, 50, 50 + v_rec.quantity, 'sample-seed', v_rec.cashier_id, v_rec.returned_at);
 	END LOOP;
 
 	-- Manual stock_in / stock_out / correction examples on random SKUs.
@@ -766,16 +766,16 @@ BEGIN
 		INSERT INTO stock_movements
 			(product_id, product_sku_id, movement_type, quantity, stock_before, stock_after, notes, created_by, created_at)
 		VALUES
-			(v_sku.product_id, v_sku.sku_id, 'stock_in',   10, 40, 50, 'demo-seed opening stock', v_admin_id, now() - INTERVAL '20 days'),
-			(v_sku.product_id, v_sku.sku_id, 'stock_out',   3, 50, 47, 'demo-seed wastage',        v_admin_id, now() - INTERVAL '14 days'),
-			(v_sku.product_id, v_sku.sku_id, 'correction',  2, 47, 49, 'demo-seed recount',        v_admin_id, now() - INTERVAL '7 days');
+			(v_sku.product_id, v_sku.sku_id, 'stock_in',   10, 40, 50, 'sample-seed opening stock', v_admin_id, now() - INTERVAL '20 days'),
+			(v_sku.product_id, v_sku.sku_id, 'stock_out',   3, 50, 47, 'sample-seed wastage',        v_admin_id, now() - INTERVAL '14 days'),
+			(v_sku.product_id, v_sku.sku_id, 'correction',  2, 47, 49, 'sample-seed recount',        v_admin_id, now() - INTERVAL '7 days');
 	END LOOP;
 
-	-- 16. Payroll slips for the last 3 months per active demo employee --------
+	-- 16. Payroll slips for the last 3 months per active sample employee -------
 	FOR v_rec IN
 		SELECT id, name, position, base_salary
 		FROM employees
-		WHERE phone = 'demo-seed' AND is_active = TRUE AND deleted_at IS NULL
+		WHERE phone = 'sample-seed' AND is_active = TRUE AND deleted_at IS NULL
 	LOOP
 		FOR k IN 1..3 LOOP
 			v_period_start := date_trunc('month', CURRENT_DATE - (k || ' months')::interval)::date;
@@ -812,7 +812,7 @@ BEGIN
 		ON v.rn = picks.rn
 	WHERE ps.id = picks.id;
 
-	RAISE NOTICE 'Demo seed complete.';
+	RAISE NOTICE 'Sample seed complete.';
 END $$;
 
 COMMIT;

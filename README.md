@@ -194,7 +194,7 @@ perintah, berurutan, dari `~/app` di VPS (butuh `VAULT_TOKEN` di environment):
 ```bash
 ./deploy.sh migrate 001_initial_pos_schema.sql
 # ... lanjutkan sampai migrasi terakhir secara berurutan
-./deploy.sh seed dashboard_demo.sql
+./deploy.sh seed dashboard_sample.sql
 ```
 
 > Catatan: `docker-compose.prod.yml` me-mount `backend/migrations` dan

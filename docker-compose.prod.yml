@@ -53,7 +53,7 @@ services:
       # deploy artifact sync. Override POSTGRES_DATA_DIR to relocate it.
       - ${POSTGRES_DATA_DIR:-/srv/pos/postgres}:/var/lib/postgresql/data
       # Schema + seed SQL mounted read-only for manual runs, e.g.:
-      #   docker exec pos-postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /sql/seeds/dashboard_demo.sql
+      #   docker exec pos-postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /sql/seeds/dashboard_sample.sql
       # NOTE: these are NOT auto-applied on init (that only happens via
       # /docker-entrypoint-initdb.d, which we intentionally do not use in prod).
       - ./backend/migrations:/sql/migrations:ro
