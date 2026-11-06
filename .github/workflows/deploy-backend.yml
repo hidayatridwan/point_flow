@@ -1,13 +1,12 @@
+# JALUR LAMA (GHCR -> VPS). VPS sudah dimatikan; trigger push dipindah ke
+# manual-only supaya tidak gagal di setiap push ke main. Deploy backend sekarang
+# lewat .github/workflows/deploy-render.yml (Render + Supabase).
+# Workflow ini tetap disimpan untuk referensi / mengaktifkan VPS lagi nanti.
+
 name: Deploy Backend
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'backend/**'
-      - 'docker-compose.prod.yml'
-      - 'deploy.sh'
 
 permissions:
   contents: read
