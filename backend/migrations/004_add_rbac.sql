@@ -48,7 +48,7 @@ VALUES
 INSERT INTO permissions (code, name, description)
 VALUES
     ('dashboard', 'Dashboard', 'Access dashboard summary.'),
-    ('pos', 'Point of Sale', 'Access sales and cashier workflows.'),
+    ('point_flow', 'Point Flow', 'Access sales and cashier workflows.'),
     ('master_data', 'Master Data', 'Access product, supplier, unit, SKU, and employee master data.'),
     ('procurement', 'Procurement', 'Access purchase order and goods receipt workflows.'),
     ('inventory', 'Inventory', 'Access stock adjustment, stock conversion, and stock movement workflows.'),
@@ -65,7 +65,7 @@ WHERE r.code = 'admin';
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM roles r
-JOIN permissions p ON p.code IN ('dashboard', 'pos')
+JOIN permissions p ON p.code IN ('dashboard', 'point_flow')
 WHERE r.code = 'cashier';
 
 ALTER TABLE users ADD COLUMN role_id BIGINT REFERENCES roles(id);

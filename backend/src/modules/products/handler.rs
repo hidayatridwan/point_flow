@@ -198,7 +198,7 @@ pub async fn list_product_skus(
 ) -> AppResult<Json<ApiResponse<Vec<ProductSkuResponse>>>> {
     user.require_any_permission(
         &state.db,
-        &["master_data", "pos", "procurement", "inventory"],
+        &["master_data", "point_flow", "procurement", "inventory"],
     )
     .await?;
     Ok(Json(ApiResponse::success(
@@ -213,7 +213,7 @@ pub async fn get_product_sku(
 ) -> AppResult<Json<ApiResponse<ProductSkuResponse>>> {
     user.require_any_permission(
         &state.db,
-        &["master_data", "pos", "procurement", "inventory"],
+        &["master_data", "point_flow", "procurement", "inventory"],
     )
     .await?;
     Ok(Json(ApiResponse::success(

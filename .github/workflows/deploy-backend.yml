@@ -36,7 +36,7 @@ jobs:
           context: ./backend
           file: ./backend/Dockerfile.prod
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/pos-backend:latest
+          tags: ghcr.io/${{ github.repository_owner }}/point_flow-backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

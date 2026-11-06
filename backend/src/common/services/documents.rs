@@ -1430,7 +1430,7 @@ pub async fn cancel_sale(
     id: i64,
     request: CancelRequest,
 ) -> AppResult<SaleDetailResponse> {
-    user.require_permission(pool, "pos").await?;
+    user.require_permission(pool, "point_flow").await?;
     let cancel_reason = normalize_optional_string(request.reason);
     let result = sqlx::query(
         r#"

@@ -200,7 +200,7 @@ export const messages = {
 			payroll: 'Payroll',
 			payrollReport: 'Laporan Payroll',
 			payrollSlips: 'Slip Payroll',
-			pointOfSale: 'Point of Sale',
+			pointFlow: 'Point Flow',
 			procurement: 'Pembelian',
 			productCategories: 'Kategori Produk',
 			products: 'Produk',
@@ -222,7 +222,7 @@ export const messages = {
 			users: 'User'
 		},
 		login: {
-			title: 'Masuk ke POS',
+			title: 'Masuk ke Point Flow',
 			subtitle: 'Gunakan akun admin atau kasir yang terdaftar.',
 			email: 'Email',
 			password: 'Kata Sandi',
@@ -604,7 +604,7 @@ export const messages = {
 			},
 			cashRegisters: {
 				title: 'Register Kas',
-				subtitle: 'Kelola perangkat kasir fisik dan laci yang digunakan untuk sesi POS.',
+				subtitle: 'Kelola perangkat kasir fisik dan laci yang digunakan untuk sesi Point Flow.',
 				addBtn: 'Tambah Register',
 				searchPlaceholder: 'Cari register...',
 				searchAriaLabel: 'Cari register kas',
@@ -1031,7 +1031,7 @@ export const messages = {
 				colSellingPrice: 'Harga Jual'
 			}
 		},
-		pos: {
+		point_flow: {
 			sales: {
 				title: 'Riwayat Penjualan',
 				subtitle: 'Tinjau transaksi penjualan yang selesai dan dibatalkan.',
@@ -1612,7 +1612,7 @@ export const messages = {
 			noResults: 'Tidak ada artikel yang sesuai dengan pencarian Anda.',
 			categories: {
 				all: 'Semua',
-				pos: 'Point of Sale',
+				point_flow: 'Point Flow',
 				procurement: 'Pembelian',
 				inventory: 'Inventori',
 				payroll: 'Payroll',
@@ -1882,7 +1882,7 @@ export const messages = {
 			payroll: 'Payroll',
 			payrollReport: 'Payroll Report',
 			payrollSlips: 'Payroll Slips',
-			pointOfSale: 'Point of Sale',
+			pointFlow: 'Point Flow',
 			procurement: 'Procurement',
 			productCategories: 'Product Categories',
 			products: 'Products',
@@ -1904,7 +1904,7 @@ export const messages = {
 			users: 'Users'
 		},
 		login: {
-			title: 'Sign in to POS',
+			title: 'Sign in to Point Flow',
 			subtitle: 'Use your registered admin or cashier account.',
 			email: 'Email',
 			password: 'Password',
@@ -2284,7 +2284,7 @@ export const messages = {
 			},
 			cashRegisters: {
 				title: 'Cash Registers',
-				subtitle: 'Manage physical cashier devices and drawers used for POS sessions.',
+				subtitle: 'Manage physical cashier devices and drawers used for Point Flow sessions.',
 				addBtn: 'Add Register',
 				searchPlaceholder: 'Search registers...',
 				searchAriaLabel: 'Search cash registers',
@@ -2709,7 +2709,7 @@ export const messages = {
 				colSellingPrice: 'Selling Price'
 			}
 		},
-		pos: {
+		point_flow: {
 			sales: {
 				title: 'Sales History',
 				subtitle: 'Review completed and cancelled sales transactions.',
@@ -3289,7 +3289,7 @@ export const messages = {
 			noResults: 'No articles match your search.',
 			categories: {
 				all: 'All',
-				pos: 'Point of Sale',
+				point_flow: 'Point Flow',
 				procurement: 'Procurement',
 				inventory: 'Inventory',
 				payroll: 'Payroll',

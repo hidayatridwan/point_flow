@@ -16,7 +16,7 @@
 
 	const CATEGORIES = [
 		'all',
-		'pos',
+		'point_flow',
 		'procurement',
 		'inventory',
 		'payroll',
@@ -26,10 +26,10 @@
 
 	// FAQ entries: structure lives here, copy lives in i18n (`helpDesk.faq.<key>.q|a`).
 	const FAQ_ITEMS = [
-		{ key: 'openSession', category: 'pos' },
-		{ key: 'noSession', category: 'pos' },
-		{ key: 'saleReturn', category: 'pos' },
-		{ key: 'cashMovement', category: 'pos' },
+		{ key: 'openSession', category: 'point_flow' },
+		{ key: 'noSession', category: 'point_flow' },
+		{ key: 'saleReturn', category: 'point_flow' },
+		{ key: 'cashMovement', category: 'point_flow' },
 		{ key: 'poToGr', category: 'procurement' },
 		{ key: 'postGr', category: 'procurement' },
 		{ key: 'stockAdjust', category: 'inventory' },

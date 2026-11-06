@@ -1,8 +1,8 @@
-# Proposal Penawaran Harga Pengembangan Aplikasi Point of Sale (POS)
+# Proposal Penawaran Harga Pengembangan Aplikasi Point of Sale (Point Flow)
 
 ## 1. Ringkasan
 
-Proposal ini mencakup pengembangan aplikasi POS berbasis web untuk membantu menjalankan operasional harian, mulai dari transaksi kasir/penjualan, dukungan barcode/QR code untuk pencarian item, manajemen produk dan SKU/kemasan, pengelolaan satuan, pengelolaan stok per SKU, pembelian barang, penerimaan barang, koreksi stok, konversi stok antar kemasan, pengelolaan karyawan, slip gaji, dashboard, sampai laporan operasional.
+Proposal ini mencakup pengembangan aplikasi Point Flow berbasis web untuk membantu menjalankan operasional harian, mulai dari transaksi kasir/penjualan, dukungan barcode/QR code untuk pencarian item, manajemen produk dan SKU/kemasan, pengelolaan satuan, pengelolaan stok per SKU, pembelian barang, penerimaan barang, koreksi stok, konversi stok antar kemasan, pengelolaan karyawan, slip gaji, dashboard, sampai laporan operasional.
 
 ## 2. Daftar Fitur
 
@@ -28,7 +28,7 @@ Proposal ini mencakup pengembangan aplikasi POS berbasis web untuk membantu menj
 
 Termasuk dalam penawaran:
 
-- Struktur database POS sesuai kebutuhan.
+- Struktur database Point Flow sesuai kebutuhan.
 - Backend API untuk seluruh modul utama.
 - Validasi input, pesan sukses, dan pesan error.
 - Role-based access untuk admin dan kasir.

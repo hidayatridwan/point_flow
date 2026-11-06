@@ -1,6 +1,6 @@
-name: pos
+name: point_flow
 
-x-logging: &pos-backend-logging
+x-logging: &point_flow-backend-logging
   driver: json-file
   options:
     max-size: "10m"
@@ -8,8 +8,8 @@ x-logging: &pos-backend-logging
 
 services:
   backend:
-    image: ghcr.io/hidayatridwan/pos-backend:latest
-    container_name: pos-backend
+    image: ghcr.io/hidayatridwan/point_flow-backend:latest
+    container_name: point_flow-backend
     restart: unless-stopped
     environment:
       APP_HOST: ${APP_HOST:-0.0.0.0}
@@ -31,7 +31,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    logging: *pos-backend-logging
+    logging: *point_flow-backend-logging
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:$${APP_PORT}/api/v1/health"]
       interval: 10s
@@ -41,7 +41,7 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    container_name: pos-postgres
+    container_name: point_flow-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
@@ -51,14 +51,14 @@ services:
       # Database lives on a host directory OUTSIDE ~/app, so it survives
       # `docker compose down -v` / volume deletion and is never touched by the
       # deploy artifact sync. Override POSTGRES_DATA_DIR to relocate it.
-      - ${POSTGRES_DATA_DIR:-/srv/pos/postgres}:/var/lib/postgresql/data
+      - ${POSTGRES_DATA_DIR:-/srv/point_flow/postgres}:/var/lib/postgresql/data
       # Schema + seed SQL mounted read-only for manual runs, e.g.:
-      #   docker exec pos-postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /sql/seeds/dashboard_sample.sql
+      #   docker exec point_flow-postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /sql/seeds/dashboard_sample.sql
       # NOTE: these are NOT auto-applied on init (that only happens via
       # /docker-entrypoint-initdb.d, which we intentionally do not use in prod).
       - ./backend/migrations:/sql/migrations:ro
       - ./backend/seeds:/sql/seeds:ro
-    logging: *pos-backend-logging
+    logging: *point_flow-backend-logging
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 10s
@@ -67,8 +67,8 @@ services:
 
 networks:
   default: {}
-  # The Caddy reverse proxy lives on the external 'web' network; pos-backend joins
-  # it so Caddy can reach the container by name (reverse_proxy pos-backend:8081).
+  # The Caddy reverse proxy lives on the external 'web' network; point_flow-backend joins
+  # it so Caddy can reach the container by name (reverse_proxy point_flow-backend:8081).
   proxy:
     external: true
     name: web

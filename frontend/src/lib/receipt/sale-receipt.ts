@@ -21,7 +21,7 @@ export function printSaleReceipt(sale: SaleDetail) {
 
 	const printWindow = window.open('', '_blank', 'popup,width=420,height=720');
 	if (!printWindow) {
-		throw new Error(t('pos.sales.receipt.printBlocked'));
+		throw new Error(t('point_flow.sales.receipt.printBlocked'));
 	}
 
 	printWindow.document.open();
@@ -40,7 +40,7 @@ function buildSaleReceiptHtml(sale: SaleDetail) {
 <html lang="${getLocale()}">
 <head>
 	<meta charset="utf-8" />
-	<title>${escapeHtml(sale.transaction_no)} ${escapeHtml(t('pos.sales.receipt.receiptLabel'))}</title>
+	<title>${escapeHtml(sale.transaction_no)} ${escapeHtml(t('point_flow.sales.receipt.receiptLabel'))}</title>
 	<style>
 		@page {
 			size: 80mm auto;
@@ -131,17 +131,17 @@ function buildSaleReceiptHtml(sale: SaleDetail) {
 <body>
 	<main class="receipt">
 		<section class="center">
-			<div class="store-name">POS SYSTEM</div>
-			<div class="muted">${escapeHtml(t('pos.sales.receipt.receiptLabel'))}</div>
+			<div class="store-name">POINT FLOW SYSTEM</div>
+			<div class="muted">${escapeHtml(t('point_flow.sales.receipt.receiptLabel'))}</div>
 		</section>
 
 		<hr class="divider" />
 
 		<section>
-			<div class="row"><span>${escapeHtml(t('pos.sales.receipt.no'))}</span><span class="value">${escapeHtml(sale.transaction_no)}</span></div>
-			<div class="row"><span>${escapeHtml(t('pos.sales.receipt.date'))}</span><span class="value">${escapeHtml(formatDateTime(sale.sold_at))}</span></div>
-			<div class="row"><span>${escapeHtml(t('pos.sales.receipt.cashier'))}</span><span class="value">${escapeHtml(sale.cashier_name)}</span></div>
-			<div class="row"><span>${escapeHtml(t('pos.sales.receipt.register'))}</span><span class="value">${escapeHtml(sale.cash_register_code ?? '-')}</span></div>
+			<div class="row"><span>${escapeHtml(t('point_flow.sales.receipt.no'))}</span><span class="value">${escapeHtml(sale.transaction_no)}</span></div>
+			<div class="row"><span>${escapeHtml(t('point_flow.sales.receipt.date'))}</span><span class="value">${escapeHtml(formatDateTime(sale.sold_at))}</span></div>
+			<div class="row"><span>${escapeHtml(t('point_flow.sales.receipt.cashier'))}</span><span class="value">${escapeHtml(sale.cashier_name)}</span></div>
+			<div class="row"><span>${escapeHtml(t('point_flow.sales.receipt.register'))}</span><span class="value">${escapeHtml(sale.cash_register_code ?? '-')}</span></div>
 			<div class="row"><span>${escapeHtml(t('common.status'))}</span><span class="value">${escapeHtml(formatStatus(sale.status))}</span></div>
 		</section>
 
@@ -154,19 +154,19 @@ function buildSaleReceiptHtml(sale: SaleDetail) {
 		<hr class="divider" />
 
 		<section>
-			<div class="row"><span>${escapeHtml(t('pos.sales.receipt.subtotal'))}</span><span class="value">${escapeHtml(formatIdr(sale.subtotal_amount))}</span></div>
-			<div class="row total"><span>${escapeHtml(t('pos.sales.receipt.total'))}</span><span class="value">${escapeHtml(formatIdr(sale.total_amount))}</span></div>
-			<div class="row"><span>${escapeHtml(t('pos.sales.receipt.paid'))}</span><span class="value">${escapeHtml(formatIdr(sale.paid_amount))}</span></div>
-			<div class="row"><span>${escapeHtml(t('pos.sales.receipt.change'))}</span><span class="value">${escapeHtml(formatIdr(sale.change_amount))}</span></div>
+			<div class="row"><span>${escapeHtml(t('point_flow.sales.receipt.subtotal'))}</span><span class="value">${escapeHtml(formatIdr(sale.subtotal_amount))}</span></div>
+			<div class="row total"><span>${escapeHtml(t('point_flow.sales.receipt.total'))}</span><span class="value">${escapeHtml(formatIdr(sale.total_amount))}</span></div>
+			<div class="row"><span>${escapeHtml(t('point_flow.sales.receipt.paid'))}</span><span class="value">${escapeHtml(formatIdr(sale.paid_amount))}</span></div>
+			<div class="row"><span>${escapeHtml(t('point_flow.sales.receipt.change'))}</span><span class="value">${escapeHtml(formatIdr(sale.change_amount))}</span></div>
 		</section>
 
-		${sale.notes ? `<hr class="divider" /><section><div>${escapeHtml(t('pos.sales.receipt.notes'))}</div><div>${escapeHtml(sale.notes)}</div></section>` : ''}
+		${sale.notes ? `<hr class="divider" /><section><div>${escapeHtml(t('point_flow.sales.receipt.notes'))}</div><div>${escapeHtml(sale.notes)}</div></section>` : ''}
 
 		<hr class="divider" />
 
 		<section class="footer">
-			<div>${escapeHtml(t('pos.sales.receipt.thanks'))}</div>
-			<div class="muted">${escapeHtml(t('pos.sales.receipt.policy'))}</div>
+			<div>${escapeHtml(t('point_flow.sales.receipt.thanks'))}</div>
+			<div class="muted">${escapeHtml(t('point_flow.sales.receipt.policy'))}</div>
 		</section>
 	</main>
 </body>
@@ -202,8 +202,8 @@ function formatNumber(value: number | null | undefined) {
 }
 
 function formatStatus(status: string) {
-	if (status === 'completed') return t('pos.sales.statusCompleted');
-	if (status === 'cancelled') return t('pos.sales.statusCancelled');
+	if (status === 'completed') return t('point_flow.sales.statusCompleted');
+	if (status === 'cancelled') return t('point_flow.sales.statusCancelled');
 	return status;
 }
 

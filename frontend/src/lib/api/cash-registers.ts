@@ -1,7 +1,7 @@
 import { apiDelete, apiGet, apiGetEnvelope, apiPost, apiPut } from './client.js';
 import type { PaginationMeta } from './types.js';
 
-const ACTIVE_SESSION_STORAGE_KEY = 'pos.active_cash_register_session_id';
+const ACTIVE_SESSION_STORAGE_KEY = 'point_flow.active_cash_register_session_id';
 
 export const cashRegisterStatuses = ['active', 'inactive'] as const;
 export const cashRegisterSessionStatuses = ['open', 'closed'] as const;

@@ -6,7 +6,7 @@
 --
 --   * Sales ............... completed + cancelled
 --   * Sale returns ........ completed + cancelled (with items)
---   * Cash sessions ....... one open (anchors POS) + several closed
+--   * Cash sessions ....... one open (anchors Point Flow) + several closed
 --   * Cash drawer moves ... cash_in / cash_out / cash_drop / petty_cash + cancelled
 --   * Purchase orders ..... draft / ordered / partially_received / received / cancelled (with items)
 --   * Goods receipts ...... draft / posted / cancelled (with items)
@@ -35,7 +35,7 @@
 --   * sample cashier emails   dewi@/budi@/sari@example.com
 --
 -- Run:
---   docker compose exec -T postgres psql -U pos -d pos < backend/seeds/dashboard_sample.sql
+--   docker compose exec -T postgres psql -U point_flow -d point_flow < backend/seeds/dashboard_sample.sql
 --
 -- Re-seed from scratch: run the RESET block below first (uncomment), then re-run.
 -- ---------------------------------------------------------------------------
@@ -262,7 +262,7 @@ BEGIN
 	WHERE email IN ('dewi@example.com', 'budi@example.com', 'sari@example.com');
 	v_cashiers := v_cashiers || v_admin_id;
 
-	-- 6. Cash register + one open session (anchors POS) + closed sessions ------
+	-- 6. Cash register + one open session (anchors Point Flow) + closed sessions ------
 	SELECT id INTO v_register_id
 	FROM cash_registers WHERE lower(code) = 'reg-01' AND deleted_at IS NULL;
 	IF v_register_id IS NULL THEN

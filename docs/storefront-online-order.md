@@ -4,7 +4,7 @@
 | --- | --- |
 | Status | Rencana — belum diimplementasikan |
 | Tanggal | 2026-11-05 |
-| Cakupan | Pembelian produk oleh end user lewat browser HP, diproses kasir dari dashboard POS yang sudah ada |
+| Cakupan | Pembelian produk oleh end user lewat browser HP, diproses kasir dari dashboard Point Flow yang sudah ada |
 | Prinsip | Sesederhana mungkin. Satu toko. Satu repo. Tanpa akun pembeli. |
 
 ## 1. Keputusan yang Sudah Disepakati
@@ -21,8 +21,8 @@ Alur utama pada dokumen ini sudah disetujui pemilik produk: katalog publik → c
 ### Tujuan
 
 - Pelanggan bisa melihat produk yang dijual toko dan memesan dari HP tanpa datang dan mengantre di kasir.
-- Kasir menerima semua pesanan online di satu tempat (dashboard POS yang sudah dipakai setiap hari), lalu menyiapkan dan menyerahkan barang.
-- Stok dan laporan penjualan tetap satu sumber kebenaran: data POS yang sudah ada.
+- Kasir menerima semua pesanan online di satu tempat (dashboard Point Flow yang sudah dipakai setiap hari), lalu menyiapkan dan menyerahkan barang.
+- Stok dan laporan penjualan tetap satu sumber kebenaran: data Point Flow yang sudah ada.
 
 ### Bukan tujuan MVP (fase lanjutan, lihat Bagian 13)
 
@@ -34,7 +34,7 @@ Alur utama pada dokumen ini sudah disetujui pemilik produk: katalog publik → c
 
 ## 3. Rekomendasi Bentuk Sistem: Tetap Satu Repo
 
-**Tidak membuat repo baru.** Storefront ditambahkan ke repo POS yang sekarang sebagai modul dan route baru.
+**Tidak membuat repo baru.** Storefront ditambahkan ke repo Point Flow yang sekarang sebagai modul dan route baru.
 
 Alasan:
 
@@ -49,7 +49,7 @@ Pemisahan yang dilakukan hanya di level akses:
 | Storefront pembeli | Publik, tanpa login | Halaman web `/shop`, API `GET /api/v1/public/...` |
 | Dashboard kasir/admin | Terlindungi JWT + RBAC seperti sekarang | Halaman `(protected)`, API yang sudah ada + endpoint pesanan online khusus kasir |
 
-Nama domain bebas dipilih saat implementasi (mis. `pos.<domain>` tetap untuk kasir dan storefront di path `/shop` pada domain yang sama). Keputusan domain tidak mengubah desain di dokumen ini.
+Nama domain bebas dipilih saat implementasi (mis. `point_flow.<domain>` tetap untuk kasir dan storefront di path `/shop` pada domain yang sama). Keputusan domain tidak mengubah desain di dokumen ini.
 
 ## 4. Alur Pengguna
 
@@ -69,7 +69,7 @@ Nama domain bebas dipilih saat implementasi (mis. `pos.<domain>` tetap untuk kas
    - Bila memilih bayar di tempat, halaman sukses menampilkan nomor pesanan dan perkiraan langkah berikutnya (menunggu diproses kasir).
 6. Pembeli cukup menyimpan nomor pesanan / halaman sukses. Tidak ada akun dan tidak ada halaman lacak status pada MVP; konfirmasi lanjutan dilakukan kasir lewat WhatsApp secara manual.
 
-### 4.2 Alur kasir (dashboard POS)
+### 4.2 Alur kasir (dashboard Point Flow)
 
 1. Pesanan baru muncul di menu baru **Pesanan Online** dengan penanda jumlah pesanan berstatus `Baru`.
 2. Kasir membuka detail pesanan: isi keranjang, nama + nomor WA pembeli, metode serah terima, alamat antar (bila ada), metode pembayaran, dan total.
@@ -143,7 +143,7 @@ Prinsip: data master (produk, SKU, harga, stok) tidak diduplikasi. Storefront ha
 
 ### 5.3 Perubahan kecil pada tabel lama
 
-- `sales`: tambah kolom penanda channel agar laporan bisa membedakan penjualan kasir dan online, mis. `channel VARCHAR(20) NOT NULL DEFAULT 'pos'` dengan nilai `pos | online`, plus `online_order_id BIGINT NULL` unik bila penjualan berasal dari pesanan online. Ini perubahan aditif (kolom baru ber-default), penjualan lama tidak terpengaruh.
+- `sales`: tambah kolom penanda channel agar laporan bisa membedakan penjualan kasir dan online, mis. `channel VARCHAR(20) NOT NULL DEFAULT 'point_flow'` dengan nilai `point_flow | online`, plus `online_order_id BIGINT NULL` unik bila penjualan berasal dari pesanan online. Ini perubahan aditif (kolom baru ber-default), penjualan lama tidak terpengaruh.
 - Tidak ada perubahan pada `product_skus`, `products`, dan tabel stok lain. Katalog publik adalah query baca dari tabel tersebut.
 
 ### 5.4 Info pembayaran toko
@@ -253,7 +253,7 @@ Endpoint publik adalah permukaan serangan baru; MVP tetap menerapkan dasar berik
 5. **Dashboard kasir**: menu Pesanan Online, daftar + detail + aksi status, penanda pesanan baru pada sidebar, perluasan pengaturan info pembayaran.
 6. **Uji end-to-end manual** sesuai Bagian 12, lalu rilis ke satu toko dan pantau pesanan masuk selama masa awal.
 
-Setiap langkah di atas adalah unit kerja terpisah yang bisa ditinjau sendiri; tidak ada perubahan perilaku pada flow POS kasir yang sudah berjalan selain kolom channel ber-default `pos`.
+Setiap langkah di atas adalah unit kerja terpisah yang bisa ditinjau sendiri; tidak ada perubahan perilaku pada flow Point Flow kasir yang sudah berjalan selain kolom channel ber-default `point_flow`.
 
 ## 12. Rencana Validasi
 

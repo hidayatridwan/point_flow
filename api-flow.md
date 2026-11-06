@@ -1,6 +1,6 @@
-# POS Backend API Flow
+# Point Flow Backend API Flow
 
-Dokumen ini menjelaskan urutan penggunaan API POS dari awal sampai akhir berdasarkan file Postman collection `pos-backend.postman_collection.json`.
+Dokumen ini menjelaskan urutan penggunaan API Point Flow dari awal sampai akhir berdasarkan file Postman collection `point_flow-backend.postman_collection.json`.
 
 Base URL yang dipakai collection:
 
@@ -18,7 +18,7 @@ Authorization: Bearer {{access_token}}
 
 Catatan:
 
-- Kolom Postman request memakai format `Folder > Request` di dalam file `pos-backend.postman_collection.json`.
+- Kolom Postman request memakai format `Folder > Request` di dalam file `point_flow-backend.postman_collection.json`.
 - Placeholder seperti `{{audit_log_id}}`, `{{cash_register_id}}`, `{{cash_register_session_id}}`, `{{cash_drawer_movement_id}}`, `{{product_id}}`, `{{product_sku_id}}`, `{{sale_id}}`, `{{sale_item_id}}`, `{{sale_return_id}}`, `{{unit_pcs_id}}`, `{{unit_dus_id}}`, `{{product_sku_from_id}}`, dan `{{product_sku_to_id}}` adalah variable Postman collection.
 - Response aktual selalu memakai envelope `data`, `meta`, `error`, dan `request_id`. Beberapa contoh response di dokumen ini menampilkan isi `data` saja agar alurnya lebih ringkas.
 - Response error umum berbentuk:
@@ -96,7 +96,7 @@ Contoh response:
       "inventory",
       "master_data",
       "payroll",
-      "pos",
+      "point_flow",
       "procurement",
       "reports",
       "users"
@@ -153,7 +153,7 @@ Contoh response:
       "inventory",
       "master_data",
       "payroll",
-      "pos",
+      "point_flow",
       "procurement",
       "reports",
       "users"
@@ -207,7 +207,7 @@ Contoh response:
       "inventory",
       "master_data",
       "payroll",
-      "pos",
+      "point_flow",
       "procurement",
       "reports",
       "users"
@@ -251,7 +251,7 @@ Contoh response:
     "inventory",
     "master_data",
     "payroll",
-    "pos",
+    "point_flow",
     "procurement",
     "reports",
     "users"
@@ -418,7 +418,7 @@ Contoh response:
 | `Cash Registers > Open Cash Register Session` | `POST {{base_url}}/cash-register-sessions/open` |
 | `Cash Registers > Close Cash Register Session` | `POST {{base_url}}/cash-register-sessions/{{cash_register_session_id}}/close` |
 
-Relasi: session memakai `cash_register_id`, `opened_by`, dan `closed_by`. Satu register hanya boleh punya satu session `open`. Endpoint session membutuhkan permission `pos`.
+Relasi: session memakai `cash_register_id`, `opened_by`, dan `closed_by`. Satu register hanya boleh punya satu session `open`. Endpoint session membutuhkan permission `point_flow`.
 
 Contoh open request:
 
@@ -593,7 +593,7 @@ Contoh close response:
 
 ## 4. User Management
 
-Admin bisa membuat user cashier. Cashier dipakai di flow POS untuk transaksi penjualan.
+Admin bisa membuat user cashier. Cashier dipakai di flow Point Flow untuk transaksi penjualan.
 
 | Postman request | Endpoint |
 | --- | --- |
@@ -631,7 +631,7 @@ Contoh create response:
   "role": "cashier",
   "permissions": [
     "dashboard",
-    "pos"
+    "point_flow"
   ],
   "is_active": true,
   "last_login_at": null,
@@ -658,7 +658,7 @@ Contoh list response:
       "inventory",
       "master_data",
       "payroll",
-      "pos",
+      "point_flow",
       "procurement",
       "reports",
       "users"
@@ -717,7 +717,7 @@ Contoh create role request:
   "description": "Point of sale and procurement access.",
   "permission_codes": [
     "dashboard",
-    "pos",
+    "point_flow",
     "procurement"
   ]
 }
@@ -734,7 +734,7 @@ Contoh role response:
   "is_system": false,
   "permissions": [
     "dashboard",
-    "pos",
+    "point_flow",
     "procurement"
   ],
   "created_at": "2026-05-18T10:12:00Z",
@@ -749,7 +749,7 @@ Contoh replace role permissions request:
 {
   "permission_codes": [
     "dashboard",
-    "pos",
+    "point_flow",
     "procurement"
   ]
 }

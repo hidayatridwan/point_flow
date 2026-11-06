@@ -28,28 +28,28 @@
 				items: [
 					{
 						titleKey: 'nav.cashier',
-						url: '/pos/register-session',
+						url: '/point_flow/register-session',
 						icon: ShoppingCartIcon,
 						items: [
 							{
 								titleKey: 'nav.registerSession',
-								url: '/pos/register-session'
+								url: '/point_flow/register-session'
 							},
 							{
 								titleKey: 'nav.newTransaction',
-								url: '/pos/sales/new'
+								url: '/point_flow/sales/new'
 							},
 							{
 								titleKey: 'nav.salesHistory',
-								url: '/pos/sales'
+								url: '/point_flow/sales'
 							},
 							{
 								titleKey: 'nav.saleReturns',
-								url: '/pos/sale-returns'
+								url: '/point_flow/sale-returns'
 							},
 							{
 								titleKey: 'nav.cashMovements',
-								url: '/pos/cash-drawer-movements'
+								url: '/point_flow/cash-drawer-movements'
 							}
 						]
 					},

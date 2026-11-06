@@ -68,7 +68,7 @@ pub async fn list_cash_register_sessions(
     user: AuthUser,
     Query(query): Query<ListQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<CashRegisterSessionResponse>>>> {
-    user.require_permission(&state.db, "pos").await?;
+    user.require_permission(&state.db, "point_flow").await?;
     Ok(Json(ApiResponse::success(
         service::list_cash_register_sessions(&state.db, query).await?,
     )))
@@ -79,7 +79,7 @@ pub async fn open_cash_register_session(
     user: AuthUser,
     Json(payload): Json<OpenCashRegisterSessionRequest>,
 ) -> AppResult<Json<ApiResponse<CashRegisterSessionResponse>>> {
-    user.require_permission(&state.db, "pos").await?;
+    user.require_permission(&state.db, "point_flow").await?;
     Ok(Json(ApiResponse::success(
         service::open_cash_register_session(&state.db, &user, payload).await?,
     )))
@@ -91,7 +91,7 @@ pub async fn close_cash_register_session(
     Path(id): Path<i64>,
     Json(payload): Json<CloseCashRegisterSessionRequest>,
 ) -> AppResult<Json<ApiResponse<CashRegisterSessionResponse>>> {
-    user.require_permission(&state.db, "pos").await?;
+    user.require_permission(&state.db, "point_flow").await?;
     Ok(Json(ApiResponse::success(
         service::close_cash_register_session(&state.db, &user, id, payload).await?,
     )))
@@ -102,7 +102,7 @@ pub async fn list_cash_drawer_movements(
     user: AuthUser,
     Query(query): Query<CashDrawerMovementQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<CashDrawerMovementResponse>>>> {
-    user.require_permission(&state.db, "pos").await?;
+    user.require_permission(&state.db, "point_flow").await?;
     Ok(Json(ApiResponse::success(
         service::list_cash_drawer_movements(&state.db, query).await?,
     )))
@@ -113,7 +113,7 @@ pub async fn get_cash_drawer_movement(
     user: AuthUser,
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<CashDrawerMovementResponse>>> {
-    user.require_permission(&state.db, "pos").await?;
+    user.require_permission(&state.db, "point_flow").await?;
     Ok(Json(ApiResponse::success(
         service::find_cash_drawer_movement(&state.db, id).await?,
     )))
@@ -124,7 +124,7 @@ pub async fn create_cash_drawer_movement(
     user: AuthUser,
     Json(payload): Json<CreateCashDrawerMovementRequest>,
 ) -> AppResult<Json<ApiResponse<CashDrawerMovementResponse>>> {
-    user.require_permission(&state.db, "pos").await?;
+    user.require_permission(&state.db, "point_flow").await?;
     Ok(Json(ApiResponse::success(
         service::create_cash_drawer_movement(&state.db, &user, payload).await?,
     )))
@@ -136,7 +136,7 @@ pub async fn cancel_cash_drawer_movement(
     Path(id): Path<i64>,
     Json(payload): Json<CancelRequest>,
 ) -> AppResult<Json<ApiResponse<CashDrawerMovementResponse>>> {
-    user.require_permission(&state.db, "pos").await?;
+    user.require_permission(&state.db, "point_flow").await?;
     Ok(Json(ApiResponse::success(
         service::cancel_cash_drawer_movement(&state.db, &user, id, payload).await?,
     )))

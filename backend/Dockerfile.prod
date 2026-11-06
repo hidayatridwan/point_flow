@@ -25,11 +25,11 @@ RUN apt-get update \
 
 WORKDIR /app
 
-COPY --from=builder /app/target/release/server /usr/local/bin/pos-server
+COPY --from=builder /app/target/release/server /usr/local/bin/point_flow-server
 
 ENV APP_HOST=0.0.0.0
 ENV APP_PORT=8080
 
 EXPOSE 8080
 
-CMD ["pos-server"]
+CMD ["point_flow-server"]

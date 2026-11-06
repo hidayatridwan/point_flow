@@ -9,15 +9,15 @@ if [[ -z "${VAULT_TOKEN:-}" ]]; then
   exit 1
 fi
 
-echo "==> Fetching secrets from Vault (kv/pos/config)..."
-eval "$(vault kv get -format=json -mount=kv/pos config \
+echo "==> Fetching secrets from Vault (kv/point_flow/config)..."
+eval "$(vault kv get -format=json -mount=kv/point_flow config \
   | jq -r '.data.data | to_entries[] | "export \(.key)=\(.value | @sh)"')"
 
 COMPOSE="docker compose -f docker-compose.prod.yml"
 
 # Manual, opt-in schema helpers. These are never run by the deploy path below;
 # you invoke them by hand, one file at a time, e.g.:
-#   ./deploy.sh migrate 001_initial_pos_schema.sql
+#   ./deploy.sh migrate 001_initial_point_flow_schema.sql
 #   ./deploy.sh seed dashboard_sample.sql
 # (No migration tracking table exists, so apply files individually and in order.)
 case "${1:-}" in
@@ -51,7 +51,7 @@ docker network inspect web >/dev/null 2>&1 || {
   exit 1
 }
 
-echo "==> Deploying POS stack..."
+echo "==> Deploying Point Flow stack..."
 $COMPOSE pull
 $COMPOSE up -d
 

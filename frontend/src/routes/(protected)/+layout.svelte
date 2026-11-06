@@ -24,7 +24,7 @@
 
 	const sectionLabelKeyBySegment: Record<string, string> = {
 		dashboard: 'nav.dashboard',
-		pos: 'nav.pointOfSale',
+		point_flow: 'nav.pointFlow',
 		master: 'nav.masterData',
 		procurement: 'nav.procurement',
 		inventory: 'nav.inventory',
@@ -37,11 +37,11 @@
 
 	const routeLabelKeyByPath: Record<string, string> = {
 		'/dashboard': 'nav.summary',
-		'/pos/register-session': 'nav.registerSession',
-		'/pos/sales/new': 'nav.newTransaction',
-		'/pos/sales': 'nav.salesHistory',
-		'/pos/sale-returns': 'nav.saleReturns',
-		'/pos/cash-drawer-movements': 'nav.cashMovements',
+		'/point_flow/register-session': 'nav.registerSession',
+		'/point_flow/sales/new': 'nav.newTransaction',
+		'/point_flow/sales': 'nav.salesHistory',
+		'/point_flow/sale-returns': 'nav.saleReturns',
+		'/point_flow/cash-drawer-movements': 'nav.cashMovements',
 		'/config/users': 'nav.users',
 		'/master/product-categories': 'nav.productCategories',
 		'/master/products': 'nav.products',

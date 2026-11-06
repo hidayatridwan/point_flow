@@ -1,6 +1,6 @@
-# POS Web System
+# Point Flow
 
-POS Web System adalah aplikasi kasir berbasis web untuk toko kecil. Sistem ini mencakup autentikasi, master data produk, manajemen SKU/kemasan, purchase order, penerimaan barang, stock adjustment, stock conversion, transaksi penjualan, payroll slip, dashboard, dan report operasional.
+Point Flow adalah aplikasi kasir berbasis web untuk toko kecil. Sistem ini mencakup autentikasi, master data produk, manajemen SKU/kemasan, purchase order, penerimaan barang, stock adjustment, stock conversion, transaksi penjualan, payroll slip, dashboard, dan report operasional.
 
 Repository ini berisi backend API berbasis Rust dan frontend berbasis SvelteKit. Backend sudah menjadi sumber utama business logic dan database schema, sedangkan frontend berisi scaffold SvelteKit beserta komponen UI awal untuk pengembangan aplikasi kasir.
 
@@ -83,7 +83,7 @@ Model inventory memakai `product_skus` sebagai titik utama stok. Perubahan stok 
 ├── docker-compose.yml
 ├── .env.example
 ├── api-flow.md
-└── pos-backend.postman_collection.json
+└── point_flow-backend.postman_collection.json
 ```
 
 ## Environment
@@ -99,7 +99,7 @@ Variable utama:
 ```text
 APP_HOST=0.0.0.0
 APP_PORT=8080
-DATABASE_URL=postgres://pos:pos@localhost:5432/pos
+DATABASE_URL=postgres://point_flow:point_flow@localhost:5432/point_flow
 CORS_ALLOWED_ORIGINS=
 JWT_SECRET=dev-only-change-this-secret-before-running-in-production
 JWT_TTL_SECONDS=900
@@ -153,7 +153,7 @@ Migration SQL di `backend/migrations` dipasang ke container PostgreSQL melalui `
 
 Backend production **tidak dibuild di VPS**. Image dikompilasi di GitHub Actions
 (`backend/Dockerfile.prod`, multi-stage) lalu dipush ke GHCR
-(`ghcr.io/<owner>/pos-backend:latest`). VPS hanya menerima artefak — tidak ada
+(`ghcr.io/<owner>/point_flow-backend:latest`). VPS hanya menerima artefak — tidak ada
 source code maupun `.git` yang dikirim ke server.
 
 Alur otomatis (`.github/workflows/deploy-backend.yml`, trigger push ke `main`
@@ -163,11 +163,11 @@ pada `backend/**`, atau `workflow_dispatch`):
 2. Job `deploy` — `scp` hanya 4 artefak ke `~/app` di VPS
    (`docker-compose.prod.yml`, `deploy.sh`, `backend/migrations/`, `backend/seeds/`),
    lalu jalankan `./deploy.sh`. `deploy.sh` mengambil secret dari Vault
-   (`kv/pos/config`), login GHCR, `docker compose pull`, lalu `up -d`.
+   (`kv/point_flow/config`), login GHCR, `docker compose pull`, lalu `up -d`.
 
 Compose production hanya menjalankan backend dan PostgreSQL. Data PostgreSQL
 disimpan sebagai **bind mount ke direktori host** (`POSTGRES_DATA_DIR`, default
-`/srv/pos/postgres`) — **bukan** Docker named volume. Konsekuensinya: data tetap
+`/srv/point_flow/postgres`) — **bukan** Docker named volume. Konsekuensinya: data tetap
 aman walau Docker volume dihapus atau `docker compose down -v` dijalankan; satu-
 satunya cara kehilangan data adalah menghapus direktori itu sendiri. Direktori
 sengaja diletakkan **di luar `~/app`** agar tidak ikut terhapus saat cleanup atau
@@ -180,8 +180,8 @@ Siapkan direktori data DB (di luar `~/app`), lalu bersihkan `~/app` dari git clo
 lama agar tidak ada `.git`/source yang tertinggal:
 
 ```bash
-sudo mkdir -p /srv/pos/postgres          # direktori data DB (bind mount)
-cd ~ && rm -rf ~/app && mkdir -p ~/app   # aman: data DB ada di /srv/pos, bukan ~/app
+sudo mkdir -p /srv/point_flow/postgres          # direktori data DB (bind mount)
+cd ~ && rm -rf ~/app && mkdir -p ~/app   # aman: data DB ada di /srv/point_flow, bukan ~/app
 # verifikasi setelah deploy berjalan: tidak ada .git, src, atau Cargo.*
 ls -la ~/app
 ```
@@ -192,7 +192,7 @@ Migrasi tidak pernah dijalankan otomatis saat deploy. Jalankan satu file per
 perintah, berurutan, dari `~/app` di VPS (butuh `VAULT_TOKEN` di environment):
 
 ```bash
-./deploy.sh migrate 001_initial_pos_schema.sql
+./deploy.sh migrate 001_initial_point_flow_schema.sql
 # ... lanjutkan sampai migrasi terakhir secara berurutan
 ./deploy.sh seed dashboard_sample.sql
 ```
@@ -267,7 +267,7 @@ bun run build
 
 Dokumen dan collection API:
 
-- `pos-backend.postman_collection.json`: Postman collection untuk semua endpoint backend.
+- `point_flow-backend.postman_collection.json`: Postman collection untuk semua endpoint backend.
 - `api-flow.md`: urutan pemakaian API dari bootstrap admin sampai report.
 
 Flow awal yang disarankan:

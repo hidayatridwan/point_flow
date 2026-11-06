@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-POS Web System — a web-based cashier application with a Rust/Axum backend and a SvelteKit frontend. The two are developed independently; the backend is the source of truth for business logic and database schema.
+Point Flow — a web-based cashier application with a Rust/Axum backend and a SvelteKit frontend. The two are developed independently; the backend is the source of truth for business logic and database schema.
 
 ## Commands
 
@@ -65,7 +65,7 @@ Each domain lives in `modules/<name>/` with a fixed internal structure:
 
 **Auth model**: JWT access token (short-lived, sent as `Authorization: Bearer`) + HttpOnly cookie refresh token. The backend has an RBAC system via `roles` table — the `admin` role is protected and cannot be assigned via user CRUD.
 
-**Additional modules**: `payroll` (payroll slips and reports) and `sale_returns` (POS return flow) each follow the same module structure as other domains — they are not in `common/services/` but delegate to `documents.rs` for their core logic.
+**Additional modules**: `payroll` (payroll slips and reports) and `sale_returns` (Point Flow return flow) each follow the same module structure as other domains — they are not in `common/services/` but delegate to `documents.rs` for their core logic.
 
 **Inventory model**: `product_skus` is the stock-holding unit. Stock changes only from:
 - goods receipt post (adds stock)
@@ -112,4 +112,4 @@ Each domain lives in `modules/<name>/` with a fixed internal structure:
 - CRUD pages: list page owns pagination state and search debounce (350ms). Dialogs receive data via props and emit `onSaved`/`onDeleted`/`onCreated` callbacks.
 - All UI strings must use `t()` from `$lib/i18n/locale.svelte.js` — never hardcode user-visible text.
 - Zod schemas for form validation are module-scope constants (not reactive); validation messages remain in English.
-- The `cash_register_session` is a prerequisite for POS transactions and cash movements — always check for an active session before enabling these flows.
+- The `cash_register_session` is a prerequisite for Point Flow transactions and cash movements — always check for an active session before enabling these flows.
