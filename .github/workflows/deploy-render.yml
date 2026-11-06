@@ -122,13 +122,23 @@ jobs:
     name: Trigger Render Deploy Hook
     runs-on: ubuntu-latest
     needs: migrate
+    env:
+      RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
     steps:
+      # Bila secret belum diisi (service Render belum dibuat), step ini dilewati
+      # agar run pertama tetap hijau: image sudah ter-push & migrasi sudah
+      # diterapkan. Setelah service dibuat + secret diisi, jalankan ulang workflow.
       - name: Deploy image terbaru
-        env:
-          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        if: ${{ env.RENDER_DEPLOY_HOOK != '' }}
         run: |
           IMG_URL="docker.io/${DOCKERHUB_USERNAME}/${IMAGE}:latest"
           ENC_IMG_URL="$(printf '%s' "$IMG_URL" | jq -sRr @uri)"
           echo "== Trigger render deploy untuk ${IMG_URL}"
           curl -fsS -X POST "${RENDER_DEPLOY_HOOK}&imgURL=${ENC_IMG_URL}"
+
+      - name: RENDER_DEPLOY_HOOK belum diset (skip trigger)
+        if: ${{ env.RENDER_DEPLOY_HOOK == '' }}
+        run: |
+          echo "::warning::RENDER_DEPLOY_HOOK kosong. Image & migrasi sudah selesai di job atas."
+          echo "::warning::Setelah service Render dibuat: isi secret RENDER_DEPLOY_HOOK, lalu run ulang workflow ini (atau pakai 'Manual Deploy > Deploy latest reference' di dashboard Render)."

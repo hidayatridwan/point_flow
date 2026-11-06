@@ -15,3 +15,5 @@ build/
 
 /storages/*
 !/storages/.gitkeep
+
+!.env.render.example
