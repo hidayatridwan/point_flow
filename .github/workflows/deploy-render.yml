@@ -33,7 +33,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  IMAGE: point-flow-backend
+  IMAGE: point-flow
 
 jobs:
   push-image:

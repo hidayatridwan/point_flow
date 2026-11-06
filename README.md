@@ -229,7 +229,7 @@ di Render yang menarik image dari **Docker Hub**, datanya di **Supabase**
 
 ```text
 push manual (Actions > Deploy to Render)
-  └─▶ job push-image  : build linux/amd64 -> push docker.io/<user>/point-flow-backend:latest
+  └─▶ job push-image  : build linux/amd64 -> push docker.io/<user>/point-flow:latest
   └─▶ job migrate     : psql via session pooler, migrasi SQL dengan tabel penjejak
   └─▶ job deploy      : curl Render deploy hook -> Render menarik image terbaru
 ```
@@ -249,9 +249,9 @@ tidak terkait dengan push ke `main`).
    > statements. Direct `db.<ref>.supabase.co:5432` juga jangan dipakai karena
    > free plan-nya IPv6-only.
 
-2. **Docker Hub** — buat repo `point-flow-backend` + Personal Access Token.
+2. **Docker Hub** — buat repo `point-flow` + Personal Access Token.
 3. **Render** — *New → Web Service → Existing Image*, isi
-   `docker.io/<user>/point-flow-backend:latest` (tambahkan credential Docker Hub
+   `docker.io/<user>/point-flow:latest` (tambahkan credential Docker Hub
    untuk menghindari rate limit pull), region `Singapore`, plan **Free**.
    ENV yang diset di dashboard:
 
