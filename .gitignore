@@ -17,3 +17,5 @@ build/
 !/storages/.gitkeep
 
 !.env.render.example
+
+notes.txt

@@ -17,6 +17,13 @@ services:
       REFRESH_TOKEN_COOKIE_NAME: refresh_token
       REFRESH_TOKEN_COOKIE_SECURE: false
       REFRESH_TOKEN_COOKIE_SAME_SITE: Lax
+      S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-http://minio:9000}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_BUCKET: ${S3_BUCKET:-point-flow-dev}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-minioadmin}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-minioadmin123}
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-http://localhost:9000/point-flow-dev}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
     ports:
       - "8080:8080"
     volumes:
@@ -33,6 +40,47 @@ services:
       timeout: 5s
       retries: 5
       start_period: 180s
+
+  minio:
+    # MinIO menghapus image resmi dari Docker Hub (Sep 2026); memakai build
+    # Chainguard yang setara. Jangan kembalikan ke minio/minio tanpa verifikasi.
+    image: cgr.dev/chainguard/minio:latest
+    container_name: point_flow-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-minioadmin123}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./storages/minio:/data
+
+  # minio/mc ikut dihapus dari Docker Hub; init memakai AWS CLI resmi.
+  minio-init:
+    image: amazon/aws-cli:latest
+    container_name: point_flow-minio-init
+    depends_on:
+      minio:
+        condition: service_started
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-minioadmin123}
+      AWS_REGION: ${S3_REGION:-us-east-1}
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_BUCKET: ${S3_BUCKET:-point-flow-dev}
+    entrypoint: >
+      sh -c "
+      aws configure set s3.addressing_style path;
+      for i in $$(seq 1 30); do
+        aws --endpoint-url \"$$S3_ENDPOINT_URL\" s3 mb \"s3://$$S3_BUCKET\" >/dev/null 2>&1 && break;
+        aws --endpoint-url \"$$S3_ENDPOINT_URL\" s3 ls \"s3://$$S3_BUCKET\" >/dev/null 2>&1 && break;
+        sleep 2;
+      done;
+      aws --endpoint-url \"$$S3_ENDPOINT_URL\" s3api put-bucket-policy --bucket \"$$S3_BUCKET\" --policy \"{\\\"Version\\\":\\\"2012-10-17\\\",\\\"Statement\\\":[{\\\"Effect\\\":\\\"Allow\\\",\\\"Principal\\\":{\\\"AWS\\\":[\\\"*\\\"]},\\\"Action\\\":[\\\"s3:GetObject\\\"],\\\"Resource\\\":[\\\"arn:aws:s3:::$$S3_BUCKET/*\\\"]}]}\";
+      "
+    restart: "no"
 
   postgres:
     image: postgres:16-alpine

@@ -2,8 +2,8 @@
 
 | Item | Isi |
 | --- | --- |
-| Status | Rencana — belum diimplementasikan |
-| Tanggal | 2026-11-05 |
+| Status | Rencana — keputusan kunci dikunci, siap implementasi |
+| Tanggal | 2026-11-05 (keputusan kunci butir 5–9 dikunci 2026-11-07) |
 | Cakupan | Pembelian produk oleh end user lewat browser HP, diproses kasir dari dashboard Point Flow yang sudah ada |
 | Prinsip | Sesederhana mungkin. Satu toko. Satu repo. Tanpa akun pembeli. |
 
@@ -13,6 +13,11 @@
 2. **Pembayaran**: bayar di tempat (saat ambil / saat barang diantar) dan transfer manual. Halaman pembayaran menampilkan nomor rekening, nomor e-wallet, dan gambar QRIS statis milik toko. Tanpa payment gateway pada MVP.
 3. **Pengantaran**: dua pilihan — ambil sendiri di toko, atau diantar oleh pihak toko. Untuk MVP, area antar mengikuti jangkauan layanan yang ditetapkan toko.
 4. **Jumlah toko**: satu toko. Tidak ada konsep cabang, multi-outlet, atau pilihan toko.
+5. **Penyimpanan file (foto produk, gambar QRIS)**: object storage S3-compatible. Lokal memakai MinIO lewat docker compose; produksi memakai layanan S3-compatible apa pun, kredensial diisi manual via env (`S3_*`, lihat Bagian 5.4). Database hanya menyimpan object key; URL publik disusun dari `S3_PUBLIC_URL` + key. Browser tidak pernah menerima secret key.
+6. **Sesi register saat penyelesaian pesanan (opsi A)**: `complete` (pembuatan penjualan) wajib dilakukan saat ada sesi register terbuka — kasir yang menyelesaikan memakai sesi terbukanya sendiri (`cashier_id` + `cash_register_session_id` miliknya). Packing (potong stok, tanpa pergerakan uang) boleh tanpa sesi terbuka. Pesanan yang masuk di luar jam buka menunggu sebagai `Baru`/`Dipacking` sampai kasir memproses saat toko buka.
+7. **Pengaturan toko**: info pembayaran, jam operasional, dan ongkir tetap dikelola di halaman pengaturan toko yang sudah ada (bukan halaman baru). Upload gambar QRIS dan foto produk lewat dashboard, diteruskan backend ke S3 (browser tidak upload langsung ke S3).
+8. **Rate limit**: memakai `tower_governor` (`GovernorLayer`) yang dipasang hanya pada router publik, per IP, dengan kuota terpisah untuk katalog (longgar) dan checkout (ketat). Detail di Bagian 10.
+9. **Permission RBAC baru**: `online_orders` (bukan menumpang `point_flow`). Endpoint kasir mensyaratkan permission ini; di-seed ke role `admin` dan `cashier` (atau setara) saat migrasi.
 
 Alur utama pada dokumen ini sudah disetujui pemilik produk: katalog publik → checkout → pesanan masuk dashboard kasir → kasir packing → serah terima (diambil / diantar).
 
@@ -64,7 +69,7 @@ Nama domain bebas dipilih saat implementasi (mis. `point_flow.<domain>` tetap un
    - Metode serah terima: `Ambil di toko` atau `Diantar`
    - Bila diantar: alamat lengkap pengantaran (jalan/nomor, patokan bila perlu) dan catatan bila perlu
    - Metode pembayaran: `Bayar di tempat` atau `Transfer`
-5. Pembeli mengirim pesanan. Sistem membalas dengan **nomor pesanan** (mis. `ONL-20261105-0001`) dan ringkasan pesanan.
+5. Pembeli mengirim pesanan. Sistem membalas dengan **nomor pesanan** (mis. `ONL-20261105-000001`) dan ringkasan pesanan.
    - Bila memilih transfer, halaman sukses menampilkan nomor rekening, nomor e-wallet, dan gambar QRIS beserta total yang harus dibayar.
    - Bila memilih bayar di tempat, halaman sukses menampilkan nomor pesanan dan perkiraan langkah berikutnya (menunggu diproses kasir).
 6. Pembeli cukup menyimpan nomor pesanan / halaman sukses. Tidak ada akun dan tidak ada halaman lacak status pada MVP; konfirmasi lanjutan dilakukan kasir lewat WhatsApp secara manual.
@@ -112,7 +117,7 @@ Prinsip: data master (produk, SKU, harga, stok) tidak diduplikasi. Storefront ha
 | Kolom | Tipe | Keterangan |
 | --- | --- | --- |
 | `id` | `BIGINT IDENTITY PK` | |
-| `order_no` | `VARCHAR(40) UNIQUE` | Nomor pesanan untuk pembeli, mis. `ONL-20261105-0001` (sequence harian terpisah dari `sales_transaction_no_seq`) |
+| `order_no` | `VARCHAR(40) UNIQUE` | Nomor pesanan untuk pembeli, mis. `ONL-20261105-000001` (sequence harian terpisah dari `sales_transaction_no_seq`) |
 | `customer_name` | `VARCHAR(120)` | Nama pembeli dari checkout |
 | `customer_phone` | `VARCHAR(30)` | Nomor WhatsApp, disimpan apa adanya (format bebas, validasi ringan) |
 | `fulfillment_method` | `pickup \| delivery` | Ambil di toko / diantar karyawan |
@@ -144,11 +149,36 @@ Prinsip: data master (produk, SKU, harga, stok) tidak diduplikasi. Storefront ha
 ### 5.3 Perubahan kecil pada tabel lama
 
 - `sales`: tambah kolom penanda channel agar laporan bisa membedakan penjualan kasir dan online, mis. `channel VARCHAR(20) NOT NULL DEFAULT 'point_flow'` dengan nilai `point_flow | online`, plus `online_order_id BIGINT NULL` unik bila penjualan berasal dari pesanan online. Ini perubahan aditif (kolom baru ber-default), penjualan lama tidak terpengaruh.
-- Tidak ada perubahan pada `product_skus`, `products`, dan tabel stok lain. Katalog publik adalah query baca dari tabel tersebut.
+- `products`: tambah kolom `image_url VARCHAR(500) NULL` berisi object key S3 (mis. `products/42/photo.jpg`), bukan URL penuh. Backend menyusun URL publik sebagai `S3_PUBLIC_URL + '/' + image_url` saat serving katalog. Satu foto per produk (dipakai bersama semua SKU-nya). Produk tanpa foto tetap tampil memakai placeholder di frontend.
+- Tidak ada perubahan pada `product_skus` dan tabel stok lain selain bacaan stok untuk katalog.
 
-### 5.4 Info pembayaran toko
+### 5.4 Pengaturan toko dan penyimpanan file
 
-Nomor rekening, nomor e-wallet, dan gambar QRIS dikelola dari dashboard (halaman pengaturan yang sudah ada di `(protected)/config`, diperluas seperlunya) atau satu tabel pengaturan kunci-nilai sederhana. Kasir/admin bisa mengubahnya tanpa deploy ulang. Gambar QRIS disimpan mengikuti pola penyimpanan file yang sudah ada (`storages/`).
+Tabel baru `store_settings` kunci-nilai sederhana (usulan bagian dari migrasi `009`):
+
+| Kolom | Tipe | Keterangan |
+| --- | --- | --- |
+| `key` | `VARCHAR(80) PK` | Mis. `store_name`, `operating_hours`, `bank_accounts`, `ewallet_numbers`, `qris_image_key`, `delivery_fee` |
+| `value` | `TEXT NOT NULL` | Nilai teks; untuk gambar berisi object key S3 |
+| `updated_at / updated_by` | `TIMESTAMPTZ / BIGINT → users(id)` | Audit perubahan terakhir |
+
+Isi yang dikelola dari halaman pengaturan toko yang sudah ada (`(protected)/config`, diperluas — bukan halaman baru): nama toko, jam operasional, nomor rekening, nomor e-wallet, gambar QRIS, ongkir tetap (`delivery_fee`, default Rp0). Kasir/admin bisa mengubahnya tanpa deploy ulang.
+
+Alur upload (QRIS dan foto produk): dashboard mengirim multipart ke endpoint backend terautentikasi → backend memvalidasi tipe/ukuran file → backend PUT object ke S3 → object key disimpan di `store_settings` / `products.image_url`. Browser tidak pernah upload langsung ke S3 dan tidak pernah menerima secret key.
+
+Kredensial S3 lewat env (nama variabel dikunci, nilai produksi diisi manual):
+
+| Variabel | Lokal (MinIO) | Produksi |
+| --- | --- | --- |
+| `S3_ENDPOINT_URL` | `http://localhost:9000` (`cargo run` dari host) / `http://minio:9000` (dari container backend) | URL S3-compatible milik sendiri |
+| `S3_REGION` | `us-east-1` | Region bucket |
+| `S3_BUCKET` | `point-flow-dev` | Nama bucket produksi |
+| `S3_ACCESS_KEY_ID` | `minioadmin` | Diisi manual |
+| `S3_SECRET_ACCESS_KEY` | `minioadmin123` | Diisi manual |
+| `S3_PUBLIC_URL` | `http://localhost:9000/point-flow-dev` | Domain publik/CDN bucket |
+| `S3_FORCE_PATH_STYLE` | `true` (wajib untuk MinIO) | `false` (atau sesuai penyedia) |
+
+Bucket bersifat public-read untuk prefix gambar (`products/*`, `qris/*`) sehingga `<img>` storefront bisa memuat langsung tanpa presigned URL. Secret key hanya dipakai server-side.
 
 ## 6. Aturan Stok
 
@@ -166,11 +196,11 @@ Catatan jam layanan: pesanan boleh masuk kapan saja (sistem tidak mengunci check
 
 ## 7. Hubungan dengan Penjualan dan Sesi Register
 
-- Saat status berubah ke `completed`, backend membuat satu baris `sales` (status `completed`, `channel = 'online'`, `online_order_id` terisi, `cashier_id` = kasir yang menyelesaikan) beserta `sale_items` yang disalin dari `online_order_items`. `online_orders.sale_id` diisi balik. Dengan ini laporan penjualan, laporan stok, dan dashboard yang sudah ada otomatis ikut membaca penjualan online tanpa query khusus baru, selain membedakan channel bila ditampilkan.
+- Saat status berubah ke `completed`, backend membuat satu baris `sales` (status `completed`, `channel = 'online'`, `online_order_id` terisi, `cashier_id` = kasir yang menyelesaikan, `cash_register_session_id` = sesi terbuka milik kasir tersebut) beserta `sale_items` yang disalin dari `online_order_items`. `online_orders.sale_id` diisi balik. Dengan ini laporan penjualan, laporan stok, dan dashboard yang sudah ada otomatis ikut membaca penjualan online tanpa query khusus baru, selain membedakan channel bila ditampilkan.
 - Pembayaran:
-  - `transfer`: kasir mengubah `payment_status` menjadi `paid` setelah mutasi/bukti diterima. Penyelesaian pesanan (`completed`) untuk metode antar sebaiknya mensyaratkan pembayaran terkonfirmasi atau bayar di tempat saat serah terima — aturan pastinya satu baris kebijakan saat implementasi; default usulan: `delivery + transfer` wajib `paid` sebelum status `delivering`, `pickup` fleksibel.
+  - `transfer`: kasir mengubah `payment_status` menjadi `paid` setelah mutasi/bukti diterima. Aturan dikunci: `delivery + transfer` wajib `paid` sebelum status `delivering`; `pickup` fleksibel (`paid` boleh ditandai saat serah terima).
   - `pay_at_store`: pembayaran terjadi saat serah terima; `paid_amount` pada penjualan diisi sebesar `total_amount` saat `completed`.
-- **Sesi register**: pembuatan dan pemrosesan pesanan online tidak mensyaratkan sesi register terbuka (pesanan bisa masuk malam hari). Uang dari pesanan online yang selesai saat sesi register sedang terbuka dicatat mengikuti pola pergerakan kas yang sudah ada, agar rekonsiliasi laci tetap klop. Detail pencatatan (baris movement per pesanan vs rekap) diputuskan saat implementasi dengan aturan: jangan sampai penjualan online tidak terlihat di laporan sesi yang sedang berjalan.
+- **Sesi register (keputusan A, dikunci)**: checkout dan packing tidak mensyaratkan sesi register terbuka (pesanan boleh masuk malam hari; potong stok tidak menyentuh uang). `complete` mensyaratkan sesi register terbuka milik kasir yang menyelesaikan — tanpa sesi terbuka, tombol Selesai ditolak dengan pesan yang jelas. Karena penjualan online selalu terikat sesi, uangnya otomatis tercatat mengikuti pola pergerakan kas yang sudah ada dan terlihat di laporan sesi yang berjalan. Konsekuensi yang diterima: pesanan dari malam hari baru bisa diselesaikan setelah kasir membuka sesi pagi harinya.
 
 ## 8. API yang Diusulkan
 
@@ -180,12 +210,12 @@ Semua respons mengikuti envelope `ApiResponse<T>` dan paginasi `PaginationMeta` 
 
 | Method & path | Fungsi |
 | --- | --- |
-| `GET /api/v1/public/products?search=&category_id=&page=&limit=` | Katalog: semua SKU aktif termasuk stok habis. Hanya kolom aman: id SKU, nama produk, nama SKU, satuan, harga jual, stok, kategori, foto bila ada. Frontend memakai nilai stok untuk menonaktifkan tombol tambah pada item stok habis. **Tidak pernah** mengekspos `purchase_price`, supplier, atau data master internal |
+| `GET /api/v1/public/products?search=&category_id=&page=&limit=` | Katalog: semua SKU aktif termasuk stok habis. Hanya kolom aman: id SKU, nama produk, nama SKU, satuan, harga jual, stok, kategori, URL foto publik (`S3_PUBLIC_URL` + `products.image_url`, kosong bila belum ada foto). Frontend memakai nilai stok untuk menonaktifkan tombol tambah pada item stok habis. **Tidak pernah** mengekspos `purchase_price`, supplier, atau data master internal |
 | `GET /api/v1/public/categories` | Daftar kategori untuk filter katalog |
 | `GET /api/v1/public/store-info` | Nama toko, jam operasional, info pembayaran (rekening, e-wallet, URL gambar QRIS), ongkir tetap bila ada |
 | `POST /api/v1/public/orders` | Checkout. Body: identitas pembeli, metode serah terima, alamat bila antar, metode pembayaran, daftar `{product_sku_id, quantity}`. Harga dan total dihitung server. Balasan: `order_no`, ringkasan, info pembayaran bila transfer |
 
-### 8.2 Kasir/admin (JWT + RBAC, mengikuti pola modul yang ada)
+### 8.2 Kasir/admin (JWT + RBAC permission `online_orders`, mengikuti pola modul yang ada)
 
 | Method & path | Fungsi |
 | --- | --- |
@@ -240,14 +270,15 @@ Endpoint publik adalah permukaan serangan baru; MVP tetap menerapkan dasar berik
 
 - DTO publik khusus: hanya kolom pada Bagian 8.1. Endpoint katalog tidak memakai ulang DTO/handler produk admin yang mengekspos `purchase_price` dan data internal.
 - Harga, total, dan ketersediaan stok selalu dihitung dan divalidasi di server saat checkout. Nilai harga dari browser diabaikan.
-- Pembatasan laju (rate limit) dasar pada `POST /api/v1/public/orders` per IP, dan validasi panjang input (nama, alamat, catatan) agar tidak disalahgunakan sebagai spam order. Honeypot/captcha hanya ditambah bila spam benar-benar terjadi.
-- Tetap di balik HTTPS saat produksi. Tidak ada data pembeli selain nama, nomor WA, dan alamat antar yang dikumpulkan; data ini hanya tampil untuk user dashboard berhak akses (RBAC mengikuti permission modul sales yang ada).
+- Pembatasan laju memakai `tower_governor` (`GovernorLayer`, algoritma token bucket) yang dipasang **hanya pada router publik** — endpoint kasir/admin tidak di-rate-limit agar operasional tidak terganggu. Kunci pembatas per IP (`PeerIpKeyExtractor`; bila di balik proxy, gunakan header `X-Forwarded-For` yang tepercaya). Dua kuota terpisah: katalog/store-info longgar (baca, mis. puluhan request per menit per IP) dan checkout ketat (tulis, mis. beberapa request per menit per IP; nilai pasti dituning saat implementasi). Respons 429 mengikuti envelope error yang sudah ada. Validasi panjang input (nama, alamat, catatan) tetap berlaku agar endpoint tidak disalahgunakan sebagai spam order. Honeypot/captcha hanya ditambah bila spam benar-benar terjadi.
+- Tetap di balik HTTPS saat produksi. Tidak ada data pembeli selain nama, nomor WA, dan alamat antar yang dikumpulkan; data ini hanya tampil untuk user dashboard dengan permission `online_orders`.
 - Transisi status hanya boleh berurutan sesuai Bagian 4.3 dan hanya oleh kasir/admin terautentikasi; endpoint publik tidak bisa mengubah status pesanan.
 
 ## 11. Langkah Implementasi (Urutan Usulan, Belum Dikerjakan)
 
-1. **Migrasi database** `009_add_online_orders.sql`: tabel `online_orders`, `online_order_items`, sequence nomor pesanan, kolom channel pada `sales`, pengaturan info pembayaran toko. Uji migrasi pada database kosong dan pada salinan data yang ada.
-2. **Backend modul `online_orders`**: katalog publik, checkout publik (validasi stok + hitung harga server-side), dan endpoint kasir termasuk transisi status transaksional (potong/kembalikan stok, pembuatan penjualan saat selesai). Daftarkan route di router utama.
+0. **Infrastruktur lokal**: service MinIO di `docker-compose.yml` (+ init bucket `point-flow-dev` public-read prefix `products/*`, `qris/*`), variabel `S3_*` di `.env.example` / `.env.prod.example`, dan teruskan ke service backend. Kredensial produksi diisi manual (lihat Bagian 5.4).
+1. **Migrasi database** `009_add_online_orders.sql`: tabel `online_orders`, `online_order_items`, tabel `store_settings` (+ seed awal: nama toko, jam operasional, `delivery_fee = 0`), sequence nomor pesanan, kolom channel + `online_order_id` pada `sales`, kolom `image_url` pada `products`, seed permission `online_orders` ke role yang sesuai. Uji migrasi pada database kosong dan pada salinan data yang ada.
+2. **Backend modul `online_orders`**: katalog publik, checkout publik (validasi stok + hitung harga server-side), dan endpoint kasir termasuk transisi status transaksional (potong/kembalikan stok, pembuatan penjualan saat selesai dengan sesi register kasir yang menyelesaikan). Tambah klien S3 (`aws-sdk-s3` + env `S3_*` dari Bagian 5.4), endpoint upload terautentikasi (QRIS, foto produk), dan `tower_governor` pada router publik. Daftarkan route di router utama.
 3. **API client frontend**: `storefront.ts` untuk pembeli dan `online-orders.ts` untuk kasir, mengikuti pola `lib/api/` yang ada.
 4. **Storefront publik** `(public)/shop`: catalog, cart (`localStorage`), checkout, halaman success. Mobile-first, semua teks via `t()`, dan tanpa library UI pihak ketiga kecuali Tailwind (lihat batasan library di Bagian 9).
 5. **Dashboard kasir**: menu Pesanan Online, daftar + detail + aksi status, penanda pesanan baru pada sidebar, perluasan pengaturan info pembayaran.
@@ -296,7 +327,7 @@ Skenario uji manual wajib (browser HP atau mode perangkat pada browser):
 | Dua pembeli memesan stok terakhir yang sama | Satu pesanan harus dibatalkan kasir | Terima di MVP (Bagian 6); kasir menghubungi pembeli via WA. Reservasi stok = fase lanjutan |
 | Pesanan iseng / spam karena tanpa verifikasi | Kasir terganggu pesanan palsu | Rate limit checkout, pesanan tidak memotong stok sebelum kasir menerima, pemblokiran nomor manual dicatat di luar sistem |
 | Pembeli transfer tapi kasir belum tahu | Pesanan tertahan | `payment_status` manual + tombol Chat WA; pembeli diinstruksikan konfirmasi via WA pada halaman sukses |
-| Kebingungan uang online dengan laci register | Rekonsiliasi sesi meleset | Penjualan online terlihat pada laporan sesi berjalan (Bagian 7); aturan pencatatan kas diputuskan sebelum langkah 2 selesai |
+| Kebingungan uang online dengan laci register | Rekonsiliasi sesi meleset | Selesai by design (keputusan A): `complete` wajib sesi terbuka sehingga penjualan online selalu tercatat di laporan sesi yang berjalan |
 | Alamat antar tidak jelas | Pengantaran lambat | Alamat bebas terstruktur longgar (jalan/nomor, patokan) + catatan + nomor WA aktif yang bisa dihubungi pengantar |
 
 ## 15. Hal yang Masih Terbuka (Tidak Menghalangi Mulai, Diputuskan Saat Implementasi)

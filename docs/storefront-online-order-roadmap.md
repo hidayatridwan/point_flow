@@ -1,0 +1,97 @@
+# Roadmap: Storefront & Pesanan Online (MVP)
+
+Desain acuan: [storefront-online-order.md](./storefront-online-order.md).
+Cara pakai: kerjakan satu fase sampai selesai, lalu minta review sebelum lanjut.
+Balas `go fase N` untuk mengeksekusi satu fase, atau sebut yang mau diubah.
+
+## Fase 0 — Infrastruktur & fondasi
+
+Tujuan: MinIO lokal jalan, nama variabel S3 dikunci di semua env.
+
+- [x] Service `minio` + `minio-init` di `docker-compose.yml`
+- [x] `S3_*` di `.env.example`, `.env.prod.example`, `.env.render.example`, `.env.render`
+- [x] Teruskan `S3_*` ke backend di `docker-compose.yml` dan `docker-compose.prod.yml`
+- [x] `docker compose up -d minio minio-init`, verifikasi bucket `point-flow-dev` bisa dibaca publik (roundtrip upload + GET anonim + init idempoten, 2026-11-07)
+- [ ] Isi `S3_*` produksi (manual, saat deploy — Render dashboard / `.env.prod`)
+
+Validasi: `docker compose config --quiet` (dev), buka `http://localhost:9001` (konsol MinIO).
+Gate review: daftar variabel S3 final, kredensial prod sudah terisi atau eksplisit ditunda.
+
+## Fase 1 — Migrasi `009_add_online_orders.sql`
+
+Tujuan: skema pesanan online + fondasi pengaturan toko dan permission.
+
+- [x] Tabel `online_orders` dan `online_order_items` (lihat Bagian 5.1–5.2)
+- [x] Sequence harian nomor pesanan (`ONL-YYYYMMDD-NNNNNN`, 6 digit ikut konvensi repo)
+- [x] Tabel `store_settings` + seed awal (nama toko, jam operasional, `delivery_fee = 0`)
+- [x] Kolom `channel` + `online_order_id` di `sales`
+- [x] Kolom `image_url` (object key S3) di `products`
+- [x] Seed permission `online_orders` ke role yang sesuai
+- [x] Uji di database kosong dan di salinan data produksi (2026-11-07, scratch Postgres: 001–009 berurutan + seed data lama + 4 uji negatif CHECK/UNIQUE)
+
+Validasi: migrasi naik-turun bersih di kedua database, `cargo test` modul terkait tetap hijau.
+Gate review: diff file migrasi 009 — [backend/migrations/009_add_online_orders.sql](/Users/ridwannhidayat/Workspace/labs/point_flow/backend/migrations/009_add_online_orders.sql).
+
+## Fase 2 — Backend publik, upload file, rate limit
+
+Tujuan: pembeli bisa melihat katalog dan checkout dari HP.
+
+- [ ] Modul `backend/src/modules/online_orders/` (routes, handler, service, repository, model, dto)
+- [ ] Route publik tanpa `AuthUser`: katalog, kategori, store-info, checkout
+- [ ] DTO publik khusus — tanpa `purchase_price`, supplier, data internal
+- [ ] Checkout: validasi stok + `quantity <= stock` ulang di server, harga dari `product_skus.selling_price`
+- [ ] Klien S3 dari env `S3_*` + endpoint upload terautentikasi (QRIS, foto produk)
+- [ ] `tower_governor` hanya di router publik (kuota longgar untuk baca, ketat untuk checkout)
+
+Validasi: `cargo test`, `cargo clippy --all-targets`, `curl` katalog/checkout manual incl. stok habis dan 429.
+Gate review: daftar endpoint publik + contoh respons katalog (pastikan tanpa harga beli).
+
+## Fase 3 — Backend kasir
+
+Tujuan: kasir bisa memproses pesanan sampai selesai dan tercatat sebagai penjualan.
+
+- [ ] Daftar + detail pesanan (filter status, paginasi), permission `online_orders`
+- [ ] Transisi `pack` (potong stok transaksional + kunci baris), `ready`, `deliver`, `complete`, `cancel` (kembalikan stok), `mark-paid`
+- [ ] `complete` wajib sesi register terbuka milik kasir yang menyelesaikan (keputusan A)
+- [ ] `delivery + transfer` wajib `paid` sebelum `delivering`; `pickup` fleksibel
+- [ ] `complete` membuat `sales` (`channel = 'online'`, `online_order_id`, `paid_amount = total`)
+
+Validasi: `cargo test`, skenario stok ganda (dua kasir pack bersamaan — satu ditolak jelas).
+Gate review: matriks transisi status vs hasil aktual per peran kasir.
+
+## Fase 4 — Frontend storefront (publik)
+
+Tujuan: katalog → keranjang → checkout → sukses, mobile-first, tanpa login.
+
+- [ ] Route `(public)/shop`: catalog, cart (`localStorage`), checkout, success
+- [ ] Hanya Tailwind + bawaan Svelte — tanpa shadcn, TanStack, superforms, sonner
+- [ ] Validasi checkout manual sisi klien + penuh di server; semua teks via `t()` (id/en)
+- [ ] Produk stok habis tampil dengan penanda, tombol tambah nonaktif
+- [ ] Halaman sukses: nomor pesanan, info transfer (rekening/e-wallet/QRIS), tombol WA toko
+- [ ] `lib/api/storefront.ts` terpisah dari API admin
+
+Validasi: `bun run check`, `bun run lint`, uji di mode perangkat HP + koneksi lambat.
+Gate review: buka `/shop` di HP, nilai kecepatan dan kemudahan checkout.
+
+## Fase 5 — Dashboard kasir
+
+Tujuan: pesanan online diproses dari tempat kasir bekerja setiap hari.
+
+- [ ] Menu Pesanan Online + badge jumlah `Baru`; daftar (tab status, cari, paginasi) + auto-refresh ringan
+- [ ] Detail: item, pembeli, tombol Chat WA (`wa.me`), satu tombol aksi utama per status + dialog konfirmasi
+- [ ] Perluasan halaman pengaturan toko: info pembayaran, upload QRIS, jam operasional, ongkir
+- [ ] Upload foto produk (ke S3) dari halaman produk
+- [ ] `lib/api/online-orders.ts` + kunci i18n id/en
+
+Validasi: `bun run check`, `bun run lint`, alur kasir penuh peran non-admin berpermission `online_orders`.
+Gate review: coba proses satu pesanan fiktif dari Baru sampai Selesai.
+
+## Fase 6 — Validasi akhir & rilis
+
+Tujuan: enam skenario Bagian 12 dokumen desain lolos, rilis ke satu toko.
+
+- [ ] Skenario 1–6 Bagian 12 (stok habis, transfer, pack/cancel, complete, race stok, kebocoran harga beli)
+- [ ] `cargo test`, `cargo clippy`, `bun run check`, `bun run lint` semua hijau
+- [ ] Rilis ke satu toko, pantau pesanan masuk masa awal
+
+Gate review: hasil tiap skenario + keputusan rilis.
