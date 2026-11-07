@@ -221,6 +221,39 @@ Set environment variable berikut di Netlify:
 PUBLIC_API_BASE_URL=https://domain-backend-anda.com/api/v1
 ```
 
+### Dua host dalam satu situs: kasir vs storefront
+
+Satu situs Netlify ini melayani dua peran lewat edge function
+`frontend/netlify/edge-functions/domain-router.ts`:
+
+- **Kasir/dashboard** — `pointflow.netlify.app` (domain bawaan) atau host lain:
+  perilaku lama; `/shop*` diarahkan ke domain storefront (begitu ada).
+- **Storefront publik** — host yang terdaftar di env `SHOP_DOMAINS`:
+  `/` langsung ke `/shop`, dan path dashboard diarahkan balik ke host kasir.
+
+Selama `SHOP_DOMAINS` kosong, fungsi ini no-op dan perilaku tidak berubah.
+
+Langkah mengaktifkan domain storefront publik (saat domainnya sudah ada):
+
+1. Netlify UI → Site configuration → **Domain management** → *Add a domain*,
+   isi domain utama toko (mis. `tokosaya.com`) + `www`-nya. Paling simpel:
+   pilih **Netlify DNS** dan ikuti instruksi ganti nameserver di registrar.
+   Alternatif tanpa pindah NS: `CNAME www → pointflow.netlify.app` dan apex
+   pakai A/ALIAS sesuai petunjuk Netlify (registrar harus mendukung apex
+   alias/CNAME flattening).
+2. Set domain apex (tanpa `www`) sebagai **primary domain**.
+3. Netlify UI → Site configuration → **Environment variables** → tambahkan
+   `SHOP_DOMAINS=<domain-utama-toko>` dengan scope **Functions** dan hanya
+   untuk environment **Production** (biar deploy preview tetap berperilaku
+   kasir), lalu deploy ulang — perubahan env edge function butuh deploy baru.
+   Opsional: `KASIR_DOMAINS` untuk mengganti host kasir (default
+   `pointflow.netlify.app`).
+4. Render → env `CORS_ALLOWED_ORIGINS` ditambah origin storefront, dipisah
+   koma (contoh di `.env.render.example`).
+5. Modul dashboard baru dengan prefix route di luar daftar
+   `DASHBOARD_PREFIXES` di edge function harus didaftarkan di sana supaya
+   tidak muncul di host storefront.
+
 ## Production Deploy (Render + Supabase)
 
 Alur deployment aktif saat ini. Backend berjalan sebagai **Web Service (Free)**
@@ -260,6 +293,8 @@ tidak terkait dengan push ke `main`).
    APP_PORT=10000
    DATABASE_URL=<session pooler string dari langkah 1>
    CORS_ALLOWED_ORIGINS=https://frontend-kamu.netlify.app
+   # setelah domain storefront publik aktif, tambahkan origin-nya dipisah koma:
+   # CORS_ALLOWED_ORIGINS=https://frontend-kamu.netlify.app,https://tokosaya.com,https://www.tokosaya.com
    JWT_SECRET=<secret production>
    JWT_TTL_SECONDS=900
    REFRESH_TOKEN_TTL_SECONDS=2592000
