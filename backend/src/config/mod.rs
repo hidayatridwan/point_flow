@@ -3,6 +3,16 @@ use std::{env, net::IpAddr};
 use anyhow::{Context, Result, bail};
 use axum::http::HeaderValue;
 
+pub struct S3Settings {
+    pub endpoint_url: String,
+    pub region: String,
+    pub bucket: String,
+    pub access_key_id: String,
+    pub secret_access_key: String,
+    pub public_url: String,
+    pub force_path_style: bool,
+}
+
 pub struct AppConfig {
     pub host: IpAddr,
     pub port: u16,
@@ -15,6 +25,7 @@ pub struct AppConfig {
     pub refresh_token_cookie_secure: bool,
     pub refresh_token_cookie_same_site: String,
     pub refresh_token_cookie_domain: Option<String>,
+    pub s3: Option<S3Settings>,
 }
 
 impl AppConfig {
@@ -53,6 +64,8 @@ impl AppConfig {
         let refresh_token_cookie_domain =
             normalize_cookie_domain(env::var("REFRESH_TOKEN_COOKIE_DOMAIN").ok())?;
 
+        let s3 = load_s3_settings()?;
+
         if jwt_ttl_seconds <= 0 {
             bail!("JWT_TTL_SECONDS must be greater than zero");
         }
@@ -78,8 +91,46 @@ impl AppConfig {
             refresh_token_cookie_secure,
             refresh_token_cookie_same_site,
             refresh_token_cookie_domain,
+            s3,
         })
     }
+}
+
+fn load_s3_settings() -> Result<Option<S3Settings>> {
+    let endpoint_url = env::var("S3_ENDPOINT_URL").unwrap_or_default();
+    let bucket = env::var("S3_BUCKET").unwrap_or_default();
+    let access_key_id = env::var("S3_ACCESS_KEY_ID").unwrap_or_default();
+    let secret_access_key = env::var("S3_SECRET_ACCESS_KEY").unwrap_or_default();
+
+    if endpoint_url.trim().is_empty()
+        || bucket.trim().is_empty()
+        || access_key_id.trim().is_empty()
+        || secret_access_key.trim().is_empty()
+    {
+        return Ok(None);
+    }
+
+    let region = env::var("S3_REGION").unwrap_or_else(|_| "us-east-1".to_string());
+    let public_url = env::var("S3_PUBLIC_URL").unwrap_or_default();
+    let public_url = if public_url.trim().is_empty() {
+        format!("{}/{}", endpoint_url.trim_end_matches('/'), bucket.trim())
+    } else {
+        public_url
+    };
+    let force_path_style: bool = env::var("S3_FORCE_PATH_STYLE")
+        .unwrap_or_else(|_| "true".to_string())
+        .parse()
+        .context("S3_FORCE_PATH_STYLE must be a boolean")?;
+
+    Ok(Some(S3Settings {
+        endpoint_url,
+        region,
+        bucket,
+        access_key_id,
+        secret_access_key,
+        public_url,
+        force_path_style,
+    }))
 }
 
 fn parse_cors_allowed_origins(value: &str) -> Result<Vec<HeaderValue>> {

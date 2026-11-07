@@ -3,6 +3,7 @@ pub mod auth;
 pub mod cash_registers;
 pub mod employees;
 pub mod inventory;
+pub mod online_orders;
 pub mod payroll;
 pub mod procurement;
 pub mod products;

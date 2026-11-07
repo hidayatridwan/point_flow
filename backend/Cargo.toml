@@ -10,7 +10,7 @@ async-trait = "0.1.89"
 aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-credential-types = "1"
 aws-sdk-s3 = "1"
-axum = { version = "0.8.8", features = ["macros"] }
+axum = { version = "0.8.8", features = ["macros", "multipart"] }
 axum-extra = { version = "0.12.5", features = ["cookie"] }
 chrono = { version = "0.4.44", features = ["serde"] }
 config = "0.15"
@@ -26,6 +26,7 @@ sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "postgres", "uui
 thiserror = "2.0.18"
 tokio = { version = "1.51.1", features = ["full"] }
 tower-http = { version = "0.6.8", features = ["trace", "cors", "request-id", "compression-full"] }
+tower_governor = { version = "0.8", default-features = false, features = ["axum"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt"] }
 uuid = { version = "1.23.0", features = ["v4", "serde"] }

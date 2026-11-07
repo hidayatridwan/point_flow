@@ -8,7 +8,7 @@ use crate::{
         EmployeeResponse, ListQuery, Paginated, ProductCategoryResponse, ProductResponse,
         ProductSkuResponse, SupplierResponse, UnitResponse, UpdateEmployeeRequest,
         UpdateProductCategoryRequest, UpdateProductRequest, UpdateProductSkuRequest,
-        UpdateSupplierRequest, UpdateUnitRequest, UpdateUserRequest, UserResponse,
+        UpdateSupplierRequest, UpdateUnitRequest, UpdateUserRequest, UserResponse, UploadResponse,
     },
     security,
 };
@@ -929,5 +929,69 @@ fn normalize_optional_string(value: Option<String>) -> Option<String> {
     value.and_then(|value| {
         let value = value.trim().to_string();
         if value.is_empty() { None } else { Some(value) }
+    })
+}
+
+/// Simpan object key foto produk. Mengembalikan NotFound bila produk tidak ada.
+pub async fn set_product_image_url(
+    pool: &PgPool,
+    product_id: i64,
+    image_key: &str,
+) -> AppResult<()> {
+    let updated_id: Option<i64> = sqlx::query_scalar(
+        r#"
+        UPDATE products
+        SET image_url = $2, updated_at = now()
+        WHERE id = $1 AND deleted_at IS NULL
+        RETURNING id
+        "#,
+    )
+    .bind(product_id)
+    .bind(image_key)
+    .fetch_optional(pool)
+    .await?;
+
+    if updated_id.is_none() {
+        return Err(AppError::NotFound);
+    }
+
+    Ok(())
+}
+
+/// Upload foto produk ke object storage lalu simpan key-nya.
+/// Urutan upload-dulu mencegah key yatim di database bila S3 gagal.
+pub async fn upload_product_photo(
+    pool: &PgPool,
+    s3: Option<&crate::infra::s3::ObjectStorage>,
+    product_id: i64,
+    bytes: Vec<u8>,
+    content_type: &str,
+) -> AppResult<UploadResponse> {
+    use crate::infra::s3;
+
+    let storage =
+        s3.ok_or_else(|| AppError::Internal("object storage is not configured".to_string()))?;
+    let extension = s3::image_extension(content_type)
+        .ok_or_else(|| AppError::Validation("unsupported image type (use jpeg, png, or webp)".to_string()))?;
+    if bytes.len() > s3::MAX_IMAGE_BYTES {
+        return Err(AppError::Validation(
+            "image is too large (max 2 MB)".to_string(),
+        ));
+    }
+
+    let key = format!(
+        "products/{product_id}/{}.{}",
+        uuid::Uuid::new_v4(),
+        extension
+    );
+    storage
+        .put_object(&key, bytes, content_type)
+        .await
+        .map_err(|err| AppError::Internal(err.to_string()))?;
+    set_product_image_url(pool, product_id, &key).await?;
+
+    Ok(UploadResponse {
+        url: storage.public_url(&key),
+        key,
     })
 }

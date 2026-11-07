@@ -36,14 +36,18 @@ Gate review: diff file migrasi 009 — [backend/migrations/009_add_online_orders
 
 Tujuan: pembeli bisa melihat katalog dan checkout dari HP.
 
-- [ ] Modul `backend/src/modules/online_orders/` (routes, handler, service, repository, model, dto)
-- [ ] Route publik tanpa `AuthUser`: katalog, kategori, store-info, checkout
-- [ ] DTO publik khusus — tanpa `purchase_price`, supplier, data internal
-- [ ] Checkout: validasi stok + `quantity <= stock` ulang di server, harga dari `product_skus.selling_price`
-- [ ] Klien S3 dari env `S3_*` + endpoint upload terautentikasi (QRIS, foto produk)
-- [ ] `tower_governor` hanya di router publik (kuota longgar untuk baca, ketat untuk checkout)
+- [x] Modul `backend/src/modules/online_orders/` (routes, handler, service, repository, model, dto)
+- [x] Route publik tanpa `AuthUser`: katalog, kategori, store-info, checkout
+- [x] DTO publik khusus — tanpa `purchase_price`, supplier, data internal
+- [x] Checkout: validasi stok + `quantity <= stock` ulang di server, harga dari `product_skus.selling_price`
+- [x] Klien S3 dari env `S3_*` + endpoint upload terautentikasi (QRIS, foto produk)
+- [x] `tower_governor` hanya di router publik (kuota longgar untuk baca, ketat untuk checkout)
 
-Validasi: `cargo test`, `cargo clippy --all-targets`, `curl` katalog/checkout manual incl. stok habis dan 429.
+Validasi (2026-11-07, semua lolos): `cargo test` (7 unit test), `cargo clippy --all-targets`
+(bersih kecuali 2 warning pre-existing di kode lama), `curl` end-to-end di scratch DB+MinIO:
+katalog tanpa harga beli + stok habis tampil, checkout pickup/transfer, 3 penolakan validasi,
+burst checkout → 429 envelope `rate_limited`, upload foto + QRIS (termasuk 401/422/404 negatif),
+`photo_url`/`qris_image_url` muncul di katalog/store-info.
 Gate review: daftar endpoint publik + contoh respons katalog (pastikan tanpa harga beli).
 
 ## Fase 3 — Backend kasir

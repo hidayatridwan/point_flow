@@ -1,5 +1,9 @@
+use std::sync::Arc;
+
 use axum::http::HeaderValue;
 use sqlx::PgPool;
+
+use crate::infra::s3::ObjectStorage;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -12,9 +16,11 @@ pub struct AppState {
     pub refresh_token_cookie_secure: bool,
     pub refresh_token_cookie_same_site: String,
     pub refresh_token_cookie_domain: Option<String>,
+    pub s3: Option<Arc<ObjectStorage>>,
 }
 
 impl AppState {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         db: PgPool,
         cors_allowed_origins: Vec<HeaderValue>,
@@ -25,6 +31,7 @@ impl AppState {
         refresh_token_cookie_secure: bool,
         refresh_token_cookie_same_site: String,
         refresh_token_cookie_domain: Option<String>,
+        s3: Option<Arc<ObjectStorage>>,
     ) -> Self {
         Self {
             db,
@@ -36,6 +43,7 @@ impl AppState {
             refresh_token_cookie_secure,
             refresh_token_cookie_same_site,
             refresh_token_cookie_domain,
+            s3,
         }
     }
 }

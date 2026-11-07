@@ -4,10 +4,14 @@ use crate::{
     app::AppState,
     models::{ApiResponse, MessageResponse},
     modules::{
-        audit, auth, cash_registers, employees, inventory, payroll, procurement, products, reports,
-        roles, sale_returns, sales, suppliers, users,
+        audit, auth, cash_registers, employees, inventory, online_orders, payroll, procurement,
+        products, reports, roles, sale_returns, sales, suppliers, users,
     },
 };
+
+pub fn public_router() -> Router<AppState> {
+    online_orders::routes::public_routes()
+}
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -20,6 +24,7 @@ pub fn router() -> Router<AppState> {
         .merge(suppliers::routes::routes())
         .merge(procurement::routes::routes())
         .merge(inventory::routes::routes())
+        .merge(online_orders::routes::routes())
         .merge(sales::routes::routes())
         .merge(sale_returns::routes::routes())
         .merge(employees::routes::routes())

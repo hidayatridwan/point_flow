@@ -9,7 +9,13 @@ use tower_http::{
     trace::TraceLayer,
 };
 
-use crate::{app::AppState, common::request_context, config::AppConfig, http, infra::db};
+use crate::{
+    app::AppState,
+    common::request_context,
+    config::AppConfig,
+    http,
+    infra::{db, s3::ObjectStorage},
+};
 
 pub async fn run() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
@@ -19,6 +25,20 @@ pub async fn run() -> anyhow::Result<()> {
     let pool = db::connect(&config.database_url)
         .await
         .context("failed to connect to database")?;
+
+    let s3 = match config.s3 {
+        Some(ref settings) => {
+            let storage = ObjectStorage::from_settings(settings)
+                .await
+                .context("failed to initialize object storage")?;
+            tracing::info!(bucket = %settings.bucket, "object storage enabled");
+            Some(std::sync::Arc::new(storage))
+        }
+        None => {
+            tracing::warn!("S3_* env not configured; file uploads are disabled");
+            None
+        }
+    };
 
     let state = AppState::new(
         pool,
@@ -30,13 +50,18 @@ pub async fn run() -> anyhow::Result<()> {
         config.refresh_token_cookie_secure,
         config.refresh_token_cookie_same_site,
         config.refresh_token_cookie_domain,
+        s3,
     );
     let addr = SocketAddr::from((config.host, config.port));
     let app = app(state);
 
     tracing::info!(%addr, "starting backend API");
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    axum::serve(listener, app.into_make_service()).await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await?;
 
     Ok(())
 }
@@ -46,6 +71,7 @@ pub fn app(state: AppState) -> Router {
 
     Router::new()
         .nest("/api/v1", http::router())
+        .nest("/api/v1", http::public_router())
         .layer(CompressionLayer::new())
         .layer(cors)
         .layer(TraceLayer::new_for_http())

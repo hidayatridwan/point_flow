@@ -1,6 +1,6 @@
 use axum::{
     Json,
-    extract::{Path, Query, State},
+    extract::{Multipart, Path, Query, State},
 };
 
 use crate::{
@@ -11,7 +11,7 @@ use crate::{
         ApiResponse, CreateProductCategoryRequest, CreateProductRequest, CreateProductSkuRequest,
         CreateUnitRequest, ListQuery, MessageResponse, PaginationMeta, ProductCategoryResponse,
         ProductResponse, ProductSkuResponse, UnitResponse, UpdateProductCategoryRequest,
-        UpdateProductRequest, UpdateProductSkuRequest, UpdateUnitRequest,
+        UpdateProductRequest, UpdateProductSkuRequest, UpdateUnitRequest, UploadResponse,
     },
 };
 
@@ -132,6 +132,27 @@ pub async fn delete_product(
     Ok(Json(ApiResponse::success(MessageResponse {
         message: "deleted",
     })))
+}
+
+pub async fn upload_product_photo(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<i64>,
+    mut multipart: Multipart,
+) -> AppResult<Json<ApiResponse<UploadResponse>>> {
+    user.require_permission(&state.db, "master_data").await?;
+    let (bytes, content_type) =
+        super::super::online_orders::handler::read_single_image(&mut multipart).await?;
+    Ok(Json(ApiResponse::success(
+        service::upload_product_photo(
+            &state.db,
+            state.s3.as_deref(),
+            id,
+            bytes,
+            &content_type,
+        )
+        .await?,
+    )))
 }
 
 pub async fn list_units(

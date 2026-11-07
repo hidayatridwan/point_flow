@@ -68,6 +68,16 @@ pub async fn delete_product(pool: &PgPool, id: i64) -> AppResult<()> {
     master::delete_product(pool, id).await
 }
 
+pub async fn upload_product_photo(
+    pool: &PgPool,
+    s3: Option<&crate::infra::s3::ObjectStorage>,
+    id: i64,
+    bytes: Vec<u8>,
+    content_type: &str,
+) -> AppResult<crate::models::UploadResponse> {
+    master::upload_product_photo(pool, s3, id, bytes, content_type).await
+}
+
 pub async fn list_units(pool: &PgPool, query: ListQuery) -> AppResult<Vec<UnitResponse>> {
     master::list_units(pool, query).await
 }

@@ -202,6 +202,13 @@ pub struct MessageResponse {
     pub message: &'static str,
 }
 
+/// Hasil upload file ke object storage: object key + URL publik.
+#[derive(Debug, Serialize)]
+pub struct UploadResponse {
+    pub key: String,
+    pub url: String,
+}
+
 #[derive(Debug, Serialize, FromRow)]
 pub struct AuditLogResponse {
     pub id: i64,
