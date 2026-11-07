@@ -70,7 +70,7 @@
 		</DropdownMenu.Content>
 	</DropdownMenu.Root>
 
-	<ProductDetailDialog productId={product.id} bind:open={isDetailOpen} />
+	<ProductDetailDialog productId={product.id} bind:open={isDetailOpen} {onUpdated} />
 	<ProductEditDialog {product} bind:open={isEditOpen} {onUpdated} />
 	<ProductDeleteAlertDialog {product} bind:open={isDeleteOpen} {onDeleted} />
 </div>

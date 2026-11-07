@@ -7,9 +7,16 @@ export type Product = {
 	category_name: string | null;
 	name: string;
 	is_active: boolean;
+	image_url: string | null;
+	photo_url: string | null;
 	created_at: string;
 	updated_at: string;
 	deleted_at: string | null;
+};
+
+export type ProductPhotoUpload = {
+	key: string;
+	url: string;
 };
 
 export type ProductListParams = {
@@ -92,6 +99,12 @@ export function updateProduct(id: number, payload: UpdateProductPayload) {
 
 export function deleteProduct(id: number) {
 	return apiDelete<MessageResponse>(`/products/${id}`);
+}
+
+export function uploadProductPhoto(id: number, file: File) {
+	const formData = new FormData();
+	formData.append('file', file);
+	return apiPost<ProductPhotoUpload>(`/products/${id}/photo`, formData);
 }
 
 function normalizePage(value: number | undefined) {

@@ -15,6 +15,7 @@ use super::{
     dto::{
         CheckoutRequest, CheckoutResponse, OnlineOrderDetailResponse, OnlineOrderResponse,
         PublicCatalogQuery, PublicCategory, PublicProductItem, StoreInfoResponse,
+        UpdateStoreSettingsRequest,
     },
     service,
 };
@@ -76,6 +77,27 @@ pub(crate) async fn read_single_image(multipart: &mut Multipart) -> AppResult<(V
     }
 
     Ok((bytes, content_type))
+}
+
+pub async fn get_store_settings(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> AppResult<Json<ApiResponse<StoreInfoResponse>>> {
+    user.require_permission(&state.db, "online_orders").await?;
+    Ok(Json(ApiResponse::success(
+        service::get_store_settings(&state.db, state.s3.as_deref()).await?,
+    )))
+}
+
+pub async fn update_store_settings(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<UpdateStoreSettingsRequest>,
+) -> AppResult<Json<ApiResponse<StoreInfoResponse>>> {
+    user.require_permission(&state.db, "online_orders").await?;
+    Ok(Json(ApiResponse::success(
+        service::update_store_settings(&state.db, state.s3.as_deref(), user.id, payload).await?,
+    )))
 }
 
 pub async fn upload_qris_image(

@@ -83,7 +83,7 @@ Model inventory memakai `product_skus` sebagai titik utama stok. Perubahan stok 
 ├── docker-compose.yml
 ├── .env.example
 ├── api-flow.md
-└── point_flow-backend.postman_collection.json
+└── point_flow.postman_collection.json
 ```
 
 ## Environment
@@ -159,7 +159,7 @@ Migration SQL di `backend/migrations` dipasang ke container PostgreSQL melalui `
 
 Backend production **tidak dibuild di VPS**. Image dikompilasi di GitHub Actions
 (`backend/Dockerfile.prod`, multi-stage) lalu dipush ke GHCR
-(`ghcr.io/<owner>/point_flow-backend:latest`). VPS hanya menerima artefak — tidak ada
+(`ghcr.io/<owner>/point_flow:latest`). VPS hanya menerima artefak — tidak ada
 source code maupun `.git` yang dikirim ke server.
 
 Alur otomatis (`.github/workflows/deploy-backend.yml`, trigger push ke `main`
@@ -350,7 +350,7 @@ bun run build
 
 Dokumen dan collection API:
 
-- `point_flow-backend.postman_collection.json`: Postman collection untuk semua endpoint backend.
+- `point_flow.postman_collection.json`: Postman collection untuk semua endpoint backend.
 - `api-flow.md`: urutan pemakaian API dari bootstrap admin sampai report.
 
 Flow awal yang disarankan:

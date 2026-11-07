@@ -8,6 +8,7 @@
 	import ShieldCheckIcon from '@lucide/svelte/icons/shield-check';
 	import ShoppingCartIcon from '@lucide/svelte/icons/shopping-cart';
 	import TruckIcon from '@lucide/svelte/icons/truck';
+	import SettingsIcon from '@lucide/svelte/icons/settings';
 	import UserCogIcon from '@lucide/svelte/icons/user-cog';
 	import WarehouseIcon from '@lucide/svelte/icons/warehouse';
 
@@ -46,6 +47,10 @@
 							{
 								titleKey: 'nav.saleReturns',
 								url: '/point_flow/sale-returns'
+							},
+							{
+								titleKey: 'nav.onlineOrders',
+								url: '/point_flow/online-orders'
 							},
 							{
 								titleKey: 'nav.cashMovements',
@@ -174,6 +179,11 @@
 				titleKey: 'navGroup.config',
 				items: [
 					{
+						titleKey: 'nav.storeSettings',
+						url: '/config/store-settings',
+						icon: SettingsIcon
+					},
+					{
 						titleKey: 'nav.users',
 						url: '/config/users',
 						icon: UserCogIcon
@@ -203,6 +213,7 @@
 	import { onMount } from 'svelte';
 	import NavMain from './nav-main.svelte';
 	import NavUser from './nav-user.svelte';
+	import { listOnlineOrders } from '$lib/api/online-orders.js';
 	import { getCurrentUser } from '$lib/api/session.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import CommandIcon from '@lucide/svelte/icons/command';
@@ -213,9 +224,17 @@
 	let { ref = $bindable(null), ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
 
 	let sidebarUser = $state<{ name: string; email: string; avatar: string } | null>(null);
+	let newOrderCount = $state(0);
+
+	const navBadges = $derived({ '/point_flow/online-orders': newOrderCount });
 
 	onMount(() => {
 		void loadCurrentUser();
+		void refreshNewOrderCount();
+		const badgeTimer = setInterval(() => {
+			void refreshNewOrderCount();
+		}, 60000);
+		return () => clearInterval(badgeTimer);
 	});
 
 	async function loadCurrentUser() {
@@ -224,6 +243,15 @@
 			sidebarUser = { name: currentUser.name, email: currentUser.email, avatar: favicon };
 		} catch {
 			sidebarUser = null;
+		}
+	}
+
+	async function refreshNewOrderCount() {
+		try {
+			const result = await listOnlineOrders({ status: ['new'], limit: 1, page: 1 });
+			newOrderCount = result.pagination.totalRecords;
+		} catch {
+			newOrderCount = 0;
 		}
 	}
 </script>
@@ -251,7 +279,7 @@
 		</Sidebar.Menu>
 	</Sidebar.Header>
 	<Sidebar.Content>
-		<NavMain groups={data.navGroups} />
+		<NavMain groups={data.navGroups} badges={navBadges} />
 	</Sidebar.Content>
 	<Sidebar.Footer>
 		{#if sidebarUser}

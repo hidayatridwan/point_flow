@@ -52,6 +52,8 @@ const PRODUCT_SELECT: &str = r#"
         c.name AS category_name,
         p.name,
         p.is_active,
+        p.image_url,
+        NULL::text AS photo_url,
         p.created_at,
         p.updated_at,
         p.deleted_at

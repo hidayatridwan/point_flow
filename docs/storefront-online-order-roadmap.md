@@ -93,14 +93,31 @@ Gate review: buka `/shop` di HP, nilai kecepatan dan kemudahan checkout.
 
 Tujuan: pesanan online diproses dari tempat kasir bekerja setiap hari.
 
-- [ ] Menu Pesanan Online + badge jumlah `Baru`; daftar (tab status, cari, paginasi) + auto-refresh ringan
-- [ ] Detail: item, pembeli, tombol Chat WA (`wa.me`), satu tombol aksi utama per status + dialog konfirmasi
-- [ ] Perluasan halaman pengaturan toko: info pembayaran, upload QRIS, jam operasional, ongkir
-- [ ] Upload foto produk (ke S3) dari halaman produk
-- [ ] `lib/api/online-orders.ts` + kunci i18n id/en
+- [x] Menu Pesanan Online + badge jumlah `Baru`; daftar (tab status, cari, paginasi) + auto-refresh ringan
+- [x] Detail: item, pembeli, tombol Chat WA (`wa.me`), satu tombol aksi utama per status + dialog konfirmasi
+- [x] Perluasan halaman pengaturan toko: info pembayaran, upload QRIS, jam operasional, ongkir
+- [x] Upload foto produk (ke S3) dari halaman produk
+- [x] `lib/api/online-orders.ts` + kunci i18n id/en
 
-Validasi: `bun run check`, `bun run lint`, alur kasir penuh peran non-admin berpermission `online_orders`.
-Gate review: coba proses satu pesanan fiktif dari Baru sampai Selesai.
+Validasi (2026-11-07, semua lolos): `bun run check` 0 error, eslint bersih
+pada file yang disentuh (`bun run lint` repo tetap merah di file lama yang
+tidak tersentuh — baseline prettier kotor), `bun run build` sukses,
+`cargo test` 13 lolos, `cargo clippy` bersih (2 warning pre-existing),
+`curl` end-to-end di scratch DB (001–010) + MinIO sebagai kasir non-admin
+berpermission `online_orders` — 25/25: bootstrap, daftar filter `new`,
+detail, pack (stok 100→97), ready, complete-tanpa-sesi ditolak → buka sesi →
+complete buat sale channel online, deliver transfer-unpaid ditolak →
+mark-paid → deliver lolos, cancel-dari-packing kembalikan stok 90→95 +
+alasan tersimpan, GET/PUT `/store-settings` (termasuk penolakan fee negatif
++ normalisasi WA `62…`), upload QRIS + foto produk (key + URL publik
+muncul di settings/produk), halaman `/point_flow/online-orders`,
+`/config/store-settings`, `/master/products`, `/shop` semua 200.
+Deviasi tercatat: backend baru `GET/PUT /store-settings` (izin
+`online_orders`) karena halaman pengaturan toko belum ada di repo;
+`ProductResponse` + `image_url`/`photo_url` (key mentah + URL publik
+dari S3) agar foto tampil di dashboard.
+Gate review: coba proses satu pesanan fiktif dari Baru sampai Selesai
+(di browser; interaksi klik belum dicoba manual — perlu dibuka dan diklik).
 
 ## Fase 6 — Validasi akhir & rilis
 

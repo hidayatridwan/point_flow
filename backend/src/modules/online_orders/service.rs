@@ -14,6 +14,7 @@ use super::{
         CheckoutItemResponse, CheckoutPaymentInfo, CheckoutRequest, CheckoutResponse,
         OnlineOrderDetailResponse, OnlineOrderItemResponse, OnlineOrderResponse,
         PublicCatalogQuery, PublicCategory, PublicProductItem, StoreInfoResponse,
+        UpdateStoreSettingsRequest,
     },
     model::OrderRow,
     repository::{self, NewOrderItem},
@@ -314,6 +315,128 @@ async fn upload_image(
     let url = storage.public_url(&key);
 
     Ok((key, url))
+}
+
+/// Pengaturan toko yang tervalidasi, siap disimpan.
+pub struct ValidatedStoreSettings {
+    pub store_name: Option<String>,
+    pub operating_hours: Option<String>,
+    pub bank_accounts: Option<String>,
+    pub ewallet_numbers: Option<String>,
+    pub delivery_fee: Option<f64>,
+    pub shop_whatsapp: Option<String>,
+}
+
+fn check_text_len(value: &str, field: &str, max: usize) -> Result<String, String> {
+    let trimmed = value.trim().to_string();
+    if trimmed.len() > max {
+        return Err(format!("{field} is too long (max {max})"));
+    }
+    Ok(trimmed)
+}
+
+/// Validasi pembaruan pengaturan toko (murni, tanpa database).
+pub fn validate_store_settings(
+    request: &UpdateStoreSettingsRequest,
+) -> Result<ValidatedStoreSettings, String> {
+    let store_name = request
+        .store_name
+        .as_deref()
+        .map(|v| {
+            let trimmed = check_text_len(v, "store_name", 200)?;
+            if trimmed.is_empty() {
+                return Err("store_name must not be empty".to_string());
+            }
+            Ok(trimmed)
+        })
+        .transpose()?;
+    let operating_hours = request
+        .operating_hours
+        .as_deref()
+        .map(|v| check_text_len(v, "operating_hours", 500))
+        .transpose()?;
+    let bank_accounts = request
+        .bank_accounts
+        .as_deref()
+        .map(|v| check_text_len(v, "bank_accounts", 2000))
+        .transpose()?;
+    let ewallet_numbers = request
+        .ewallet_numbers
+        .as_deref()
+        .map(|v| check_text_len(v, "ewallet_numbers", 2000))
+        .transpose()?;
+    let delivery_fee = request
+        .delivery_fee
+        .map(|fee| {
+            if !fee.is_finite() || fee < 0.0 || fee > 1_000_000_000_000.0 {
+                return Err("delivery_fee must be between 0 and 1000000000000".to_string());
+            }
+            Ok(fee)
+        })
+        .transpose()?;
+    let shop_whatsapp = request
+        .shop_whatsapp
+        .as_deref()
+        .map(|v| {
+            let trimmed = check_text_len(v, "shop_whatsapp", 30)?;
+            if !trimmed.is_empty()
+                && !trimmed
+                    .chars()
+                    .all(|c| c.is_ascii_digit() || "+- ().".contains(c))
+            {
+                return Err("shop_whatsapp contains invalid characters".to_string());
+            }
+            Ok(trimmed)
+        })
+        .transpose()?;
+
+    Ok(ValidatedStoreSettings {
+        store_name,
+        operating_hours,
+        bank_accounts,
+        ewallet_numbers,
+        delivery_fee,
+        shop_whatsapp,
+    })
+}
+
+/// Baca pengaturan toko untuk dashboard kasir/admin (bentuk sama dengan info publik).
+pub async fn get_store_settings(
+    pool: &PgPool,
+    s3: Option<&ObjectStorage>,
+) -> AppResult<StoreInfoResponse> {
+    get_store_info(pool, s3).await
+}
+
+/// Terapkan pembaruan pengaturan toko yang sudah tervalidasi.
+pub async fn update_store_settings(
+    pool: &PgPool,
+    s3: Option<&ObjectStorage>,
+    updated_by: i64,
+    request: UpdateStoreSettingsRequest,
+) -> AppResult<StoreInfoResponse> {
+    let settings = validate_store_settings(&request).map_err(AppError::Validation)?;
+
+    if let Some(value) = settings.store_name {
+        repository::set_setting(pool, "store_name", &value, Some(updated_by)).await?;
+    }
+    if let Some(value) = settings.operating_hours {
+        repository::set_setting(pool, "operating_hours", &value, Some(updated_by)).await?;
+    }
+    if let Some(value) = settings.bank_accounts {
+        repository::set_setting(pool, "bank_accounts", &value, Some(updated_by)).await?;
+    }
+    if let Some(value) = settings.ewallet_numbers {
+        repository::set_setting(pool, "ewallet_numbers", &value, Some(updated_by)).await?;
+    }
+    if let Some(fee) = settings.delivery_fee {
+        repository::set_setting(pool, "delivery_fee", &fee.to_string(), Some(updated_by)).await?;
+    }
+    if let Some(value) = settings.shop_whatsapp {
+        repository::set_setting(pool, "shop_whatsapp", &value, Some(updated_by)).await?;
+    }
+
+    get_store_info(pool, s3).await
 }
 
 pub async fn upload_qris_image(
@@ -773,6 +896,58 @@ mod tests {
         assert!(next_status(OrderAction::Complete, "packing", "pickup", "pay_at_store", "unpaid").is_err());
         // pack ulang ditolak
         assert!(next_status(OrderAction::Pack, "packing", "pickup", "pay_at_store", "unpaid").is_err());
+    }
+
+    #[test]
+    fn validate_store_settings_accepts_partial_update() {
+        use super::super::dto::UpdateStoreSettingsRequest;
+        let request = UpdateStoreSettingsRequest {
+            store_name: Some("  Toko Maju  ".to_string()),
+            operating_hours: None,
+            bank_accounts: Some(String::new()),
+            ewallet_numbers: None,
+            delivery_fee: Some(5000.0),
+            shop_whatsapp: Some("0812-3456-789".to_string()),
+        };
+        let settings = validate_store_settings(&request).expect("valid settings");
+        assert_eq!(settings.store_name.as_deref(), Some("Toko Maju"));
+        assert!(settings.operating_hours.is_none());
+        assert_eq!(settings.bank_accounts.as_deref(), Some(""));
+        assert_eq!(settings.delivery_fee, Some(5000.0));
+        assert_eq!(settings.shop_whatsapp.as_deref(), Some("0812-3456-789"));
+    }
+
+    #[test]
+    fn validate_store_settings_rejects_bad_values() {
+        use super::super::dto::UpdateStoreSettingsRequest;
+        let base = || UpdateStoreSettingsRequest {
+            store_name: None,
+            operating_hours: None,
+            bank_accounts: None,
+            ewallet_numbers: None,
+            delivery_fee: None,
+            shop_whatsapp: None,
+        };
+
+        let mut request = base();
+        request.store_name = Some("   ".to_string());
+        assert!(validate_store_settings(&request).is_err());
+
+        let mut request = base();
+        request.delivery_fee = Some(-100.0);
+        assert!(validate_store_settings(&request).is_err());
+
+        let mut request = base();
+        request.delivery_fee = Some(f64::NAN);
+        assert!(validate_store_settings(&request).is_err());
+
+        let mut request = base();
+        request.shop_whatsapp = Some("abc-def".to_string());
+        assert!(validate_store_settings(&request).is_err());
+
+        let mut request = base();
+        request.shop_whatsapp = Some("08123456789".to_string());
+        assert!(validate_store_settings(&request).is_ok());
     }
 
     #[test]

@@ -1,6 +1,6 @@
 # Point Flow Backend API Flow
 
-Dokumen ini menjelaskan urutan penggunaan API Point Flow dari awal sampai akhir berdasarkan file Postman collection `point_flow-backend.postman_collection.json`.
+Dokumen ini menjelaskan urutan penggunaan API Point Flow dari awal sampai akhir berdasarkan file Postman collection `point_flow.postman_collection.json`.
 
 Base URL yang dipakai collection:
 
@@ -18,7 +18,7 @@ Authorization: Bearer {{access_token}}
 
 Catatan:
 
-- Kolom Postman request memakai format `Folder > Request` di dalam file `point_flow-backend.postman_collection.json`.
+- Kolom Postman request memakai format `Folder > Request` di dalam file `point_flow.postman_collection.json`.
 - Placeholder seperti `{{audit_log_id}}`, `{{cash_register_id}}`, `{{cash_register_session_id}}`, `{{cash_drawer_movement_id}}`, `{{product_id}}`, `{{product_sku_id}}`, `{{sale_id}}`, `{{sale_item_id}}`, `{{sale_return_id}}`, `{{unit_pcs_id}}`, `{{unit_dus_id}}`, `{{product_sku_from_id}}`, dan `{{product_sku_to_id}}` adalah variable Postman collection.
 - Response aktual selalu memakai envelope `data`, `meta`, `error`, dan `request_id`. Beberapa contoh response di dokumen ini menampilkan isi `data` saja agar alurnya lebih ringkas.
 - Response error umum berbentuk:

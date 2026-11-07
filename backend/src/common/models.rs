@@ -367,6 +367,8 @@ pub struct ProductResponse {
     pub category_name: Option<String>,
     pub name: String,
     pub is_active: bool,
+    pub image_url: Option<String>,
+    pub photo_url: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub deleted_at: Option<DateTime<Utc>>,

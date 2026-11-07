@@ -57,6 +57,10 @@ pub fn public_routes() -> Router<AppState> {
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
+            "/store-settings",
+            get(handler::get_store_settings).put(handler::update_store_settings),
+        )
+        .route(
             "/store-settings/qris-image",
             post(handler::upload_qris_image),
         )

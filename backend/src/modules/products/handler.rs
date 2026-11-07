@@ -7,6 +7,7 @@ use crate::{
     app::AppState,
     auth::AuthUser,
     error::AppResult,
+    infra::s3::ObjectStorage,
     models::{
         ApiResponse, CreateProductCategoryRequest, CreateProductRequest, CreateProductSkuRequest,
         CreateUnitRequest, ListQuery, MessageResponse, PaginationMeta, ProductCategoryResponse,
@@ -14,6 +15,16 @@ use crate::{
         UpdateProductRequest, UpdateProductSkuRequest, UpdateUnitRequest, UploadResponse,
     },
 };
+
+/// Isi `photo_url` dari object key agar dashboard bisa menampilkan foto produk.
+fn with_photo_url(mut product: ProductResponse, s3: Option<&ObjectStorage>) -> ProductResponse {
+    product.photo_url = product
+        .image_url
+        .as_deref()
+        .filter(|key| !key.is_empty())
+        .and_then(|key| s3.map(|storage| storage.public_url(key)));
+    product
+}
 
 use super::service;
 
@@ -83,9 +94,12 @@ pub async fn list_products(
     Query(query): Query<ListQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<ProductResponse>>>> {
     user.require_permission(&state.db, "master_data").await?;
-    Ok(Json(ApiResponse::success(
-        service::list_products(&state.db, query).await?,
-    )))
+    let products = service::list_products(&state.db, query).await?;
+    let products = products
+        .into_iter()
+        .map(|product| with_photo_url(product, state.s3.as_deref()))
+        .collect();
+    Ok(Json(ApiResponse::success(products)))
 }
 
 pub async fn get_product(
@@ -94,9 +108,11 @@ pub async fn get_product(
     Path(id): Path<i64>,
 ) -> AppResult<Json<ApiResponse<ProductResponse>>> {
     user.require_permission(&state.db, "master_data").await?;
-    Ok(Json(ApiResponse::success(
-        service::find_product(&state.db, id).await?,
-    )))
+    let product = service::find_product(&state.db, id).await?;
+    Ok(Json(ApiResponse::success(with_photo_url(
+        product,
+        state.s3.as_deref(),
+    ))))
 }
 
 pub async fn create_product(
@@ -105,9 +121,11 @@ pub async fn create_product(
     Json(payload): Json<CreateProductRequest>,
 ) -> AppResult<Json<ApiResponse<ProductResponse>>> {
     user.require_permission(&state.db, "master_data").await?;
-    Ok(Json(ApiResponse::success(
-        service::create_product(&state.db, payload).await?,
-    )))
+    let product = service::create_product(&state.db, payload).await?;
+    Ok(Json(ApiResponse::success(with_photo_url(
+        product,
+        state.s3.as_deref(),
+    ))))
 }
 
 pub async fn update_product(
@@ -117,9 +135,11 @@ pub async fn update_product(
     Json(payload): Json<UpdateProductRequest>,
 ) -> AppResult<Json<ApiResponse<ProductResponse>>> {
     user.require_permission(&state.db, "master_data").await?;
-    Ok(Json(ApiResponse::success(
-        service::update_product(&state.db, id, payload).await?,
-    )))
+    let product = service::update_product(&state.db, id, payload).await?;
+    Ok(Json(ApiResponse::success(with_photo_url(
+        product,
+        state.s3.as_deref(),
+    ))))
 }
 
 pub async fn delete_product(

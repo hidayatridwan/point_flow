@@ -137,3 +137,15 @@ pub struct OnlineOrderDetailResponse {
     pub items: Vec<OnlineOrderItemResponse>,
 }
 
+/// Pembaruan parsial pengaturan toko oleh kasir/admin.
+/// `None` = tidak diubah; `Some` = ganti nilai (string kosong = kosongkan).
+#[derive(Debug, Deserialize)]
+pub struct UpdateStoreSettingsRequest {
+    pub store_name: Option<String>,
+    pub operating_hours: Option<String>,
+    pub bank_accounts: Option<String>,
+    pub ewallet_numbers: Option<String>,
+    pub delivery_fee: Option<f64>,
+    pub shop_whatsapp: Option<String>,
+}
+

@@ -1,6 +1,6 @@
 name: point_flow
 
-x-logging: &point_flow-backend-logging
+x-logging: &point_flow-logging
   driver: json-file
   options:
     max-size: "10m"
@@ -8,8 +8,8 @@ x-logging: &point_flow-backend-logging
 
 services:
   backend:
-    image: ghcr.io/hidayatridwan/point_flow-backend:latest
-    container_name: point_flow-backend
+    image: ghcr.io/hidayatridwan/point_flow:latest
+    container_name: point_flow
     restart: unless-stopped
     environment:
       APP_HOST: ${APP_HOST:-0.0.0.0}
@@ -38,7 +38,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    logging: *point_flow-backend-logging
+    logging: *point_flow-logging
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:$${APP_PORT}/api/v1/health"]
       interval: 10s
@@ -65,7 +65,7 @@ services:
       # /docker-entrypoint-initdb.d, which we intentionally do not use in prod).
       - ./backend/migrations:/sql/migrations:ro
       - ./backend/seeds:/sql/seeds:ro
-    logging: *point_flow-backend-logging
+    logging: *point_flow-logging
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 10s
@@ -74,8 +74,8 @@ services:
 
 networks:
   default: {}
-  # The Caddy reverse proxy lives on the external 'web' network; point_flow-backend joins
-  # it so Caddy can reach the container by name (reverse_proxy point_flow-backend:8081).
+  # The Caddy reverse proxy lives on the external 'web' network; point_flow joins
+  # it so Caddy can reach the container by name (reverse_proxy point_flow:8081).
   proxy:
     external: true
     name: web

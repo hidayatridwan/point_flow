@@ -3,7 +3,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: point_flow-backend
+    container_name: point_flow
     restart: unless-stopped
     working_dir: /app
     command: cargo run --bin server
