@@ -52,6 +52,7 @@ pub struct StoreInfoResponse {
     pub ewallet_numbers: String,
     pub qris_image_url: Option<String>,
     pub delivery_fee: f64,
+    pub shop_whatsapp: String,
 }
 
 #[derive(Debug, Deserialize)]

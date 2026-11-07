@@ -119,6 +119,15 @@ pub fn build_object_key(prefix: &str, scope: &str, extension: &str) -> String {
     format!("{prefix}/{scope}/{}.{}", Uuid::new_v4(), extension)
 }
 
+/// Normalisasi nomor WhatsApp toko ke digit internasional (62...). Murni.
+pub fn normalize_whatsapp(raw: &str) -> String {
+    let digits: String = raw.chars().filter(|c| c.is_ascii_digit()).collect();
+    if let Some(rest) = digits.strip_prefix('0') {
+        return format!("62{rest}");
+    }
+    digits
+}
+
 pub async fn list_catalog(
     pool: &PgPool,
     s3: Option<&ObjectStorage>,
@@ -157,6 +166,10 @@ pub async fn get_store_info(
         .as_deref()
         .filter(|k| !k.is_empty())
         .and_then(|key| s3.map(|storage| storage.public_url(key)));
+    let shop_whatsapp = repository::get_setting(pool, "shop_whatsapp")
+        .await?
+        .map(|v| normalize_whatsapp(&v))
+        .unwrap_or_default();
 
     Ok(StoreInfoResponse {
         store_name,
@@ -165,6 +178,7 @@ pub async fn get_store_info(
         ewallet_numbers,
         qris_image_url,
         delivery_fee,
+        shop_whatsapp,
     })
 }
 
@@ -696,6 +710,14 @@ mod tests {
         let mut request = checkout_request();
         request.items[0].quantity = 0.0;
         assert!(validate_checkout(&request).is_err());
+    }
+
+    #[test]
+    fn normalize_whatsapp_converts_local_format() {
+        assert_eq!(normalize_whatsapp("0812-3456-789"), "628123456789");
+        assert_eq!(normalize_whatsapp("+62 812 3456 789"), "628123456789");
+        assert_eq!(normalize_whatsapp("628123456789"), "628123456789");
+        assert_eq!(normalize_whatsapp(""), "");
     }
 
     #[test]

@@ -73,14 +73,20 @@ Gate review: matriks transisi status vs hasil aktual per peran kasir.
 
 Tujuan: katalog → keranjang → checkout → sukses, mobile-first, tanpa login.
 
-- [ ] Route `(public)/shop`: catalog, cart (`localStorage`), checkout, success
-- [ ] Hanya Tailwind + bawaan Svelte — tanpa shadcn, TanStack, superforms, sonner
-- [ ] Validasi checkout manual sisi klien + penuh di server; semua teks via `t()` (id/en)
-- [ ] Produk stok habis tampil dengan penanda, tombol tambah nonaktif
-- [ ] Halaman sukses: nomor pesanan, info transfer (rekening/e-wallet/QRIS), tombol WA toko
-- [ ] `lib/api/storefront.ts` terpisah dari API admin
+- [x] Route `(public)/shop`: catalog, cart (`localStorage`), checkout, success (+ layout terang Poppins, tanpa toggle tema)
+- [x] Hanya Tailwind + bawaan Svelte — tanpa shadcn, TanStack, superforms, sonner, lucide
+- [x] Validasi checkout manual sisi klien + penuh di server; semua teks via `t()` (id/en)
+- [x] Produk stok habis tampil dengan penanda, tombol tambah nonaktif; grid masonry 2 kolom
+- [x] Halaman sukses: nomor pesanan, info transfer (rekening/e-wallet/QRIS), tombol WA toko
+- [x] `lib/api/storefront.ts` terpisah dari API admin; cart store `lib/cart.svelte.ts`
 
-Validasi: `bun run check`, `bun run lint`, uji di mode perangkat HP + koneksi lambat.
+Validasi (2026-11-07): `bun run check` 0 error, eslint bersih, `bun run build` sukses,
+serve dev: `/shop`, `/shop/cart`, `/shop/checkout`, `/shop/success/…` semua 200,
+API store-info + checkout e2e lolos (termasuk `shop_whatsapp` ternormalisasi).
+Visual mengacu mockup 2026-11-07 (aksen `#FF6534`, Poppins, kartu 2 kolom, stepper + CTA
+pindah ke halaman keranjang karena tidak ada halaman detail).
+Yang belum terverifikasi: interaksi nyata di browser (tambah cart, submit, salin nomor) —
+perlu dibuka dan dicoba manual.
 Gate review: buka `/shop` di HP, nilai kecepatan dan kemudahan checkout.
 
 ## Fase 5 — Dashboard kasir

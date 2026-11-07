@@ -159,7 +159,7 @@ Tabel baru `store_settings` kunci-nilai sederhana (usulan bagian dari migrasi `0
 
 | Kolom | Tipe | Keterangan |
 | --- | --- | --- |
-| `key` | `VARCHAR(80) PK` | Mis. `store_name`, `operating_hours`, `bank_accounts`, `ewallet_numbers`, `qris_image_key`, `delivery_fee` |
+| `key` | `VARCHAR(80) PK` | Mis. `store_name`, `operating_hours`, `bank_accounts`, `ewallet_numbers`, `qris_image_key`, `delivery_fee`, `shop_whatsapp` |
 | `value` | `TEXT NOT NULL` | Nilai teks; untuk gambar berisi object key S3 |
 | `updated_at / updated_by` | `TIMESTAMPTZ / BIGINT → users(id)` | Audit perubahan terakhir |
 
@@ -236,6 +236,14 @@ Backend mengikuti struktur modul baku repo: modul baru `backend/src/modules/onli
 ### Storefront pembeli — mobile-first, tanpa login
 
 Lokasi usulan: route group baru `frontend/src/routes/(public)/` dengan halaman katalog pada path `/shop`, di luar layout `(protected)`. File API baru `frontend/src/lib/api/storefront.ts` terpisah dari API admin. Isi cart disimpan di `localStorage` HP pembeli (tidak perlu tabel cart di server).
+
+Keputusan visual yang dikunci (referensi mockup 2026-11-07, dikonfirmasi pemilik produk):
+- Palet: aksen oranye `#FF6534` untuk CTA/tombol tambah, teks `#333333`, kartu putih di atas latar abu muda. Tanpa toggle tema gelap/terang di storefront (terang saja).
+- Font: Poppins via `<link>` Google Fonts pada layout `(public)` saja (dashboard tidak berubah).
+- Header katalog: nama toko + jam operasional dari store-info (bukan sapaan "Welcome!").
+- Grid katalog: masonry 2 kolom ala mockup (kartu mengikuti tinggi alami foto, tanpa filter — hanya kolom pencarian teks).
+- Harga dalam Rupiah via `formatIdr` yang sudah ada; kondisi stok habis dirancang sendiri (kartu grayscale + label + tombol nonaktif) karena tidak ada di mockup.
+- Sistem komponen: komponen reusable di `frontend/src/lib/components/storefront/` (kartu produk, stepper jumlah, bilah cart, dkk.), memakai fitur bawaan Svelte (runes, snippet, `{@attach}` bila perlu) — tanpa library UI tambahan selain Tailwind.
 
 | Halaman | Isi (hanya ini, tidak lebih) |
 | --- | --- |
@@ -316,6 +324,7 @@ Skenario uji manual wajib (browser HP atau mode perangkat pada browser):
 
 - Akun pembeli + OTP WhatsApp dan halaman riwayat/lacak status untuk pembeli.
 - Payment gateway (QRIS dinamis per transaksi, VA) dengan status pembayaran otomatis.
+- Upload bukti transfer oleh pembeli memakai presigned URL (bukan backend-proxy): backend menerbitkan URL singkat per pesanan, browser upload langsung ke S3, backend verifikasi lalu menandai "menunggu verifikasi kasir". Kasir tetap yang mengonfirmasi `paid`.
 - Reservasi stok saat checkout dengan kedaluwarsa otomatis.
 - Notifikasi WhatsApp otomatis ke pembeli pada setiap perubahan status.
 - Ongkir bertingkat per zona/jarak, jadwal pengantaran, dan minimal belanja antar.
