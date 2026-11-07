@@ -125,7 +125,7 @@ Tujuan: enam skenario Bagian 12 dokumen desain lolos, rilis ke satu toko.
 
 - [ ] Skenario 1–6 Bagian 12 (stok habis, transfer, pack/cancel, complete, race stok, kebocoran harga beli)
 - [ ] `cargo test`, `cargo clippy`, `bun run check`, `bun run lint` semua hijau
-- [ ] Domain storefront publik aktif: domain custom di Netlify (primary), env `SHOP_DOMAINS` scope Functions/Production, `CORS_ALLOWED_ORIGINS` + origin storefront (lihat README "Dua host dalam satu situs")
+- [ ] Storefront di situs Netlify terpisah: situs dibuat + secret `NETLIFY_SITE_ID_SHOP`, env `SHOP_DOMAINS` (Functions/Production) di kedua situs, domain custom (primary) + `CORS_ALLOWED_ORIGINS` origin storefront (lihat README "Dua situs Netlify: kasir vs storefront")
 - [ ] Rilis ke satu toko, pantau pesanan masuk masa awal
 
 Gate review: hasil tiap skenario + keputusan rilis.

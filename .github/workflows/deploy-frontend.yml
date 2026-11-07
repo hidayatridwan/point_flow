@@ -12,6 +12,8 @@ jobs:
   deploy:
     name: Deploy to Netlify
     runs-on: ubuntu-latest
+    env:
+      NETLIFY_SITE_ID_SHOP: ${{ secrets.NETLIFY_SITE_ID_SHOP }}
     steps:
       - uses: actions/checkout@v4
 
@@ -29,10 +31,22 @@ jobs:
           PUBLIC_API_BASE_URL: ${{ secrets.PUBLIC_API_BASE_URL }}
         run: bun run build
 
-      - name: Deploy to Netlify
+      - name: Deploy dashboard kasir ke Netlify
         uses: netlify/actions/cli@master
         with:
           args: deploy --dir=frontend/build --prod
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      # Situs storefront (deploy kedua dengan build yang sama). Step ini
+      # ter-skip sampai secret NETLIFY_SITE_ID_SHOP dibuat — lihat README
+      # bagian "Dua situs Netlify: kasir vs storefront".
+      - name: Deploy storefront ke Netlify
+        if: env.NETLIFY_SITE_ID_SHOP != ''
+        uses: netlify/actions/cli@master
+        with:
+          args: deploy --dir=frontend/build --prod
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID_SHOP }}

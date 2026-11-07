@@ -207,7 +207,10 @@ perintah, berurutan, dari `~/app` di VPS (butuh `VAULT_TOKEN` di environment):
 > `backend/seeds` read-only ke `/sql/migrations` dan `/sql/seeds` di container
 > PostgreSQL — itulah yang dibaca oleh helper di atas.
 
-Frontend production dideploy oleh Netlify dari folder `frontend`. `netlify.toml` sudah mengatur:
+Frontend production dideploy ke Netlify oleh
+`.github/workflows/deploy-frontend.yml` dari folder `frontend` — build sekali,
+hasilnya di-deploy ke dua situs (kasir & storefront, lihat bagian di bawah).
+`netlify.toml` sudah mengatur:
 
 ```text
 base = "frontend"
@@ -221,38 +224,52 @@ Set environment variable berikut di Netlify:
 PUBLIC_API_BASE_URL=https://domain-backend-anda.com/api/v1
 ```
 
-### Dua host dalam satu situs: kasir vs storefront
+### Dua situs Netlify: kasir vs storefront
 
-Satu situs Netlify ini melayani dua peran lewat edge function
-`frontend/netlify/edge-functions/domain-router.ts`:
+Storefront dan dashboard dihosting di **dua situs Netlify terpisah** dari repo
+yang sama — build sekali, hasil build yang sama di-deploy dua kali oleh
+`.github/workflows/deploy-frontend.yml`. Pemisahan peran dilakukan edge
+function `frontend/netlify/edge-functions/domain-router.ts` yang membaca env
+`SHOP_DOMAINS`:
 
-- **Kasir/dashboard** — `pointflow.netlify.app` (domain bawaan) atau host lain:
-  perilaku lama; `/shop*` diarahkan ke domain storefront (begitu ada).
-- **Storefront publik** — host yang terdaftar di env `SHOP_DOMAINS`:
-  `/` langsung ke `/shop`, dan path dashboard diarahkan balik ke host kasir.
+- **Situs kasir** (`pointflow.netlify.app`, domain bawaan) — perilaku lama;
+  `/shop*` diarahkan ke situs storefront (begitu `SHOP_DOMAINS` di-set).
+- **Situs storefront** (mis. `pointflow-shop.netlify.app`, nanti domain
+  custom toko) — host-nya terdaftar di `SHOP_DOMAINS`: `/` langsung ke
+  `/shop`, dan path dashboard diarahkan balik ke host kasir.
 
-Selama `SHOP_DOMAINS` kosong, fungsi ini no-op dan perilaku tidak berubah.
+Selama `SHOP_DOMAINS` kosong, fungsi ini no-op: semua berperilaku kasir.
 
-Langkah mengaktifkan domain storefront publik (saat domainnya sudah ada):
+Setup sekali di awal:
 
-1. Netlify UI → Site configuration → **Domain management** → *Add a domain*,
-   isi domain utama toko (mis. `tokosaya.com`) + `www`-nya. Paling simpel:
-   pilih **Netlify DNS** dan ikuti instruksi ganti nameserver di registrar.
-   Alternatif tanpa pindah NS: `CNAME www → pointflow.netlify.app` dan apex
-   pakai A/ALIAS sesuai petunjuk Netlify (registrar harus mendukung apex
-   alias/CNAME flattening).
-2. Set domain apex (tanpa `www`) sebagai **primary domain**.
-3. Netlify UI → Site configuration → **Environment variables** → tambahkan
-   `SHOP_DOMAINS=<domain-utama-toko>` dengan scope **Functions** dan hanya
-   untuk environment **Production** (biar deploy preview tetap berperilaku
-   kasir), lalu deploy ulang — perubahan env edge function butuh deploy baru.
-   Opsional: `KASIR_DOMAINS` untuk mengganti host kasir (default
-   `pointflow.netlify.app`).
-4. Render → env `CORS_ALLOWED_ORIGINS` ditambah origin storefront, dipisah
+1. Netlify UI → *Add new site* → **Deploy manually** → beri nama mis.
+   `pointflow-shop`. Tanpa import repo/build config — deploy datang dari
+   GitHub Actions. URL awalnya `pointflow-shop.netlify.app` dan **sudah bisa
+   dipakai test storefront tanpa beli domain**.
+2. GitHub → Settings → Secrets and variables → Actions → tambahkan
+   `NETLIFY_SITE_ID_SHOP` = Site ID situs baru (Netlify UI → Site
+   configuration → General → Site information). Sebelum secret ini ada,
+   step deploy storefront di workflow ter-skip otomatis.
+3. Env di kedua situs (Site configuration → Environment variables, scope
+   **Functions**, environment **Production**; perubahan env edge function
+   butuh deploy ulang):
+   - Situs kasir: `SHOP_DOMAINS=<host-storefront>`
+   - Situs storefront: `SHOP_DOMAINS=<nilai yang sama>` + opsional
+     `KASIR_DOMAINS=pointflow.netlify.app` (defaultnya memang itu)
+4. Saat domain custom toko sudah dibeli: di **situs storefront** → Site
+   configuration → **Domain management** → *Add a domain* (mis.
+   `tokosaya.com` + `www`). Paling simpel: pilih **Netlify DNS** dan ikuti
+   instruksi ganti nameserver di registrar. Alternatif tanpa pindah NS:
+   `CNAME www → <nama-situs-storefront>.netlify.app` dan apex pakai A/ALIAS
+   sesuai petunjuk Netlify (registrar harus mendukung apex alias/CNAME
+   flattening). Set domain apex (tanpa `www`) sebagai **primary domain**.
+   Setelah aktif, ubah `SHOP_DOMAINS` di kedua situs jadi `tokosaya.com`
+   lalu deploy ulang.
+5. Render → env `CORS_ALLOWED_ORIGINS` ditambah origin storefront, dipisah
    koma (contoh di `.env.render.example`).
-5. Modul dashboard baru dengan prefix route di luar daftar
+6. Modul dashboard baru dengan prefix route di luar daftar
    `DASHBOARD_PREFIXES` di edge function harus didaftarkan di sana supaya
-   tidak muncul di host storefront.
+   tidak muncul di situs storefront.
 
 ## Production Deploy (Render + Supabase)
 

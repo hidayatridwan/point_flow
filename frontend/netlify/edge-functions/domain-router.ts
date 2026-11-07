@@ -1,9 +1,12 @@
 /**
- * Router per-domain untuk satu situs Netlify yang sama.
+ * Router per-host untuk dua situs Netlify yang di-deploy dari repo yang sama
+ * (build SPA yang sama, dua tujuan deploy).
  *
- * Satu situs (satu build SPA) melayani dua peran:
- *   - Host yang terdaftar di env `SHOP_DOMAINS` = storefront publik `/shop*`.
- *   - Host lain (mis. `pointflow.netlify.app`, deploy preview) = dashboard kasir.
+ *   - Situs kasir (mis. `pointflow.netlify.app`): perilaku lama; `/shop*`
+ *     diarahkan ke host storefront yang terdaftar di env `SHOP_DOMAINS`.
+ *   - Situs storefront (host-nya terdaftar di `SHOP_DOMAINS`): hanya melayani
+ *     `/shop*`; `/` diarahkan ke `/shop`, path dashboard diarahkan balik ke
+ *     host kasir.
  *
  * Selama `SHOP_DOMAINS` belum di-set di Netlify (scope "Functions"), fungsi
  * ini no-op: semua host berperilaku kasir seperti sebelumnya. Env edge
