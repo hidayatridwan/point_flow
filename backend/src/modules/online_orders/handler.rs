@@ -1,6 +1,6 @@
 use axum::{
     Json,
-    extract::{Multipart, Query, State},
+    extract::{Multipart, Path, Query, State},
 };
 
 use crate::{
@@ -8,11 +8,14 @@ use crate::{
     auth::AuthUser,
     error::{AppError, AppResult},
     infra::s3::MAX_IMAGE_BYTES,
-    models::{ApiResponse, PaginationMeta, UploadResponse},
+    models::{ApiResponse, CancelRequest, ListQuery, PaginationMeta, UploadResponse},
 };
 
 use super::{
-    dto::{CheckoutRequest, CheckoutResponse, PublicCatalogQuery, PublicCategory, PublicProductItem, StoreInfoResponse},
+    dto::{
+        CheckoutRequest, CheckoutResponse, OnlineOrderDetailResponse, OnlineOrderResponse,
+        PublicCatalogQuery, PublicCategory, PublicProductItem, StoreInfoResponse,
+    },
     service,
 };
 
@@ -91,6 +94,99 @@ pub async fn upload_qris_image(
             &content_type,
         )
         .await?,
+    )))
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard kasir (JWT + permission `online_orders`)
+// ---------------------------------------------------------------------------
+
+pub async fn list_orders(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(query): Query<ListQuery>,
+) -> AppResult<Json<ApiResponse<Vec<OnlineOrderResponse>, PaginationMeta>>> {
+    user.require_permission(&state.db, "online_orders").await?;
+    let (orders, meta) = service::list_orders(&state.db, query).await?;
+
+    Ok(Json(ApiResponse::success_with_meta(orders, meta)))
+}
+
+pub async fn get_order(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<i64>,
+) -> AppResult<Json<ApiResponse<OnlineOrderDetailResponse>>> {
+    user.require_permission(&state.db, "online_orders").await?;
+    Ok(Json(ApiResponse::success(
+        service::find_order(&state.db, id).await?,
+    )))
+}
+
+pub async fn pack_order(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<i64>,
+) -> AppResult<Json<ApiResponse<OnlineOrderDetailResponse>>> {
+    user.require_permission(&state.db, "online_orders").await?;
+    Ok(Json(ApiResponse::success(
+        service::pack_order(&state.db, user.id, id).await?,
+    )))
+}
+
+pub async fn ready_order(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<i64>,
+) -> AppResult<Json<ApiResponse<OnlineOrderDetailResponse>>> {
+    user.require_permission(&state.db, "online_orders").await?;
+    Ok(Json(ApiResponse::success(
+        service::ready_order(&state.db, user.id, id).await?,
+    )))
+}
+
+pub async fn deliver_order(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<i64>,
+) -> AppResult<Json<ApiResponse<OnlineOrderDetailResponse>>> {
+    user.require_permission(&state.db, "online_orders").await?;
+    Ok(Json(ApiResponse::success(
+        service::deliver_order(&state.db, user.id, id).await?,
+    )))
+}
+
+pub async fn complete_order(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<i64>,
+) -> AppResult<Json<ApiResponse<OnlineOrderDetailResponse>>> {
+    user.require_permission(&state.db, "online_orders").await?;
+    Ok(Json(ApiResponse::success(
+        service::complete_order(&state.db, user.id, id).await?,
+    )))
+}
+
+pub async fn cancel_order(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<i64>,
+    Json(payload): Json<CancelRequest>,
+) -> AppResult<Json<ApiResponse<OnlineOrderDetailResponse>>> {
+    user.require_permission(&state.db, "online_orders").await?;
+    Ok(Json(ApiResponse::success(
+        service::cancel_order(&state.db, user.id, id, payload.reason).await?,
+    )))
+}
+
+pub async fn mark_order_paid(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<i64>,
+) -> AppResult<Json<ApiResponse<OnlineOrderDetailResponse>>> {
+    user.require_permission(&state.db, "online_orders").await?;
+    Ok(Json(ApiResponse::success(
+        service::mark_order_paid(&state.db, user.id, id).await?,
     )))
 }
 

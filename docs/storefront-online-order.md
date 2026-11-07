@@ -151,6 +151,7 @@ Prinsip: data master (produk, SKU, harga, stok) tidak diduplikasi. Storefront ha
 - `sales`: tambah kolom penanda channel agar laporan bisa membedakan penjualan kasir dan online, mis. `channel VARCHAR(20) NOT NULL DEFAULT 'point_flow'` dengan nilai `point_flow | online`, plus `online_order_id BIGINT NULL` unik bila penjualan berasal dari pesanan online. Ini perubahan aditif (kolom baru ber-default), penjualan lama tidak terpengaruh.
 - `products`: tambah kolom `image_url VARCHAR(500) NULL` berisi object key S3 (mis. `products/42/photo.jpg`), bukan URL penuh. Backend menyusun URL publik sebagai `S3_PUBLIC_URL + '/' + image_url` saat serving katalog. Satu foto per produk (dipakai bersama semua SKU-nya). Produk tanpa foto tetap tampil memakai placeholder di frontend.
 - Tidak ada perubahan pada `product_skus` dan tabel stok lain selain bacaan stok untuk katalog.
+- Pengecualian aditif pada migrasi `010`: `stock_movements` mendapat kolom nullable `online_order_id` + `online_order_item_id` (+ index). Alasan: movement packing ditulis sebelum baris `sales` ada; kolom ini menautkan movement packing ke penjualan saat `complete`, sehingga ledger stok tetap utuh. Tidak memengaruhi baris lama (NULL).
 
 ### 5.4 Pengaturan toko dan penyimpanan file
 

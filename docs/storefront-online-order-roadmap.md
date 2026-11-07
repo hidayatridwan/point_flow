@@ -54,13 +54,19 @@ Gate review: daftar endpoint publik + contoh respons katalog (pastikan tanpa har
 
 Tujuan: kasir bisa memproses pesanan sampai selesai dan tercatat sebagai penjualan.
 
-- [ ] Daftar + detail pesanan (filter status, paginasi), permission `online_orders`
-- [ ] Transisi `pack` (potong stok transaksional + kunci baris), `ready`, `deliver`, `complete`, `cancel` (kembalikan stok), `mark-paid`
-- [ ] `complete` wajib sesi register terbuka milik kasir yang menyelesaikan (keputusan A)
-- [ ] `delivery + transfer` wajib `paid` sebelum `delivering`; `pickup` fleksibel
-- [ ] `complete` membuat `sales` (`channel = 'online'`, `online_order_id`, `paid_amount = total`)
+- [x] Daftar + detail pesanan (filter status, paginasi), permission `online_orders`
+- [x] Transisi `pack` (potong stok transaksional + kunci baris), `ready`, `deliver`, `complete`, `cancel` (kembalikan stok), `mark-paid`
+- [x] `complete` wajib sesi register terbuka milik kasir yang menyelesaikan (keputusan A)
+- [x] `delivery + transfer` wajib `paid` sebelum `delivering`; `pickup` fleksibel
+- [x] `complete` membuat `sales` (`channel = 'online'`, `online_order_id`, `paid_amount = total`)
 
-Validasi: `cargo test`, skenario stok ganda (dua kasir pack bersamaan — satu ditolak jelas).
+Validasi (2026-11-07, semua lolos): `cargo test` (10 unit test, termasuk 3 test state machine
+murni), `cargo clippy` bersih (2 warning pre-existing), `curl` end-to-end (scratch DB):
+pack potong stok 100→97 + movement tertaut pesanan, ready→complete buat penjualan channel
+online tanpa potongan ganda + movement tertaut sale, deliver transfer-unpaid ditolak →
+mark-paid → deliver lolos, complete tanpa sesi → 409 → buka sesi → lolos, cancel completed
+ditolak, cancel-dari-packing kembalikan stok + movement koreksi + alasan tersimpan.
+Deviasi tercatat: migrasi `010` menambah kolom nullable di `stock_movements` (lihat Bagian 5.3).
 Gate review: matriks transisi status vs hasil aktual per peran kasir.
 
 ## Fase 4 — Frontend storefront (publik)

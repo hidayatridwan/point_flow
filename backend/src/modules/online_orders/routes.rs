@@ -55,8 +55,20 @@ pub fn public_routes() -> Router<AppState> {
 
 /// Route kasir/admin: JWT + permission `online_orders`.
 pub fn routes() -> Router<AppState> {
-    Router::new().route(
-        "/store-settings/qris-image",
-        post(handler::upload_qris_image),
-    )
+    Router::new()
+        .route(
+            "/store-settings/qris-image",
+            post(handler::upload_qris_image),
+        )
+        .route("/online-orders", get(handler::list_orders))
+        .route("/online-orders/{id}", get(handler::get_order))
+        .route("/online-orders/{id}/pack", post(handler::pack_order))
+        .route("/online-orders/{id}/ready", post(handler::ready_order))
+        .route("/online-orders/{id}/deliver", post(handler::deliver_order))
+        .route("/online-orders/{id}/complete", post(handler::complete_order))
+        .route("/online-orders/{id}/cancel", post(handler::cancel_order))
+        .route(
+            "/online-orders/{id}/mark-paid",
+            post(handler::mark_order_paid),
+        )
 }

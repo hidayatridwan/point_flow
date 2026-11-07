@@ -1,17 +1,21 @@
+use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::{
     error::{AppError, AppResult},
     infra::s3::{self, ObjectStorage},
-    models::{PaginationMeta, UploadResponse},
+    models::{ListQuery, PaginationMeta, UploadResponse},
+    services::audit,
 };
 
 use super::{
     dto::{
         CheckoutItemResponse, CheckoutPaymentInfo, CheckoutRequest, CheckoutResponse,
+        OnlineOrderDetailResponse, OnlineOrderItemResponse, OnlineOrderResponse,
         PublicCatalogQuery, PublicCategory, PublicProductItem, StoreInfoResponse,
     },
+    model::OrderRow,
     repository::{self, NewOrderItem},
 };
 
@@ -311,6 +315,321 @@ pub async fn upload_qris_image(
     Ok(UploadResponse { key, url })
 }
 
+// ---------------------------------------------------------------------------
+// Dashboard kasir
+// ---------------------------------------------------------------------------
+
+/// Aksi kasir pada pesanan (satu tombol utama per status, Bagian 4.2).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OrderAction {
+    Pack,
+    Ready,
+    Deliver,
+    Complete,
+    Cancel,
+    MarkPaid,
+}
+
+/// Aturan transisi status murni (Bagian 4.3 + keputusan A).
+/// Mengembalikan status tujuan bila aksi sah untuk kondisi pesanan.
+pub fn next_status(
+    action: OrderAction,
+    status: &str,
+    fulfillment_method: &str,
+    payment_method: &str,
+    payment_status: &str,
+) -> Result<&'static str, String> {
+    match action {
+        OrderAction::Pack => match status {
+            "new" => Ok("packing"),
+            _ => Err(format!("only new orders can be packed (status is {status})")),
+        },
+        OrderAction::Ready => match (status, fulfillment_method) {
+            ("packing", "pickup") => Ok("ready"),
+            ("packing", _) => Err("only pickup orders can be marked ready".to_string()),
+            _ => Err(format!("only packing orders can be marked ready (status is {status})")),
+        },
+        OrderAction::Deliver => match (status, fulfillment_method) {
+            ("packing", "delivery") if payment_method == "pay_at_store" => Ok("delivering"),
+            ("packing", "delivery") if payment_status == "paid" => Ok("delivering"),
+            ("packing", "delivery") => Err(
+                "transfer payment must be confirmed before delivery".to_string()
+            ),
+            ("packing", _) => Err("only delivery orders can be marked delivering".to_string()),
+            _ => Err(format!(
+                "only packing orders can be marked delivering (status is {status})"
+            )),
+        },
+        OrderAction::Complete => match status {
+            "ready" | "delivering" => Ok("completed"),
+            _ => Err(format!(
+                "only ready or delivering orders can be completed (status is {status})"
+            )),
+        },
+        OrderAction::Cancel => match status {
+            "new" | "packing" => Ok("cancelled"),
+            _ => Err(format!("orders with status {status} cannot be cancelled here")),
+        },
+        OrderAction::MarkPaid => match (status, payment_status) {
+            ("completed" | "cancelled", _) => Err(format!(
+                "payment of {status} orders can no longer be changed"
+            )),
+            (_, "paid") => Err("payment is already confirmed".to_string()),
+            _ => Ok("paid"),
+        },
+    }
+}
+
+fn to_response(order: OrderRow) -> OnlineOrderResponse {
+    OnlineOrderResponse {
+        id: order.id,
+        order_no: order.order_no,
+        customer_name: order.customer_name,
+        customer_phone: order.customer_phone,
+        fulfillment_method: order.fulfillment_method,
+        delivery_address: order.delivery_address,
+        payment_method: order.payment_method,
+        payment_status: order.payment_status,
+        status: order.status,
+        subtotal_amount: order.subtotal_amount,
+        delivery_fee: order.delivery_fee,
+        total_amount: order.total_amount,
+        notes: order.notes,
+        sale_id: order.sale_id,
+        cancel_reason: order.cancel_reason,
+    }
+}
+
+pub async fn list_orders(
+    pool: &PgPool,
+    query: ListQuery,
+) -> AppResult<(Vec<OnlineOrderResponse>, PaginationMeta)> {
+    let (rows, meta) = repository::list_orders(pool, &query).await?;
+    Ok((rows.into_iter().map(to_response).collect(), meta))
+}
+
+pub async fn find_order(pool: &PgPool, id: i64) -> AppResult<OnlineOrderDetailResponse> {
+    let order = repository::find_order(pool, id)
+        .await?
+        .ok_or(AppError::NotFound)?;
+    let items = repository::order_items(pool, id).await?;
+
+    Ok(OnlineOrderDetailResponse {
+        order: to_response(order),
+        items: items
+            .into_iter()
+            .map(|item| OnlineOrderItemResponse {
+                id: item.id,
+                product_sku_id: item.product_sku_id,
+                product_name: item.product_name,
+                product_sku: item.product_sku,
+                unit: item.unit,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                line_total: item.line_total,
+            })
+            .collect(),
+    })
+}
+
+async fn transition(
+    pool: &PgPool,
+    user_id: i64,
+    id: i64,
+    action: OrderAction,
+    audit_action: &str,
+) -> AppResult<OnlineOrderDetailResponse> {
+    let mut tx = pool.begin().await?;
+    let order = repository::lock_order(&mut tx, id)
+        .await?
+        .ok_or(AppError::NotFound)?;
+    let target = next_status(
+        action,
+        &order.status,
+        &order.fulfillment_method,
+        &order.payment_method,
+        &order.payment_status,
+    )
+    .map_err(AppError::Validation)?;
+    repository::set_order_status(&mut tx, id, target, user_id).await?;
+    tx.commit().await?;
+
+    audit::record_audit_log_best_effort(
+        pool,
+        audit::AuditLogRecord::success(Some(user_id), audit_action, "online_order", Some(id)),
+    )
+    .await;
+
+    find_order(pool, id).await
+}
+
+pub async fn pack_order(
+    pool: &PgPool,
+    user_id: i64,
+    id: i64,
+) -> AppResult<OnlineOrderDetailResponse> {
+    let mut tx = pool.begin().await?;
+    let order = repository::lock_order(&mut tx, id)
+        .await?
+        .ok_or(AppError::NotFound)?;
+    next_status(
+        OrderAction::Pack,
+        &order.status,
+        &order.fulfillment_method,
+        &order.payment_method,
+        &order.payment_status,
+    )
+    .map_err(AppError::Validation)?;
+
+    let items = repository::order_items(pool, id).await?;
+    for item in &items {
+        repository::cut_stock_for_pack(&mut tx, item, user_id, id).await?;
+    }
+    repository::set_order_status(&mut tx, id, "packing", user_id).await?;
+    tx.commit().await?;
+
+    audit::record_audit_log_best_effort(
+        pool,
+        audit::AuditLogRecord::success(Some(user_id), "online_order.pack", "online_order", Some(id)),
+    )
+    .await;
+
+    find_order(pool, id).await
+}
+
+pub async fn ready_order(
+    pool: &PgPool,
+    user_id: i64,
+    id: i64,
+) -> AppResult<OnlineOrderDetailResponse> {
+    transition(pool, user_id, id, OrderAction::Ready, "online_order.ready").await
+}
+
+pub async fn deliver_order(
+    pool: &PgPool,
+    user_id: i64,
+    id: i64,
+) -> AppResult<OnlineOrderDetailResponse> {
+    transition(pool, user_id, id, OrderAction::Deliver, "online_order.deliver").await
+}
+
+pub async fn complete_order(
+    pool: &PgPool,
+    user_id: i64,
+    id: i64,
+) -> AppResult<OnlineOrderDetailResponse> {
+    let mut tx = pool.begin().await?;
+    let order = repository::lock_order(&mut tx, id)
+        .await?
+        .ok_or(AppError::NotFound)?;
+    next_status(
+        OrderAction::Complete,
+        &order.status,
+        &order.fulfillment_method,
+        &order.payment_method,
+        &order.payment_status,
+    )
+    .map_err(AppError::Validation)?;
+
+    let session_id = repository::find_cashier_open_session(&mut tx, user_id)
+        .await?
+        .ok_or_else(|| {
+            AppError::Conflict(
+                "open a cash register session before completing online orders".to_string(),
+            )
+        })?;
+
+    let items = repository::order_items(pool, id).await?;
+    let (sale_id, links) =
+        repository::insert_online_sale(&mut tx, &order, &items, user_id, session_id).await?;
+    for (order_item_id, sale_item_id) in links {
+        repository::link_movements_to_sale(&mut tx, order_item_id, sale_id, sale_item_id).await?;
+    }
+    repository::finalize_completed_order(&mut tx, id, sale_id, user_id).await?;
+    tx.commit().await?;
+
+    audit::record_audit_log_best_effort(
+        pool,
+        audit::AuditLogRecord::success(
+            Some(user_id),
+            "online_order.complete",
+            "online_order",
+            Some(id),
+        )
+        .with_metadata(json!({ "sale_id": sale_id })),
+    )
+    .await;
+
+    find_order(pool, id).await
+}
+
+pub async fn cancel_order(
+    pool: &PgPool,
+    user_id: i64,
+    id: i64,
+    reason: Option<String>,
+) -> AppResult<OnlineOrderDetailResponse> {
+    let mut tx = pool.begin().await?;
+    let order = repository::lock_order(&mut tx, id)
+        .await?
+        .ok_or(AppError::NotFound)?;
+    next_status(
+        OrderAction::Cancel,
+        &order.status,
+        &order.fulfillment_method,
+        &order.payment_method,
+        &order.payment_status,
+    )
+    .map_err(AppError::Validation)?;
+
+    if order.status == "packing" {
+        let items = repository::order_items(pool, id).await?;
+        for item in &items {
+            repository::restore_stock_for_cancel(&mut tx, item, user_id, id).await?;
+        }
+    }
+    let reason = reason.map(|r| r.trim().to_string()).filter(|r| !r.is_empty());
+    repository::set_order_cancelled(&mut tx, id, reason.as_deref(), user_id).await?;
+    tx.commit().await?;
+
+    audit::record_audit_log_best_effort(
+        pool,
+        audit::AuditLogRecord::success(
+            Some(user_id),
+            "online_order.cancel",
+            "online_order",
+            Some(id),
+        )
+        .with_metadata(json!({ "reason": reason })),
+    )
+    .await;
+
+    find_order(pool, id).await
+}
+
+pub async fn mark_order_paid(
+    pool: &PgPool,
+    user_id: i64,
+    id: i64,
+) -> AppResult<OnlineOrderDetailResponse> {
+    let mut tx = pool.begin().await?;
+    let order = repository::lock_order(&mut tx, id)
+        .await?
+        .ok_or(AppError::NotFound)?;
+    next_status(
+        OrderAction::MarkPaid,
+        &order.status,
+        &order.fulfillment_method,
+        &order.payment_method,
+        &order.payment_status,
+    )
+    .map_err(AppError::Validation)?;
+    repository::set_order_paid(&mut tx, id, user_id).await?;
+    tx.commit().await?;
+
+    find_order(pool, id).await
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::dto::CheckoutItemRequest;
@@ -385,5 +704,75 @@ mod tests {
         assert!(key.starts_with("products/42/"));
         assert!(key.ends_with(".jpg"));
         assert!(key.len() > "products/42/.jpg".len());
+    }
+
+    use super::OrderAction;
+
+    #[test]
+    fn transition_follows_documented_lifecycle() {
+        // new -> packing -> ready -> completed (pickup)
+        assert_eq!(
+            next_status(OrderAction::Pack, "new", "pickup", "pay_at_store", "unpaid"),
+            Ok("packing")
+        );
+        assert_eq!(
+            next_status(OrderAction::Ready, "packing", "pickup", "pay_at_store", "unpaid"),
+            Ok("ready")
+        );
+        assert_eq!(
+            next_status(OrderAction::Complete, "ready", "pickup", "pay_at_store", "paid"),
+            Ok("completed")
+        );
+        // packing -> delivering -> completed (delivery + transfer paid)
+        assert_eq!(
+            next_status(OrderAction::Deliver, "packing", "delivery", "transfer", "paid"),
+            Ok("delivering")
+        );
+        assert_eq!(
+            next_status(OrderAction::Deliver, "packing", "delivery", "pay_at_store", "unpaid"),
+            Ok("delivering")
+        );
+        assert_eq!(
+            next_status(OrderAction::Complete, "delivering", "delivery", "transfer", "paid"),
+            Ok("completed")
+        );
+    }
+
+    #[test]
+    fn transition_rejects_wrong_fulfillment_and_unpaid_delivery() {
+        // ready hanya untuk pickup
+        assert!(next_status(OrderAction::Ready, "packing", "delivery", "transfer", "paid").is_err());
+        // deliver hanya untuk antar
+        assert!(next_status(OrderAction::Deliver, "packing", "pickup", "pay_at_store", "unpaid").is_err());
+        // antar + transfer wajib paid sebelum delivering
+        assert!(next_status(OrderAction::Deliver, "packing", "delivery", "transfer", "unpaid").is_err());
+        // complete hanya dari ready/delivering
+        assert!(next_status(OrderAction::Complete, "new", "pickup", "pay_at_store", "unpaid").is_err());
+        assert!(next_status(OrderAction::Complete, "packing", "pickup", "pay_at_store", "unpaid").is_err());
+        // pack ulang ditolak
+        assert!(next_status(OrderAction::Pack, "packing", "pickup", "pay_at_store", "unpaid").is_err());
+    }
+
+    #[test]
+    fn cancel_and_mark_paid_follow_rules() {
+        assert_eq!(
+            next_status(OrderAction::Cancel, "new", "pickup", "pay_at_store", "unpaid"),
+            Ok("cancelled")
+        );
+        assert_eq!(
+            next_status(OrderAction::Cancel, "packing", "delivery", "transfer", "unpaid"),
+            Ok("cancelled")
+        );
+        assert!(next_status(OrderAction::Cancel, "ready", "pickup", "pay_at_store", "unpaid").is_err());
+        assert!(next_status(OrderAction::Cancel, "delivering", "delivery", "transfer", "paid").is_err());
+        assert!(next_status(OrderAction::Cancel, "completed", "pickup", "pay_at_store", "paid").is_err());
+        // mark-paid boleh selama belum selesai/batal dan belum paid
+        assert_eq!(
+            next_status(OrderAction::MarkPaid, "new", "delivery", "transfer", "unpaid"),
+            Ok("paid")
+        );
+        assert!(next_status(OrderAction::MarkPaid, "packing", "delivery", "transfer", "paid").is_err());
+        assert!(next_status(OrderAction::MarkPaid, "completed", "pickup", "pay_at_store", "paid").is_err());
+        assert!(next_status(OrderAction::MarkPaid, "cancelled", "pickup", "pay_at_store", "unpaid").is_err());
     }
 }

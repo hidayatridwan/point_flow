@@ -1,10 +1,13 @@
-use sqlx::PgPool;
+use sqlx::{PgPool, Postgres, Transaction};
 
-use crate::{error::AppResult, models::PaginationMeta};
+use crate::{
+    error::{AppError, AppResult},
+    models::{ListQuery, PaginationMeta},
+};
 
 use super::{
     dto::{PublicCatalogQuery, PublicCategory, PublicProductItem},
-    model::{CatalogRow, CheckoutSkuRow, NewOrderRow, PublicCategoryRow},
+    model::{CatalogRow, CheckoutSkuRow, LockedSkuRow, NewOrderRow, OrderItemRow, OrderRow, PublicCategoryRow},
 };
 
 const CATALOG_WHERE: &str = r#"
@@ -254,6 +257,500 @@ pub async fn set_setting(
     .bind(value)
     .bind(updated_by)
     .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+pub const ORDER_STATUSES: &[&str] = &[
+    "new",
+    "packing",
+    "ready",
+    "delivering",
+    "completed",
+    "cancelled",
+];
+
+const ORDER_SELECT: &str = r#"
+    SELECT
+        id,
+        order_no,
+        customer_name,
+        customer_phone,
+        fulfillment_method::text AS fulfillment_method,
+        delivery_address,
+        payment_method::text AS payment_method,
+        payment_status::text AS payment_status,
+        status::text AS status,
+        subtotal_amount::float8 AS subtotal_amount,
+        delivery_fee::float8 AS delivery_fee,
+        total_amount::float8 AS total_amount,
+        notes,
+        sale_id,
+        cancel_reason,
+        created_at
+    FROM online_orders
+"#;
+
+/// Daftar pesanan untuk dashboard kasir: filter status (koma), cari, paginasi.
+pub async fn list_orders(
+    pool: &PgPool,
+    query: &ListQuery,
+) -> AppResult<(Vec<OrderRow>, PaginationMeta)> {
+    let search = query.search_pattern();
+    let limit = query.limit();
+    let offset = query.offset();
+    let statuses = parse_order_statuses(query.status.as_deref())?;
+
+    let sql = format!(
+        r#"{ORDER_SELECT}
+        WHERE ($1 = '%%'
+            OR lower(order_no) LIKE $1
+            OR lower(customer_name) LIKE $1
+            OR lower(customer_phone) LIKE $1)
+            AND (COALESCE(array_length($4::text[], 1), 0) = 0 OR status::text = ANY($4::text[]))
+        ORDER BY id DESC
+        LIMIT $2 OFFSET $3"#
+    );
+    let rows = sqlx::query_as::<_, OrderRow>(&sql)
+        .bind(&search)
+        .bind(limit)
+        .bind(offset)
+        .bind(&statuses)
+        .fetch_all(pool)
+        .await?;
+
+    let total: i64 = sqlx::query_scalar(
+        r#"
+        SELECT COUNT(*)
+        FROM online_orders
+        WHERE ($1 = '%%'
+            OR lower(order_no) LIKE $1
+            OR lower(customer_name) LIKE $1
+            OR lower(customer_phone) LIKE $1)
+            AND (COALESCE(array_length($2::text[], 1), 0) = 0 OR status::text = ANY($2::text[]))
+        "#,
+    )
+    .bind(&search)
+    .bind(&statuses)
+    .fetch_one(pool)
+    .await?;
+
+    Ok((rows, PaginationMeta::new(limit, offset, total)))
+}
+
+fn parse_order_statuses(status: Option<&str>) -> AppResult<Vec<String>> {
+    let Some(status) = status else {
+        return Ok(Vec::new());
+    };
+    let mut out = Vec::new();
+    for value in status.split(',').map(str::trim).filter(|s| !s.is_empty()) {
+        if !ORDER_STATUSES.contains(&value) {
+            return Err(AppError::Validation(format!(
+                "unknown online order status: {value}"
+            )));
+        }
+        out.push(value.to_string());
+    }
+    Ok(out)
+}
+
+pub async fn find_order(pool: &PgPool, id: i64) -> AppResult<Option<OrderRow>> {
+    let row = sqlx::query_as::<_, OrderRow>(&format!("{ORDER_SELECT} WHERE id = $1"))
+        .bind(id)
+        .fetch_optional(pool)
+        .await?;
+
+    Ok(row)
+}
+
+pub async fn order_items(pool: &PgPool, order_id: i64) -> AppResult<Vec<OrderItemRow>> {
+    let rows = sqlx::query_as::<_, OrderItemRow>(
+        r#"
+        SELECT
+            id,
+            product_sku_id,
+            product_name,
+            product_sku,
+            unit,
+            quantity::float8 AS quantity,
+            unit_price::float8 AS unit_price,
+            line_total::float8 AS line_total
+        FROM online_order_items
+        WHERE online_order_id = $1
+        ORDER BY id
+        "#,
+    )
+    .bind(order_id)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows)
+}
+
+/// Kunci header pesanan dalam transaksi transisi status.
+pub async fn lock_order(
+    tx: &mut Transaction<'_, Postgres>,
+    id: i64,
+) -> AppResult<Option<OrderRow>> {
+    let row = sqlx::query_as::<_, OrderRow>(&format!("{ORDER_SELECT} WHERE id = $1 FOR UPDATE"))
+        .bind(id)
+        .fetch_optional(&mut **tx)
+        .await?;
+
+    Ok(row)
+}
+
+/// Kunci baris SKU untuk pemotongan/pengembalian stok.
+pub async fn lock_sku(
+    tx: &mut Transaction<'_, Postgres>,
+    product_sku_id: i64,
+) -> AppResult<Option<LockedSkuRow>> {
+    let row = sqlx::query_as::<_, LockedSkuRow>(
+        r#"
+        SELECT product_id, id AS product_sku_id, stock::float8 AS stock
+        FROM product_skus
+        WHERE id = $1 AND deleted_at IS NULL
+        FOR UPDATE
+        "#,
+    )
+    .bind(product_sku_id)
+    .fetch_optional(&mut **tx)
+    .await?;
+
+    Ok(row)
+}
+
+async fn write_stock(
+    tx: &mut Transaction<'_, Postgres>,
+    product_sku_id: i64,
+    stock_after: f64,
+) -> AppResult<()> {
+    sqlx::query("UPDATE product_skus SET stock = $2::numeric WHERE id = $1")
+        .bind(product_sku_id)
+        .bind(stock_after)
+        .execute(&mut **tx)
+        .await?;
+
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn insert_movement(
+    tx: &mut Transaction<'_, Postgres>,
+    product_id: i64,
+    product_sku_id: i64,
+    movement_type: &str,
+    quantity: f64,
+    stock_before: f64,
+    stock_after: f64,
+    notes: &str,
+    created_by: i64,
+    sale_id: Option<i64>,
+    sale_item_id: Option<i64>,
+    online_order_id: Option<i64>,
+    online_order_item_id: Option<i64>,
+) -> AppResult<()> {
+    sqlx::query(
+        r#"
+        INSERT INTO stock_movements (
+            product_id, product_sku_id, movement_type, quantity,
+            stock_before, stock_after, notes, created_by,
+            sale_id, sale_item_id, online_order_id, online_order_item_id
+        )
+        VALUES (
+            $1, $2, $3::stock_movement_type, $4::numeric,
+            $5::numeric, $6::numeric, $7, $8,
+            $9, $10, $11, $12
+        )
+        "#,
+    )
+    .bind(product_id)
+    .bind(product_sku_id)
+    .bind(movement_type)
+    .bind(quantity)
+    .bind(stock_before)
+    .bind(stock_after)
+    .bind(notes)
+    .bind(created_by)
+    .bind(sale_id)
+    .bind(sale_item_id)
+    .bind(online_order_id)
+    .bind(online_order_item_id)
+    .execute(&mut **tx)
+    .await?;
+
+    Ok(())
+}
+
+/// Potong stok satu item saat packing + catat movement tertaut pesanan.
+pub async fn cut_stock_for_pack(
+    tx: &mut Transaction<'_, Postgres>,
+    item: &OrderItemRow,
+    created_by: i64,
+    order_id: i64,
+) -> AppResult<()> {
+    let sku = lock_sku(tx, item.product_sku_id)
+        .await?
+        .ok_or_else(|| AppError::Conflict(format!("{} is no longer available", item.product_sku)))?;
+    if sku.stock < item.quantity {
+        return Err(AppError::Conflict(format!(
+            "{} only has {} {} in stock",
+            item.product_name, sku.stock, item.unit
+        )));
+    }
+
+    let stock_after = sku.stock - item.quantity;
+    write_stock(tx, item.product_sku_id, stock_after).await?;
+    insert_movement(
+        tx,
+        sku.product_id,
+        item.product_sku_id,
+        "sale",
+        item.quantity,
+        sku.stock,
+        stock_after,
+        "Online order packed",
+        created_by,
+        None,
+        None,
+        Some(order_id),
+        Some(item.id),
+    )
+    .await?;
+
+    Ok(())
+}
+
+/// Kembalikan stok satu item saat batal dari packing + movement koreksi.
+pub async fn restore_stock_for_cancel(
+    tx: &mut Transaction<'_, Postgres>,
+    item: &OrderItemRow,
+    created_by: i64,
+    order_id: i64,
+) -> AppResult<()> {
+    let sku = lock_sku(tx, item.product_sku_id)
+        .await?
+        .ok_or_else(|| AppError::Conflict(format!("{} is no longer available", item.product_sku)))?;
+
+    let stock_after = sku.stock + item.quantity;
+    write_stock(tx, item.product_sku_id, stock_after).await?;
+    insert_movement(
+        tx,
+        sku.product_id,
+        item.product_sku_id,
+        "correction",
+        item.quantity,
+        sku.stock,
+        stock_after,
+        "Online order cancelled, stock restored",
+        created_by,
+        None,
+        None,
+        Some(order_id),
+        Some(item.id),
+    )
+    .await?;
+
+    Ok(())
+}
+
+/// Tautkan movement packing ke penjualan yang dibuat saat complete.
+pub async fn link_movements_to_sale(
+    tx: &mut Transaction<'_, Postgres>,
+    order_item_id: i64,
+    sale_id: i64,
+    sale_item_id: i64,
+) -> AppResult<()> {
+    sqlx::query(
+        r#"
+        UPDATE stock_movements
+        SET sale_id = $2, sale_item_id = $3
+        WHERE online_order_item_id = $1 AND movement_type = 'sale'
+        "#,
+    )
+    .bind(order_item_id)
+    .bind(sale_id)
+    .bind(sale_item_id)
+    .execute(&mut **tx)
+    .await?;
+
+    Ok(())
+}
+
+pub async fn set_order_status(
+    tx: &mut Transaction<'_, Postgres>,
+    id: i64,
+    status: &str,
+    processed_by: i64,
+) -> AppResult<()> {
+    let affected = sqlx::query(
+        r#"
+        UPDATE online_orders
+        SET status = $2::online_order_status, processed_by = $3, updated_at = now()
+        WHERE id = $1
+        "#,
+    )
+    .bind(id)
+    .bind(status)
+    .bind(processed_by)
+    .execute(&mut **tx)
+    .await?;
+
+    if affected.rows_affected() == 0 {
+        return Err(AppError::NotFound);
+    }
+
+    Ok(())
+}
+
+pub async fn set_order_cancelled(
+    tx: &mut Transaction<'_, Postgres>,
+    id: i64,
+    reason: Option<&str>,
+    processed_by: i64,
+) -> AppResult<()> {
+    let affected = sqlx::query(
+        r#"
+        UPDATE online_orders
+        SET status = 'cancelled', cancel_reason = $2, processed_by = $3, updated_at = now()
+        WHERE id = $1
+        "#,
+    )
+    .bind(id)
+    .bind(reason)
+    .bind(processed_by)
+    .execute(&mut **tx)
+    .await?;
+
+    if affected.rows_affected() == 0 {
+        return Err(AppError::NotFound);
+    }
+
+    Ok(())
+}
+
+pub async fn set_order_paid(
+    tx: &mut Transaction<'_, Postgres>,
+    id: i64,
+    processed_by: i64,
+) -> AppResult<()> {
+    let affected = sqlx::query(
+        r#"
+        UPDATE online_orders
+        SET payment_status = 'paid', processed_by = $2, updated_at = now()
+        WHERE id = $1 AND payment_status = 'unpaid'
+            AND status NOT IN ('completed', 'cancelled')
+        "#,
+    )
+    .bind(id)
+    .bind(processed_by)
+    .execute(&mut **tx)
+    .await?;
+
+    if affected.rows_affected() == 0 {
+        return Err(AppError::NotFound);
+    }
+
+    Ok(())
+}
+
+/// Sesi register terbuka milik kasir (keputusan A: complete wajib sesi sendiri).
+pub async fn find_cashier_open_session(
+    tx: &mut Transaction<'_, Postgres>,
+    cashier_id: i64,
+) -> AppResult<Option<i64>> {
+    let session = sqlx::query_scalar::<_, i64>(
+        r#"
+        SELECT crs.id
+        FROM cash_register_sessions crs
+        JOIN cash_registers cr ON cr.id = crs.cash_register_id
+        WHERE crs.opened_by = $1
+            AND crs.status = 'open'
+            AND cr.status = 'active'
+            AND cr.deleted_at IS NULL
+        ORDER BY crs.id DESC
+        LIMIT 1
+        "#,
+    )
+    .bind(cashier_id)
+    .fetch_optional(&mut **tx)
+    .await?;
+
+    Ok(session)
+}
+
+/// Buat penjualan dari pesanan online TANPA memotong stok
+/// (stok sudah dipotong saat packing). Mirror create_sale minus stok.
+pub async fn insert_online_sale(
+    tx: &mut Transaction<'_, Postgres>,
+    order: &OrderRow,
+    items: &[OrderItemRow],
+    cashier_id: i64,
+    session_id: i64,
+) -> AppResult<(i64, Vec<(i64, i64)>)> {
+    let sale_id: i64 = sqlx::query_scalar(
+        r#"
+        INSERT INTO sales (
+            cashier_id, cash_register_session_id, subtotal_amount, total_amount,
+            paid_amount, change_amount, channel, online_order_id, notes
+        )
+        VALUES ($1, $2, $3::numeric, $4::numeric, $4::numeric, 0, 'online', $5, $6)
+        RETURNING id
+        "#,
+    )
+    .bind(cashier_id)
+    .bind(session_id)
+    .bind(order.subtotal_amount)
+    .bind(order.total_amount)
+    .bind(order.id)
+    .bind(format!("Online order {}", order.order_no))
+    .fetch_one(&mut **tx)
+    .await?;
+
+    let mut links = Vec::with_capacity(items.len());
+    for item in items {
+        let sale_item_id: i64 = sqlx::query_scalar(
+            r#"
+            INSERT INTO sale_items (
+                sale_id, product_id, product_sku_id,
+                product_name, product_sku, unit, quantity, unit_price
+            )
+            SELECT $1, product_id, product_sku_id,
+                product_name, product_sku, unit, quantity, unit_price
+            FROM online_order_items
+            WHERE id = $2
+            RETURNING id
+            "#,
+        )
+        .bind(sale_id)
+        .bind(item.id)
+        .fetch_one(&mut **tx)
+        .await?;
+        links.push((item.id, sale_item_id));
+    }
+
+    Ok((sale_id, links))
+}
+
+pub async fn finalize_completed_order(
+    tx: &mut Transaction<'_, Postgres>,
+    id: i64,
+    sale_id: i64,
+    processed_by: i64,
+) -> AppResult<()> {
+    sqlx::query(
+        r#"
+        UPDATE online_orders
+        SET status = 'completed', sale_id = $2, payment_status = 'paid',
+            processed_by = $3, updated_at = now()
+        WHERE id = $1
+        "#,
+    )
+    .bind(id)
+    .bind(sale_id)
+    .bind(processed_by)
+    .execute(&mut **tx)
     .await?;
 
     Ok(())

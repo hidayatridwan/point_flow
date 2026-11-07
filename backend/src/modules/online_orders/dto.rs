@@ -99,3 +99,40 @@ pub struct CheckoutResponse {
     pub payment_info: Option<CheckoutPaymentInfo>,
 }
 
+#[derive(Debug, Serialize)]
+pub struct OnlineOrderItemResponse {
+    pub id: i64,
+    pub product_sku_id: i64,
+    pub product_name: String,
+    pub product_sku: String,
+    pub unit: String,
+    pub quantity: f64,
+    pub unit_price: f64,
+    pub line_total: f64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct OnlineOrderResponse {
+    pub id: i64,
+    pub order_no: String,
+    pub customer_name: String,
+    pub customer_phone: String,
+    pub fulfillment_method: String,
+    pub delivery_address: Option<String>,
+    pub payment_method: String,
+    pub payment_status: String,
+    pub status: String,
+    pub subtotal_amount: f64,
+    pub delivery_fee: f64,
+    pub total_amount: f64,
+    pub notes: Option<String>,
+    pub sale_id: Option<i64>,
+    pub cancel_reason: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct OnlineOrderDetailResponse {
+    pub order: OnlineOrderResponse,
+    pub items: Vec<OnlineOrderItemResponse>,
+}
+
