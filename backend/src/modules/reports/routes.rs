@@ -11,10 +11,19 @@ pub fn routes() -> Router<AppState> {
         .route("/dashboard/top-products", get(handler::top_products))
         .route("/dashboard/hourly-sales", get(handler::hourly_sales))
         .route("/dashboard/low-stock", get(handler::low_stock))
-        .route("/dashboard/sales-by-category", get(handler::sales_by_category))
+        .route(
+            "/dashboard/sales-by-category",
+            get(handler::sales_by_category),
+        )
         .route("/dashboard/product-scatter", get(handler::product_scatter))
-        .route("/dashboard/cashier-performance", get(handler::cashier_performance))
-        .route("/dashboard/procurement-funnel", get(handler::procurement_funnel))
+        .route(
+            "/dashboard/cashier-performance",
+            get(handler::cashier_performance),
+        )
+        .route(
+            "/dashboard/procurement-funnel",
+            get(handler::procurement_funnel),
+        )
         .route("/reports/daily-sales", get(handler::daily_sales))
         .route("/reports/monthly-sales", get(handler::monthly_sales))
         .route("/reports/stock", get(handler::stock))

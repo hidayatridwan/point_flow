@@ -6,8 +6,9 @@ use crate::{
     models::{
         CashierPerformance, DailySalesReport, DashboardResponse, GoodsReceiptReport,
         HourlySalesPoint, ListQuery, MonthlySalesReport, PayrollReport, ProcurementFunnel,
-        ProductScatterItem, PurchaseOrderReport, SalesByCategoryItem, StockAdjustmentReport,
-        StockMovementReport, StockMovementReportQuery, StockReport, SalesTrendPoint, TopProductItem,
+        ProductScatterItem, PurchaseOrderReport, SalesByCategoryItem, SalesTrendPoint,
+        StockAdjustmentReport, StockMovementReport, StockMovementReportQuery, StockReport,
+        TopProductItem,
     },
     services::reports,
 };
@@ -85,10 +86,7 @@ pub async fn product_scatter(
     reports::product_scatter(pool, days, limit).await
 }
 
-pub async fn cashier_performance(
-    pool: &PgPool,
-    days: i32,
-) -> AppResult<Vec<CashierPerformance>> {
+pub async fn cashier_performance(pool: &PgPool, days: i32) -> AppResult<Vec<CashierPerformance>> {
     reports::cashier_performance(pool, days).await
 }
 

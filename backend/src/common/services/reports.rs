@@ -6,8 +6,9 @@ use crate::{
     models::{
         CashierPerformance, DailySalesReport, DashboardResponse, GoodsReceiptReport,
         HourlySalesPoint, ListQuery, MonthlySalesReport, PayrollReport, ProcurementFunnel,
-        ProductScatterItem, PurchaseOrderReport, SalesByCategoryItem, StockAdjustmentReport,
-        StockMovementReport, StockMovementReportQuery, StockReport, SalesTrendPoint, TopProductItem,
+        ProductScatterItem, PurchaseOrderReport, SalesByCategoryItem, SalesTrendPoint,
+        StockAdjustmentReport, StockMovementReport, StockMovementReportQuery, StockReport,
+        TopProductItem,
     },
 };
 

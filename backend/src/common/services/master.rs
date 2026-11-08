@@ -8,7 +8,7 @@ use crate::{
         EmployeeResponse, ListQuery, Paginated, ProductCategoryResponse, ProductResponse,
         ProductSkuResponse, SupplierResponse, UnitResponse, UpdateEmployeeRequest,
         UpdateProductCategoryRequest, UpdateProductRequest, UpdateProductSkuRequest,
-        UpdateSupplierRequest, UpdateUnitRequest, UpdateUserRequest, UserResponse, UploadResponse,
+        UpdateSupplierRequest, UpdateUnitRequest, UpdateUserRequest, UploadResponse, UserResponse,
     },
     security,
 };
@@ -973,8 +973,9 @@ pub async fn upload_product_photo(
 
     let storage =
         s3.ok_or_else(|| AppError::Internal("object storage is not configured".to_string()))?;
-    let extension = s3::image_extension(content_type)
-        .ok_or_else(|| AppError::Validation("unsupported image type (use jpeg, png, or webp)".to_string()))?;
+    let extension = s3::image_extension(content_type).ok_or_else(|| {
+        AppError::Validation("unsupported image type (use jpeg, png, or webp)".to_string())
+    })?;
     if bytes.len() > s3::MAX_IMAGE_BYTES {
         return Err(AppError::Validation(
             "image is too large (max 2 MB)".to_string(),

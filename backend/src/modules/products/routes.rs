@@ -29,10 +29,7 @@ pub fn routes() -> Router<AppState> {
                 .put(handler::update_product)
                 .delete(handler::delete_product),
         )
-        .route(
-            "/products/{id}/photo",
-            post(handler::upload_product_photo),
-        )
+        .route("/products/{id}/photo", post(handler::upload_product_photo))
         .route(
             "/units",
             get(handler::list_units).post(handler::create_unit),
