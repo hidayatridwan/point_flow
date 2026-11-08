@@ -242,20 +242,33 @@ Selama `SHOP_DOMAINS` kosong, fungsi ini no-op: semua berperilaku kasir.
 
 Setup sekali di awal:
 
-1. Netlify UI → *Add new site* → **Deploy manually** → beri nama mis.
-   `pointflow-shop`. Tanpa import repo/build config — deploy datang dari
-   GitHub Actions. URL awalnya `pointflow-shop.netlify.app` dan **sudah bisa
-   dipakai test storefront tanpa beli domain**.
-2. GitHub → Settings → Secrets and variables → Actions → tambahkan
-   `NETLIFY_SITE_ID_SHOP` = Site ID situs baru (Netlify UI → Site
-   configuration → General → Site information). Sebelum secret ini ada,
-   step deploy storefront di workflow ter-skip otomatis.
+1. Netlify UI → *Add new site* → beri nama mis. `pointflow-shop`. Ada dua
+   jalur — pilih SATU:
+   - **Import dari GitHub** (build di infra Netlify, tiap push `main`
+     auto-deploy): pilih repo ini, branch `main`; field base/komando/publish
+     bisa dibiarkan apa adanya karena `netlify.toml` yang menang. Jangan set
+     secret `NETLIFY_SITE_ID_SHOP` (step deploy Actions sudah ter-skip) agar
+     tidak double-deploy. Build memakai build minutes free tier Netlify;
+     kalau build gagal karena `bun` tidak ada di build image, isi Build
+     command dengan `npx bun install && npx bun run build`.
+   - **Deploy manually** (build di GitHub Actions, tidak memakai build
+     minutes Netlify): tanpa import repo, lalu ikuti langkah 2.
+   Keduanya dapat URL gratis `<nama>.netlify.app` yang langsung bisa dipakai
+   test storefront tanpa beli domain.
+2. Hanya untuk jalur *Deploy manually*: GitHub → Settings → Secrets and
+   variables → Actions → tambahkan `NETLIFY_SITE_ID_SHOP` = Site ID situs
+   baru (Netlify UI → Site configuration → General → Site information).
+   Sebelum secret ini ada, step deploy storefront di workflow ter-skip
+   otomatis.
 3. Env di kedua situs (Site configuration → Environment variables, scope
    **Functions**, environment **Production**; perubahan env edge function
    butuh deploy ulang):
    - Situs kasir: `SHOP_DOMAINS=<host-storefront>`
    - Situs storefront: `SHOP_DOMAINS=<nilai yang sama>` + opsional
      `KASIR_DOMAINS=pointflow.netlify.app` (defaultnya memang itu)
+   `PUBLIC_API_BASE_URL` tidak perlu di-set di situs storefront hasil import:
+   build dari repo sudah mendapat nilai dari `[build.environment]` di
+   `netlify.toml`.
 4. Saat domain custom toko sudah dibeli: di **situs storefront** → Site
    configuration → **Domain management** → *Add a domain* (mis.
    `tokosaya.com` + `www`). Paling simpel: pilih **Netlify DNS** dan ikuti
