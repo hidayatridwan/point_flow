@@ -1,0 +1,177 @@
+name: Deploy to Fly.io
+
+# ALUR: build image di Actions -> push ke Docker Hub -> apply migrasi ke
+# Supabase -> deploy image ke Fly.io (Machines) lewat flyctl --image, tanpa
+# Dockerfile di sisi Fly. Frontend tidak disentuh: tetap di Netlify lewat
+# .github/workflows/deploy-frontend.yml.
+#
+# Trigger-nya manual (workflow_dispatch) supaya sepenuhnya terpisah dari jalur
+# Render (.github/workflows/deploy-render.yml) dan jalur VPS lama
+# (deploy-backend.yml). Database yang dipakai sama (Supabase) — job migrate
+# memakai tabel penjejak yang sama, jadi migrasi tidak akan dijalankan dobel.
+#
+# Secrets yang harus diisi di repo (Settings > Secrets and variables > Actions):
+#   DOCKERHUB_USERNAME     — username Docker Hub (sama dengan deploy-render.yml)
+#   DOCKERHUB_TOKEN        — access token Docker Hub (sama dengan deploy-render.yml)
+#   SUPABASE_DATABASE_URL  — connection string session pooler Supabase (sama)
+#   FLY_API_TOKEN          — token API Fly.io; pilihan paling pas untuk CI:
+#                            fly tokens create deploy -a <nama-app>
+# Variables (tab Variables, bukan Secret):
+#   FLY_APP_NAME           — nama app Fly.io. Alternatifnya: isi input
+#                            fly_app_name saat trigger manual, atau cukup
+#                            sundulkan `app =` di fly.toml.
+#
+# Worksheet lengkap: .env.flyio.example
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply_seeds:
+        description: "Juga jalankan backend/seeds/dashboard_sample.sql (contoh data, tidak idempotent)"
+        type: boolean
+        default: false
+      fly_app_name:
+        description: "Nama app Fly.io (boleh kosong kalau variables FLY_APP_NAME atau fly.toml sudah diisi)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-flyio
+  cancel-in-progress: false
+
+env:
+  IMAGE: point-flow
+
+jobs:
+  push-image:
+    name: Build & Push Image ke Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Fly Machines default berjalan di host amd64; platform ini di-pin
+      # eksplisit agar hasil build tidak tergantung platform runner.
+      - name: Build and push (linux/amd64)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile.prod
+          platforms: linux/amd64
+          push: true
+          tags: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  migrate:
+    name: Apply Migrations ke Supabase
+    runs-on: ubuntu-latest
+    needs: push-image
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure psql is available
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+          fi
+
+      # Migrasi dijalankan satu file per transaksi sesuai urutan nama file.
+      # Tabel _point_flow_schema_migrations mencatat file yang sudah jalan,
+      # sehingga deploy berikutnya tidak menjalankan ulang (CREATE TABLE tanpa
+      # IF NOT EXISTS akan gagal kalau dijalankan dobel). Tabel ini juga dipakai
+      # bersama jalur Render, jadi urutan antar-jalur tetap aman.
+      - name: Apply pending migrations in order
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c \
+            "CREATE TABLE IF NOT EXISTS _point_flow_schema_migrations (name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())"
+
+          for f in backend/migrations/*.sql; do
+            name="$(basename "$f")"
+            applied="$(psql "$DATABASE_URL" -tA -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM _point_flow_schema_migrations WHERE name = '$name'")"
+            if [ "$applied" = "1" ]; then
+              echo "== $name -> sudah diterapkan, skip"
+            else
+              echo "== $name -> diterapkan..."
+              psql "$DATABASE_URL" -v ON_ERROR_STOP=1 --single-transaction -f "$f"
+              psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "INSERT INTO _point_flow_schema_migrations (name) VALUES ('$name')"
+            fi
+          done
+
+          psql "$DATABASE_URL" -tA -v ON_ERROR_STOP=1 -c "SELECT 'total applied: ' || count(*) FROM _point_flow_schema_migrations"
+
+      # Optional: contoh data dashboard. Tidak idempotent — hanya centang saat
+      # benar-benar mau seed, biasanya sekali saja di awal.
+      - name: Apply dashboard_sample seed (optional)
+        if: ${{ inputs.apply_seeds }}
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f backend/seeds/dashboard_sample.sql
+
+      - name: Verify health of migrated schema
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+        run: |
+          psql "$DATABASE_URL" -tA -v ON_ERROR_STOP=1 -c \
+            "SELECT 'tables: ' || count(*) FROM information_schema.tables WHERE table_schema = 'public'"
+
+  deploy:
+    name: Deploy Image ke Fly.io
+    runs-on: ubuntu-latest
+    needs: migrate
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      # App dipilih dari input workflow, fallback ke repo variable; bila
+      # keduanya kosong flyctl otomatis memakai `app =` di fly.toml.
+      FLY_APP_NAME: ${{ github.event.inputs.fly_app_name || vars.FLY_APP_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      # Bila secret belum diisi (app Fly belum dibuat), step ini dilewati agar
+      # run pertama tetap hijau: image sudah ter-push & migrasi sudah
+      # diterapkan. Setelah secret diisi, jalankan ulang workflow ini.
+      #
+      # Resolusi image dilakukan server-side oleh Fly (fly deploy --image),
+      # jadi repo di Docker Hub perlu public. Bila image private, salakan
+      # pull/push dari runner lewat opsi --local-only:
+      #   echo "$DOCKERHUB_TOKEN" | docker login docker.io -u "$DOCKERHUB_USERNAME" --password-stdin
+      #   docker pull "${IMG_URL}"
+      #   flyctl deploy --config fly.toml --image "${IMG_URL}" --local-only
+      - name: Deploy image terbaru
+        if: ${{ env.FLY_API_TOKEN != '' }}
+        run: |
+          IMG_URL="docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE }}:latest"
+          ARGS=(deploy --config fly.toml --image "${IMG_URL}" --now)
+          if [ -n "${FLY_APP_NAME}" ]; then
+            ARGS+=(--app "${FLY_APP_NAME}")
+          fi
+          echo "== Deploy ${IMG_URL} ke Fly.io (app: ${FLY_APP_NAME:-dari fly.toml})"
+          flyctl "${ARGS[@]}"
+
+      # Deploy sudah menunggu smoke checks + health check baru selesai; step
+      # ini hanya menampilkan ringkasan state machines untuk dibaca di log CI.
+      - name: Status machines pasca-deploy
+        if: ${{ env.FLY_API_TOKEN != '' }}
+        run: flyctl machines list --json | jq -r '.[] | [.id, .region, .state] | @tsv'
+
+      - name: FLY_API_TOKEN belum diset (skip trigger)
+        if: ${{ env.FLY_API_TOKEN == '' }}
+        run: |
+          echo "::warning::FLY_API_TOKEN kosong. Image & migrasi sudah selesai di job atas."
+          echo "::warning::Setelah app Fly dibuat: isi secret FLY_API_TOKEN (lihat .env.flyio.example), lalu run ulang workflow ini."

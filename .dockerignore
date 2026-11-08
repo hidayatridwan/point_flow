@@ -1,0 +1,52 @@
+# flyctl launch added from .gitignore
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.prod.example
+
+**/.DS_Store
+**/Thumbs.db
+
+**/node_modules
+**/target
+**/dist
+**/build
+**/.svelte-kit
+**/.output
+
+storages/*
+!storages/.gitkeep
+
+!**/.env.render.example
+!**/.env.flyio.example
+
+**/notes.txt
+
+# flyctl launch added from backend/.gitignore
+backend/target
+
+# flyctl launch added from frontend/.gitignore
+frontend/**/node_modules
+
+# Output
+frontend/**/.output
+frontend/**/.vercel
+frontend/**/.netlify
+frontend/**/.wrangler
+frontend/.svelte-kit
+frontend/build
+
+# OS
+frontend/**/.DS_Store
+frontend/**/Thumbs.db
+
+# Env
+frontend/**/.env
+frontend/**/.env.*
+!frontend/**/.env.example
+!frontend/**/.env.test
+
+# Vite
+frontend/**/vite.config.js.timestamp-*
+frontend/**/vite.config.ts.timestamp-*
+fly.toml

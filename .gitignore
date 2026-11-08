@@ -17,5 +17,6 @@ build/
 !/storages/.gitkeep
 
 !.env.render.example
+!.env.flyio.example
 
 notes.txt

@@ -360,6 +360,80 @@ berikutnya.
   DB, jadi ping uptime tidak menghitung sebagai aktivitas Supabase.
 - Supabase Free: 500 MB DB, 5 GB egress/bulan, direct connection IPv6-only.
 
+## Production Deploy (Fly.io + Supabase)
+
+Jalur deployment backend alternatif ke **Fly.io** (Machines) — menarik image
+dari **Docker Hub**, database tetap di **Supabase**, frontend tetap di
+**Netlify**. Jalur Render (section atas) **tidak diganti**: kedua workflow bisa
+jalan paralel karena schema migrasi & data tidak berubah — hanya host runtime
+backend yang berubah.
+
+```text
+push manual (Actions > Deploy to Fly.io)
+  └─▶ job push-image : build linux/amd64 -> push docker.io/<user>/point-flow:latest
+  └─▶ job migrate    : psql via session pooler, migrasi SQL dengan tabel penjejak
+                       (tabel sama dengan jalur Render -> tidak dijalankan dobel)
+  └─▶ job deploy     : flyctl deploy --image -> Fly menarik image, Machines
+                       di-update rolling + health check /api/v1/health
+```
+
+Workflow: `.github/workflows/deploy-flyio.yml` (trigger `workflow_dispatch`),
+konfigurasi app: `fly.toml` di root repo, worksheet env: `.env.flyio.example`
+(salin ke `.env.flyio` lalu isi manual).
+
+### Setup sekali di awal
+
+1. **Fly.io** — install flyctl (`brew install flyctl` atau
+   `curl -L https://fly.io/install.sh | sh`), lalu:
+
+   ```bash
+   fly auth login
+   fly apps create <nama-app>   # nama unik global -> https://<nama-app>.fly.dev
+   ```
+
+   Sesuaikan `app =` dan `primary_region` di `fly.toml` bila perlu (default
+   `point-flow` di region `sin`/Singapore, machine `shared-cpu-1x` 512 MB).
+
+2. **GitHub secrets** (Settings → Secrets and variables → Actions → Secrets):
+   `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `SUPABASE_DATABASE_URL` bisa
+   disalin dari jalur Render (nilainya sama). `FLY_API_TOKEN` dibuat dari
+   terminal dengan deploy-scoped token (pilihan yang direkomendasikan Fly.io
+   untuk CI, bukan `fly auth token`):
+
+   ```bash
+   fly tokens create deploy -a <nama-app>
+   ```
+
+3. **GitHub variables** (tab Variables): `FLY_APP_NAME = <nama-app>`.
+   Alternatif: input `fly_app_name` saat menjalankan workflow, atau cukup
+   sundulkan `app =` di `fly.toml` — prioritas: input → variable → fly.toml.
+4. **Env runtime backend** — di-set sekali sebagai secrets app Fly (bukan di
+   workflow) lewat `fly secrets set`, daftar lengkap + urutan langkahnya di
+   `.env.flyio.example`. Catatan: **jangan** set `APP_PORT` di Fly — beda dari
+   Render, `fly.toml` memakai `internal_port = 8080` yang sudah cocok dengan
+   default Dockerfile.
+5. Jalankan workflow **Deploy to Fly.io** sekali. Deploy pertama membuat
+   machine di `primary_region` + release; run berikutnya update machine
+   secara rolling. Docker Hub repo image harus **public** (Fly menarik lewat
+   resolusi server-side tanpa kredensial; bila private, ada opsi
+   `--local-only` yang dijelasin di komentar workflow).
+6. **Netlify** — update env `PUBLIC_API_BASE_URL` (kedua situs) ke
+   `https://<nama-app>.fly.dev/api/v1`. `SHOP_DOMAINS`/`KASIR_DOMAINS` dan
+   semua token Netlify tidak berubah.
+
+### Catatan
+
+- Health endpoint untuk uptime ping / health check Fly:
+  `https://<nama-app>.fly.dev/api/v1/health`.
+- TLS gratis untuk `*.fly.dev` secara otomatis; custom domain tambah lewat
+  `fly certs add <domain> -a <nama-app>` lalu buat DNS record sesuai
+  instruksi `fly certs check`.
+- Auto-stop: default `auto_stop_machines = "stop"` (machine berhenti saat
+  idle, auto-start kejut saat ada request — lebih cepat dari spin-down
+  Render). Untuk always-on ubah `auto_stop_machines = "off"` dan
+  `min_machines_running = 1` di `fly.toml`.
+- YAML konfigurasi fly.toml lengkap: https://fly.io/reference/configuration/
+
 
 ## Run Backend Locally
 
