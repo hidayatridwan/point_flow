@@ -4,7 +4,7 @@ command = "bun run build"
 publish = "build"
 
 [build.environment]
-PUBLIC_API_BASE_URL = "https://point-flow-latest.onrender.com/api/v1"
+PUBLIC_API_BASE_URL = "https://point-flow.fly.dev/api/v1"
 
 # SPA fallback: serve the client-rendered shell for any path that isn't a real
 # file (e.g. /dashboard on a hard refresh). Real assets are matched first, so
