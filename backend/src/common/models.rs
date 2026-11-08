@@ -156,7 +156,7 @@ pub struct ApiErrorBody {
     pub message: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PaginationMeta {
     pub page: i64,
     pub limit: i64,

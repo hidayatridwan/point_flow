@@ -24,7 +24,7 @@ impl PublicCatalogQuery {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PublicProductItem {
     pub product_sku_id: i64,
     pub product_id: i64,
@@ -38,13 +38,13 @@ pub struct PublicProductItem {
     pub photo_url: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PublicCategory {
     pub id: i64,
     pub name: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct StoreInfoResponse {
     pub store_name: String,
     pub operating_hours: String,
@@ -148,4 +148,3 @@ pub struct UpdateStoreSettingsRequest {
     pub delivery_fee: Option<f64>,
     pub shop_whatsapp: Option<String>,
 }
-

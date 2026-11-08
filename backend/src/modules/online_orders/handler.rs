@@ -24,8 +24,19 @@ pub async fn list_public_products(
     State(state): State<AppState>,
     Query(query): Query<PublicCatalogQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<PublicProductItem>, PaginationMeta>>> {
-    let (items, meta) =
-        service::list_catalog(&state.db, state.s3.as_deref(), query).await?;
+    let cache_key = format!(
+        "catalog|{:?}|{:?}|{:?}|{:?}",
+        query.search, query.category_id, query.limit, query.offset
+    );
+    if let Some((items, meta)) = state.public_cache.catalog.get(&cache_key) {
+        return Ok(Json(ApiResponse::success_with_meta(items, meta)));
+    }
+
+    let (items, meta) = service::list_catalog(&state.db, state.s3.as_deref(), query).await?;
+    state
+        .public_cache
+        .catalog
+        .insert(cache_key, (items.clone(), meta.clone()));
 
     Ok(Json(ApiResponse::success_with_meta(items, meta)))
 }
@@ -33,17 +44,33 @@ pub async fn list_public_products(
 pub async fn list_public_categories(
     State(state): State<AppState>,
 ) -> AppResult<Json<ApiResponse<Vec<PublicCategory>>>> {
-    Ok(Json(ApiResponse::success(
-        service::list_categories(&state.db).await?,
-    )))
+    if let Some(categories) = state.public_cache.categories.get("all") {
+        return Ok(Json(ApiResponse::success(categories)));
+    }
+
+    let categories = service::list_categories(&state.db).await?;
+    state
+        .public_cache
+        .categories
+        .insert("all", categories.clone());
+
+    Ok(Json(ApiResponse::success(categories)))
 }
 
 pub async fn get_public_store_info(
     State(state): State<AppState>,
 ) -> AppResult<Json<ApiResponse<StoreInfoResponse>>> {
-    Ok(Json(ApiResponse::success(
-        service::get_store_info(&state.db, state.s3.as_deref()).await?,
-    )))
+    if let Some(store_info) = state.public_cache.store_info.get("current") {
+        return Ok(Json(ApiResponse::success(store_info)));
+    }
+
+    let store_info = service::get_store_info(&state.db, state.s3.as_deref()).await?;
+    state
+        .public_cache
+        .store_info
+        .insert("current", store_info.clone());
+
+    Ok(Json(ApiResponse::success(store_info)))
 }
 
 pub async fn checkout(
@@ -95,9 +122,11 @@ pub async fn update_store_settings(
     Json(payload): Json<UpdateStoreSettingsRequest>,
 ) -> AppResult<Json<ApiResponse<StoreInfoResponse>>> {
     user.require_permission(&state.db, "online_orders").await?;
-    Ok(Json(ApiResponse::success(
-        service::update_store_settings(&state.db, state.s3.as_deref(), user.id, payload).await?,
-    )))
+    let settings =
+        service::update_store_settings(&state.db, state.s3.as_deref(), user.id, payload).await?;
+    // Pengaturan toko tampil di /public/store-info; bersihkan cache-nya.
+    state.public_cache.invalidate();
+    Ok(Json(ApiResponse::success(settings)))
 }
 
 pub async fn upload_qris_image(
@@ -107,16 +136,17 @@ pub async fn upload_qris_image(
 ) -> AppResult<Json<ApiResponse<UploadResponse>>> {
     user.require_permission(&state.db, "online_orders").await?;
     let (bytes, content_type) = read_single_image(&mut multipart).await?;
-    Ok(Json(ApiResponse::success(
-        service::upload_qris_image(
-            &state.db,
-            state.s3.as_deref(),
-            user.id,
-            bytes,
-            &content_type,
-        )
-        .await?,
-    )))
+    let uploaded = service::upload_qris_image(
+        &state.db,
+        state.s3.as_deref(),
+        user.id,
+        bytes,
+        &content_type,
+    )
+    .await?;
+    // QRIS tampil di /public/store-info; bersihkan cache-nya.
+    state.public_cache.invalidate();
+    Ok(Json(ApiResponse::success(uploaded)))
 }
 
 // ---------------------------------------------------------------------------
@@ -211,5 +241,3 @@ pub async fn mark_order_paid(
         service::mark_order_paid(&state.db, user.id, id).await?,
     )))
 }
-
-

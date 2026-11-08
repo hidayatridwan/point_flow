@@ -51,12 +51,16 @@ impl ObjectStorage {
     }
 
     pub async fn put_object(&self, key: &str, bytes: Vec<u8>, content_type: &str) -> Result<()> {
+        // Key selalu unik per upload (UUID), jadi aman di-cache browser/Tigris
+        // edge setahun penuh: hemat Tigris Class B request dan kunjungan
+        // ulang menampilkan gambar instan dari cache.
         self.client
             .put_object()
             .bucket(&self.bucket)
             .key(key)
             .body(ByteStream::from(bytes))
             .content_type(content_type.to_string())
+            .cache_control("public, max-age=31536000, immutable")
             .send()
             .await
             .with_context(|| format!("failed to upload object {key}"))?;

@@ -59,9 +59,9 @@ pub async fn create_category(
     Json(payload): Json<CreateProductCategoryRequest>,
 ) -> AppResult<Json<ApiResponse<ProductCategoryResponse>>> {
     user.require_permission(&state.db, "master_data").await?;
-    Ok(Json(ApiResponse::success(
-        service::create_category(&state.db, payload).await?,
-    )))
+    let category = service::create_category(&state.db, payload).await?;
+    state.public_cache.invalidate();
+    Ok(Json(ApiResponse::success(category)))
 }
 
 pub async fn update_category(
@@ -71,9 +71,9 @@ pub async fn update_category(
     Json(payload): Json<UpdateProductCategoryRequest>,
 ) -> AppResult<Json<ApiResponse<ProductCategoryResponse>>> {
     user.require_permission(&state.db, "master_data").await?;
-    Ok(Json(ApiResponse::success(
-        service::update_category(&state.db, id, payload).await?,
-    )))
+    let category = service::update_category(&state.db, id, payload).await?;
+    state.public_cache.invalidate();
+    Ok(Json(ApiResponse::success(category)))
 }
 
 pub async fn delete_category(
@@ -83,6 +83,7 @@ pub async fn delete_category(
 ) -> AppResult<Json<ApiResponse<MessageResponse>>> {
     user.require_permission(&state.db, "master_data").await?;
     service::delete_category(&state.db, id).await?;
+    state.public_cache.invalidate();
     Ok(Json(ApiResponse::success(MessageResponse {
         message: "deleted",
     })))
@@ -122,6 +123,7 @@ pub async fn create_product(
 ) -> AppResult<Json<ApiResponse<ProductResponse>>> {
     user.require_permission(&state.db, "master_data").await?;
     let product = service::create_product(&state.db, payload).await?;
+    state.public_cache.invalidate();
     Ok(Json(ApiResponse::success(with_photo_url(
         product,
         state.s3.as_deref(),
@@ -136,6 +138,7 @@ pub async fn update_product(
 ) -> AppResult<Json<ApiResponse<ProductResponse>>> {
     user.require_permission(&state.db, "master_data").await?;
     let product = service::update_product(&state.db, id, payload).await?;
+    state.public_cache.invalidate();
     Ok(Json(ApiResponse::success(with_photo_url(
         product,
         state.s3.as_deref(),
@@ -149,6 +152,7 @@ pub async fn delete_product(
 ) -> AppResult<Json<ApiResponse<MessageResponse>>> {
     user.require_permission(&state.db, "master_data").await?;
     service::delete_product(&state.db, id).await?;
+    state.public_cache.invalidate();
     Ok(Json(ApiResponse::success(MessageResponse {
         message: "deleted",
     })))
@@ -163,16 +167,12 @@ pub async fn upload_product_photo(
     user.require_permission(&state.db, "master_data").await?;
     let (bytes, content_type) =
         super::super::online_orders::handler::read_single_image(&mut multipart).await?;
-    Ok(Json(ApiResponse::success(
-        service::upload_product_photo(
-            &state.db,
-            state.s3.as_deref(),
-            id,
-            bytes,
-            &content_type,
-        )
-        .await?,
-    )))
+    let uploaded =
+        service::upload_product_photo(&state.db, state.s3.as_deref(), id, bytes, &content_type)
+            .await?;
+    // Foto baru tampil di katalog publik; bersihkan cache-nya.
+    state.public_cache.invalidate();
+    Ok(Json(ApiResponse::success(uploaded)))
 }
 
 pub async fn list_units(
@@ -203,9 +203,10 @@ pub async fn create_unit(
     Json(payload): Json<CreateUnitRequest>,
 ) -> AppResult<Json<ApiResponse<UnitResponse>>> {
     user.require_permission(&state.db, "master_data").await?;
-    Ok(Json(ApiResponse::success(
-        service::create_unit(&state.db, payload).await?,
-    )))
+    let unit = service::create_unit(&state.db, payload).await?;
+    // Kode unit ikut tampil di katalog publik; bersihkan cache-nya.
+    state.public_cache.invalidate();
+    Ok(Json(ApiResponse::success(unit)))
 }
 
 pub async fn update_unit(
@@ -215,9 +216,9 @@ pub async fn update_unit(
     Json(payload): Json<UpdateUnitRequest>,
 ) -> AppResult<Json<ApiResponse<UnitResponse>>> {
     user.require_permission(&state.db, "master_data").await?;
-    Ok(Json(ApiResponse::success(
-        service::update_unit(&state.db, id, payload).await?,
-    )))
+    let unit = service::update_unit(&state.db, id, payload).await?;
+    state.public_cache.invalidate();
+    Ok(Json(ApiResponse::success(unit)))
 }
 
 pub async fn delete_unit(
@@ -227,6 +228,7 @@ pub async fn delete_unit(
 ) -> AppResult<Json<ApiResponse<MessageResponse>>> {
     user.require_permission(&state.db, "master_data").await?;
     service::delete_unit(&state.db, id).await?;
+    state.public_cache.invalidate();
     Ok(Json(ApiResponse::success(MessageResponse {
         message: "deleted",
     })))
@@ -268,9 +270,9 @@ pub async fn create_product_sku(
     Json(payload): Json<CreateProductSkuRequest>,
 ) -> AppResult<Json<ApiResponse<ProductSkuResponse>>> {
     user.require_permission(&state.db, "master_data").await?;
-    Ok(Json(ApiResponse::success(
-        service::create_product_sku(&state.db, payload).await?,
-    )))
+    let sku = service::create_product_sku(&state.db, payload).await?;
+    state.public_cache.invalidate();
+    Ok(Json(ApiResponse::success(sku)))
 }
 
 pub async fn update_product_sku(
@@ -280,9 +282,9 @@ pub async fn update_product_sku(
     Json(payload): Json<UpdateProductSkuRequest>,
 ) -> AppResult<Json<ApiResponse<ProductSkuResponse>>> {
     user.require_permission(&state.db, "master_data").await?;
-    Ok(Json(ApiResponse::success(
-        service::update_product_sku(&state.db, id, payload).await?,
-    )))
+    let sku = service::update_product_sku(&state.db, id, payload).await?;
+    state.public_cache.invalidate();
+    Ok(Json(ApiResponse::success(sku)))
 }
 
 pub async fn delete_product_sku(
@@ -292,6 +294,7 @@ pub async fn delete_product_sku(
 ) -> AppResult<Json<ApiResponse<MessageResponse>>> {
     user.require_permission(&state.db, "master_data").await?;
     service::delete_product_sku(&state.db, id).await?;
+    state.public_cache.invalidate();
     Ok(Json(ApiResponse::success(MessageResponse {
         message: "deleted",
     })))

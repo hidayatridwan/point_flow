@@ -1,9 +1,47 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use axum::http::HeaderValue;
 use sqlx::PgPool;
 
-use crate::infra::s3::ObjectStorage;
+use crate::{
+    common::models::PaginationMeta,
+    infra::{cache::TtlCache, s3::ObjectStorage},
+    modules::online_orders::dto::{PublicCategory, PublicProductItem, StoreInfoResponse},
+};
+
+/// Nilai cache katalog publik: (item halaman, meta paginasi).
+type CatalogCacheValue = (Vec<PublicProductItem>, PaginationMeta);
+
+/// Cache respons publik storefront (in-process, tanpa Redis).
+/// TTL produk lebih pendek karena harga bisa berubah; perubahan **stok** dari
+/// penjualan sengaja mengandalkan TTL (bukan invalidasi) agar alur kasir yang
+/// ramai tidak mengosongkan cache terus-menerus — staleness maksimal 30 detik.
+pub struct PublicCache {
+    pub catalog: TtlCache<CatalogCacheValue>,
+    pub categories: TtlCache<Vec<PublicCategory>>,
+    pub store_info: TtlCache<StoreInfoResponse>,
+}
+
+impl Default for PublicCache {
+    fn default() -> Self {
+        Self {
+            catalog: TtlCache::new(Duration::from_secs(30)),
+            categories: TtlCache::new(Duration::from_secs(300)),
+            store_info: TtlCache::new(Duration::from_secs(300)),
+        }
+    }
+}
+
+impl PublicCache {
+    /// Kosongkan seluruh cache publik. Dipanggil handler mutasi master data
+    /// (produk, SKU, unit, kategori) dan pengaturan toko/QRIS.
+    pub fn invalidate(&self) {
+        self.catalog.clear();
+        self.categories.clear();
+        self.store_info.clear();
+    }
+}
 
 #[derive(Clone)]
 pub struct AppState {
@@ -17,6 +55,7 @@ pub struct AppState {
     pub refresh_token_cookie_same_site: String,
     pub refresh_token_cookie_domain: Option<String>,
     pub s3: Option<Arc<ObjectStorage>>,
+    pub public_cache: Arc<PublicCache>,
 }
 
 impl AppState {
@@ -44,6 +83,7 @@ impl AppState {
             refresh_token_cookie_same_site,
             refresh_token_cookie_domain,
             s3,
+            public_cache: Arc::new(PublicCache::default()),
         }
     }
 }
