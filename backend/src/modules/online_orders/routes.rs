@@ -69,7 +69,10 @@ pub fn routes() -> Router<AppState> {
         .route("/online-orders/{id}/pack", post(handler::pack_order))
         .route("/online-orders/{id}/ready", post(handler::ready_order))
         .route("/online-orders/{id}/deliver", post(handler::deliver_order))
-        .route("/online-orders/{id}/complete", post(handler::complete_order))
+        .route(
+            "/online-orders/{id}/complete",
+            post(handler::complete_order),
+        )
         .route("/online-orders/{id}/cancel", post(handler::cancel_order))
         .route(
             "/online-orders/{id}/mark-paid",

@@ -7,7 +7,10 @@ use crate::{
 
 use super::{
     dto::{PublicCatalogQuery, PublicCategory, PublicProductItem},
-    model::{CatalogRow, CheckoutSkuRow, LockedSkuRow, NewOrderRow, OrderItemRow, OrderRow, PublicCategoryRow},
+    model::{
+        CatalogRow, CheckoutSkuRow, LockedSkuRow, NewOrderRow, OrderItemRow, OrderRow,
+        PublicCategoryRow,
+    },
 };
 
 const CATALOG_WHERE: &str = r#"
@@ -69,9 +72,8 @@ pub async fn list_catalog(
     let limit = query.limit();
     let offset = query.offset();
 
-    let sql = format!(
-        "{CATALOG_SELECT} {CATALOG_WHERE} ORDER BY p.name, ps.sku LIMIT $2 OFFSET $3"
-    );
+    let sql =
+        format!("{CATALOG_SELECT} {CATALOG_WHERE} ORDER BY p.name, ps.sku LIMIT $2 OFFSET $3");
     let rows = sqlx::query_as::<_, CatalogRow>(&sql)
         .bind(&search)
         .bind(limit)
@@ -121,10 +123,7 @@ pub async fn list_catalog(
 
 /// Muat SKU untuk item checkout: hanya yang aktif dan belum dihapus.
 /// Stok dicek ulang di service; pemotongan terjadi saat packing (Fase 3).
-pub async fn load_checkout_skus(
-    pool: &PgPool,
-    sku_ids: &[i64],
-) -> AppResult<Vec<CheckoutSkuRow>> {
+pub async fn load_checkout_skus(pool: &PgPool, sku_ids: &[i64]) -> AppResult<Vec<CheckoutSkuRow>> {
     let rows = sqlx::query_as::<_, CheckoutSkuRow>(
         r#"
         SELECT
@@ -490,9 +489,9 @@ pub async fn cut_stock_for_pack(
     created_by: i64,
     order_id: i64,
 ) -> AppResult<()> {
-    let sku = lock_sku(tx, item.product_sku_id)
-        .await?
-        .ok_or_else(|| AppError::Conflict(format!("{} is no longer available", item.product_sku)))?;
+    let sku = lock_sku(tx, item.product_sku_id).await?.ok_or_else(|| {
+        AppError::Conflict(format!("{} is no longer available", item.product_sku))
+    })?;
     if sku.stock < item.quantity {
         return Err(AppError::Conflict(format!(
             "{} only has {} {} in stock",
@@ -529,9 +528,9 @@ pub async fn restore_stock_for_cancel(
     created_by: i64,
     order_id: i64,
 ) -> AppResult<()> {
-    let sku = lock_sku(tx, item.product_sku_id)
-        .await?
-        .ok_or_else(|| AppError::Conflict(format!("{} is no longer available", item.product_sku)))?;
+    let sku = lock_sku(tx, item.product_sku_id).await?.ok_or_else(|| {
+        AppError::Conflict(format!("{} is no longer available", item.product_sku))
+    })?;
 
     let stock_after = sku.stock + item.quantity;
     write_stock(tx, item.product_sku_id, stock_after).await?;

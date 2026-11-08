@@ -70,9 +70,17 @@ pub fn validate_checkout(request: &CheckoutRequest) -> Result<ValidatedCheckout,
         return Err("payment_method must be pay_at_store or transfer".to_string());
     }
 
-    let delivery_address = request.delivery_address.as_deref().map(str::trim).and_then(|s| {
-        if s.is_empty() { None } else { Some(s.to_string()) }
-    });
+    let delivery_address = request
+        .delivery_address
+        .as_deref()
+        .map(str::trim)
+        .and_then(|s| {
+            if s.is_empty() {
+                None
+            } else {
+                Some(s.to_string())
+            }
+        });
     if fulfillment_method == FULFILLMENT_DELIVERY && delivery_address.is_none() {
         return Err("delivery_address is required for delivery orders".to_string());
     }
@@ -81,9 +89,7 @@ pub fn validate_checkout(request: &CheckoutRequest) -> Result<ValidatedCheckout,
         return Err("items must not be empty".to_string());
     }
     if request.items.len() > MAX_CHECKOUT_ITEMS {
-        return Err(format!(
-            "items must not exceed {MAX_CHECKOUT_ITEMS}"
-        ));
+        return Err(format!("items must not exceed {MAX_CHECKOUT_ITEMS}"));
     }
 
     let mut items = Vec::with_capacity(request.items.len());
@@ -101,7 +107,11 @@ pub fn validate_checkout(request: &CheckoutRequest) -> Result<ValidatedCheckout,
     }
 
     let notes = request.notes.as_deref().map(str::trim).and_then(|s| {
-        if s.is_empty() { None } else { Some(s.to_string()) }
+        if s.is_empty() {
+            None
+        } else {
+            Some(s.to_string())
+        }
     });
 
     Ok(ValidatedCheckout {
@@ -296,15 +306,15 @@ async fn upload_image(
     bytes: Vec<u8>,
     content_type: &str,
 ) -> AppResult<(String, String)> {
-    let storage = s3.ok_or_else(|| AppError::Internal("object storage is not configured".to_string()))?;
-    let extension =
-        s3::image_extension(content_type).ok_or_else(|| {
-            AppError::Validation(
-                "unsupported image type (use jpeg, png, or webp)".to_string(),
-            )
-        })?;
+    let storage =
+        s3.ok_or_else(|| AppError::Internal("object storage is not configured".to_string()))?;
+    let extension = s3::image_extension(content_type).ok_or_else(|| {
+        AppError::Validation("unsupported image type (use jpeg, png, or webp)".to_string())
+    })?;
     if bytes.len() > s3::MAX_IMAGE_BYTES {
-        return Err(AppError::Validation("image is too large (max 2 MB)".to_string()));
+        return Err(AppError::Validation(
+            "image is too large (max 2 MB)".to_string(),
+        ));
     }
 
     let key = build_object_key(prefix, scope, extension);
@@ -479,19 +489,23 @@ pub fn next_status(
     match action {
         OrderAction::Pack => match status {
             "new" => Ok("packing"),
-            _ => Err(format!("only new orders can be packed (status is {status})")),
+            _ => Err(format!(
+                "only new orders can be packed (status is {status})"
+            )),
         },
         OrderAction::Ready => match (status, fulfillment_method) {
             ("packing", "pickup") => Ok("ready"),
             ("packing", _) => Err("only pickup orders can be marked ready".to_string()),
-            _ => Err(format!("only packing orders can be marked ready (status is {status})")),
+            _ => Err(format!(
+                "only packing orders can be marked ready (status is {status})"
+            )),
         },
         OrderAction::Deliver => match (status, fulfillment_method) {
             ("packing", "delivery") if payment_method == "pay_at_store" => Ok("delivering"),
             ("packing", "delivery") if payment_status == "paid" => Ok("delivering"),
-            ("packing", "delivery") => Err(
-                "transfer payment must be confirmed before delivery".to_string()
-            ),
+            ("packing", "delivery") => {
+                Err("transfer payment must be confirmed before delivery".to_string())
+            }
             ("packing", _) => Err("only delivery orders can be marked delivering".to_string()),
             _ => Err(format!(
                 "only packing orders can be marked delivering (status is {status})"
@@ -505,7 +519,9 @@ pub fn next_status(
         },
         OrderAction::Cancel => match status {
             "new" | "packing" => Ok("cancelled"),
-            _ => Err(format!("orders with status {status} cannot be cancelled here")),
+            _ => Err(format!(
+                "orders with status {status} cannot be cancelled here"
+            )),
         },
         OrderAction::MarkPaid => match (status, payment_status) {
             ("completed" | "cancelled", _) => Err(format!(
@@ -627,7 +643,12 @@ pub async fn pack_order(
 
     audit::record_audit_log_best_effort(
         pool,
-        audit::AuditLogRecord::success(Some(user_id), "online_order.pack", "online_order", Some(id)),
+        audit::AuditLogRecord::success(
+            Some(user_id),
+            "online_order.pack",
+            "online_order",
+            Some(id),
+        ),
     )
     .await;
 
@@ -647,7 +668,14 @@ pub async fn deliver_order(
     user_id: i64,
     id: i64,
 ) -> AppResult<OnlineOrderDetailResponse> {
-    transition(pool, user_id, id, OrderAction::Deliver, "online_order.deliver").await
+    transition(
+        pool,
+        user_id,
+        id,
+        OrderAction::Deliver,
+        "online_order.deliver",
+    )
+    .await
 }
 
 pub async fn complete_order(
@@ -725,7 +753,9 @@ pub async fn cancel_order(
             repository::restore_stock_for_cancel(&mut tx, item, user_id, id).await?;
         }
     }
-    let reason = reason.map(|r| r.trim().to_string()).filter(|r| !r.is_empty());
+    let reason = reason
+        .map(|r| r.trim().to_string())
+        .filter(|r| !r.is_empty());
     repository::set_order_cancelled(&mut tx, id, reason.as_deref(), user_id).await?;
     tx.commit().await?;
 
@@ -861,24 +891,54 @@ mod tests {
             Ok("packing")
         );
         assert_eq!(
-            next_status(OrderAction::Ready, "packing", "pickup", "pay_at_store", "unpaid"),
+            next_status(
+                OrderAction::Ready,
+                "packing",
+                "pickup",
+                "pay_at_store",
+                "unpaid"
+            ),
             Ok("ready")
         );
         assert_eq!(
-            next_status(OrderAction::Complete, "ready", "pickup", "pay_at_store", "paid"),
+            next_status(
+                OrderAction::Complete,
+                "ready",
+                "pickup",
+                "pay_at_store",
+                "paid"
+            ),
             Ok("completed")
         );
         // packing -> delivering -> completed (delivery + transfer paid)
         assert_eq!(
-            next_status(OrderAction::Deliver, "packing", "delivery", "transfer", "paid"),
+            next_status(
+                OrderAction::Deliver,
+                "packing",
+                "delivery",
+                "transfer",
+                "paid"
+            ),
             Ok("delivering")
         );
         assert_eq!(
-            next_status(OrderAction::Deliver, "packing", "delivery", "pay_at_store", "unpaid"),
+            next_status(
+                OrderAction::Deliver,
+                "packing",
+                "delivery",
+                "pay_at_store",
+                "unpaid"
+            ),
             Ok("delivering")
         );
         assert_eq!(
-            next_status(OrderAction::Complete, "delivering", "delivery", "transfer", "paid"),
+            next_status(
+                OrderAction::Complete,
+                "delivering",
+                "delivery",
+                "transfer",
+                "paid"
+            ),
             Ok("completed")
         );
     }
@@ -886,16 +946,70 @@ mod tests {
     #[test]
     fn transition_rejects_wrong_fulfillment_and_unpaid_delivery() {
         // ready hanya untuk pickup
-        assert!(next_status(OrderAction::Ready, "packing", "delivery", "transfer", "paid").is_err());
+        assert!(
+            next_status(
+                OrderAction::Ready,
+                "packing",
+                "delivery",
+                "transfer",
+                "paid"
+            )
+            .is_err()
+        );
         // deliver hanya untuk antar
-        assert!(next_status(OrderAction::Deliver, "packing", "pickup", "pay_at_store", "unpaid").is_err());
+        assert!(
+            next_status(
+                OrderAction::Deliver,
+                "packing",
+                "pickup",
+                "pay_at_store",
+                "unpaid"
+            )
+            .is_err()
+        );
         // antar + transfer wajib paid sebelum delivering
-        assert!(next_status(OrderAction::Deliver, "packing", "delivery", "transfer", "unpaid").is_err());
+        assert!(
+            next_status(
+                OrderAction::Deliver,
+                "packing",
+                "delivery",
+                "transfer",
+                "unpaid"
+            )
+            .is_err()
+        );
         // complete hanya dari ready/delivering
-        assert!(next_status(OrderAction::Complete, "new", "pickup", "pay_at_store", "unpaid").is_err());
-        assert!(next_status(OrderAction::Complete, "packing", "pickup", "pay_at_store", "unpaid").is_err());
+        assert!(
+            next_status(
+                OrderAction::Complete,
+                "new",
+                "pickup",
+                "pay_at_store",
+                "unpaid"
+            )
+            .is_err()
+        );
+        assert!(
+            next_status(
+                OrderAction::Complete,
+                "packing",
+                "pickup",
+                "pay_at_store",
+                "unpaid"
+            )
+            .is_err()
+        );
         // pack ulang ditolak
-        assert!(next_status(OrderAction::Pack, "packing", "pickup", "pay_at_store", "unpaid").is_err());
+        assert!(
+            next_status(
+                OrderAction::Pack,
+                "packing",
+                "pickup",
+                "pay_at_store",
+                "unpaid"
+            )
+            .is_err()
+        );
     }
 
     #[test]
@@ -953,23 +1067,95 @@ mod tests {
     #[test]
     fn cancel_and_mark_paid_follow_rules() {
         assert_eq!(
-            next_status(OrderAction::Cancel, "new", "pickup", "pay_at_store", "unpaid"),
+            next_status(
+                OrderAction::Cancel,
+                "new",
+                "pickup",
+                "pay_at_store",
+                "unpaid"
+            ),
             Ok("cancelled")
         );
         assert_eq!(
-            next_status(OrderAction::Cancel, "packing", "delivery", "transfer", "unpaid"),
+            next_status(
+                OrderAction::Cancel,
+                "packing",
+                "delivery",
+                "transfer",
+                "unpaid"
+            ),
             Ok("cancelled")
         );
-        assert!(next_status(OrderAction::Cancel, "ready", "pickup", "pay_at_store", "unpaid").is_err());
-        assert!(next_status(OrderAction::Cancel, "delivering", "delivery", "transfer", "paid").is_err());
-        assert!(next_status(OrderAction::Cancel, "completed", "pickup", "pay_at_store", "paid").is_err());
+        assert!(
+            next_status(
+                OrderAction::Cancel,
+                "ready",
+                "pickup",
+                "pay_at_store",
+                "unpaid"
+            )
+            .is_err()
+        );
+        assert!(
+            next_status(
+                OrderAction::Cancel,
+                "delivering",
+                "delivery",
+                "transfer",
+                "paid"
+            )
+            .is_err()
+        );
+        assert!(
+            next_status(
+                OrderAction::Cancel,
+                "completed",
+                "pickup",
+                "pay_at_store",
+                "paid"
+            )
+            .is_err()
+        );
         // mark-paid boleh selama belum selesai/batal dan belum paid
         assert_eq!(
-            next_status(OrderAction::MarkPaid, "new", "delivery", "transfer", "unpaid"),
+            next_status(
+                OrderAction::MarkPaid,
+                "new",
+                "delivery",
+                "transfer",
+                "unpaid"
+            ),
             Ok("paid")
         );
-        assert!(next_status(OrderAction::MarkPaid, "packing", "delivery", "transfer", "paid").is_err());
-        assert!(next_status(OrderAction::MarkPaid, "completed", "pickup", "pay_at_store", "paid").is_err());
-        assert!(next_status(OrderAction::MarkPaid, "cancelled", "pickup", "pay_at_store", "unpaid").is_err());
+        assert!(
+            next_status(
+                OrderAction::MarkPaid,
+                "packing",
+                "delivery",
+                "transfer",
+                "paid"
+            )
+            .is_err()
+        );
+        assert!(
+            next_status(
+                OrderAction::MarkPaid,
+                "completed",
+                "pickup",
+                "pay_at_store",
+                "paid"
+            )
+            .is_err()
+        );
+        assert!(
+            next_status(
+                OrderAction::MarkPaid,
+                "cancelled",
+                "pickup",
+                "pay_at_store",
+                "unpaid"
+            )
+            .is_err()
+        );
     }
 }
