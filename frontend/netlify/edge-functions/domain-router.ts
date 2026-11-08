@@ -2,11 +2,11 @@
  * Router per-host untuk dua situs Netlify yang di-deploy dari repo yang sama
  * (build SPA yang sama, dua tujuan deploy).
  *
- *   - Situs kasir (mis. `pointflow.netlify.app`): perilaku lama; `/shop*`
+ *   - Situs storefront (`pointflow.netlify.app`; host-nya terdaftar di env
+ *     `SHOP_DOMAINS`): hanya melayani `/shop*`; `/` diarahkan ke `/shop`,
+ *     path dashboard diarahkan balik ke host kasir.
+ *   - Situs kasir (`dash-pointflow.netlify.app`): perilaku lama; `/shop*`
  *     diarahkan ke host storefront yang terdaftar di env `SHOP_DOMAINS`.
- *   - Situs storefront (host-nya terdaftar di `SHOP_DOMAINS`): hanya melayani
- *     `/shop*`; `/` diarahkan ke `/shop`, path dashboard diarahkan balik ke
- *     host kasir.
  *
  * Selama `SHOP_DOMAINS` belum di-set di Netlify (scope "Functions"), fungsi
  * ini no-op: semua host berperilaku kasir seperti sebelumnya. Env edge
@@ -15,7 +15,7 @@
  */
 
 /** Host dashboard default (domain Netlify bawaan); bisa dioverride via `KASIR_DOMAINS`. */
-const KASIR_FALLBACK_HOST = 'pointflow.netlify.app';
+const KASIR_FALLBACK_HOST = 'dash-pointflow.netlify.app';
 
 /**
  * Prefix route dashboard — mengikuti group `(protected)` di
