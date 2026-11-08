@@ -154,8 +154,8 @@ Migration SQL di `backend/migrations` dipasang ke container PostgreSQL melalui `
 > ⚠️ **Non-aktif.** Section ini menjelaskan alur lama ke VPS (GHCR + Vault +
 > bind mount) yang sudah berhenti dipakai karena VPS dimatikan. Workflow-nya
 > tetap ada di repo (`deploy-backend.yml`, kini manual-only) sebagai referensi.
-> **Alur deployment yang aktif sekarang: Render + Supabase** — lihat section
-> "Production Deploy (Render + Supabase)" di bawah.
+> **Alur deployment yang aktif sekarang: Fly.io + Supabase (Singapore)** —
+> lihat section "Production Deploy (Fly.io + Supabase)" di bawah.
 
 Backend production **tidak dibuild di VPS**. Image dikompilasi di GitHub Actions
 (`backend/Dockerfile.prod`, multi-stage) lalu dipush ke GHCR
@@ -276,103 +276,24 @@ Setup sekali di awal:
    flattening). Set domain apex (tanpa `www`) sebagai **primary domain**.
    Setelah aktif, ubah `SHOP_DOMAINS` di kedua situs jadi `tokosaya.com`
    lalu deploy ulang.
-5. Render → env `CORS_ALLOWED_ORIGINS` berisi origin storefront & kasir,
-   dipisah koma (contoh di `.env.render.example`).
+5. Fly.io → secret `CORS_ALLOWED_ORIGINS` berisi origin storefront & kasir,
+   dipisah koma (contoh di `.env.flyio.example`).
 6. Modul dashboard baru dengan prefix route di luar daftar
    `DASHBOARD_PREFIXES` di edge function harus didaftarkan di sana supaya
    tidak muncul di situs storefront.
 
-## Production Deploy (Render + Supabase)
-
-Alur deployment aktif saat ini. Backend berjalan sebagai **Web Service (Free)**
-di Render yang menarik image dari **Docker Hub**, datanya di **Supabase**
-(PostgreSQL) lewat session pooler, frontend tetap di **Netlify**.
-
-```text
-push manual (Actions > Deploy to Render)
-  └─▶ job push-image  : build linux/amd64 -> push docker.io/<user>/point-flow:latest
-  └─▶ job migrate     : psql via session pooler, migrasi SQL dengan tabel penjejak
-  └─▶ job deploy      : curl Render deploy hook -> Render menarik image terbaru
-```
-
-Workflow: `.github/workflows/deploy-render.yml` (trigger `workflow_dispatch`,
-tidak terkait dengan push ke `main`).
-
-### Setup sekali di awal
-
-1. **Supabase** — buat project (region terdekat, mis. `ap-southeast-1`), ambil
-   connection string **Session pooler** di tombol *Connect* (host
-   `aws-0-<region>.pooler.supabase.com:5432`, username `postgres.<project-ref>`),
-   lalu tambahkan `?sslmode=require`.
-
-   > Jangan pakai port `6543` (transaction mode) — mode itu tidak mendukung
-   > prepared statements, sedangkan backend memakai `sqlx` yang memakai prepared
-   > statements. Direct `db.<ref>.supabase.co:5432` juga jangan dipakai karena
-   > free plan-nya IPv6-only.
-
-2. **Docker Hub** — buat repo `point-flow` + Personal Access Token.
-3. **Render** — *New → Web Service → Existing Image*, isi
-   `docker.io/<user>/point-flow:latest` (tambahkan credential Docker Hub
-   untuk menghindari rate limit pull), region `Singapore`, plan **Free**.
-   ENV yang diset di dashboard:
-
-   ```text
-   APP_HOST=0.0.0.0
-   APP_PORT=10000
-   DATABASE_URL=<session pooler string dari langkah 1>
-   CORS_ALLOWED_ORIGINS=https://frontend-kamu.netlify.app
-   # setelah domain storefront publik aktif, tambahkan origin-nya dipisah koma:
-   # CORS_ALLOWED_ORIGINS=https://frontend-kamu.netlify.app,https://tokosaya.com,https://www.tokosaya.com
-   JWT_SECRET=<secret production>
-   JWT_TTL_SECONDS=900
-   REFRESH_TOKEN_TTL_SECONDS=2592000
-   REFRESH_TOKEN_COOKIE_NAME=refresh_token
-   REFRESH_TOKEN_COOKIE_SECURE=true
-   REFRESH_TOKEN_COOKIE_SAME_SITE=None
-   ```
-
-   Health check path: `/api/v1/health`. Setelah service jalan, salin
-   **Deploy Hook URL** dari tab *Settings*.
-
-4. **GitHub secrets** (Settings → Secrets and variables → Actions):
-   `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `SUPABASE_DATABASE_URL`,
-   `RENDER_DEPLOY_HOOK`.
-5. **Netlify** — update secret `PUBLIC_API_BASE_URL` ke
-   `https://<nama-backend>.onrender.com/api/v1`.
-6. Jalankan workflow **Deploy to Render** sekali (centang `apply_seeds` hanya
-   kalau mau mengisi data contoh dashboard).
-
-### Cara kerja migrasi otomatis
-
-Setiap run workflow, job `migrate` membaca `backend/migrations/*.sql` berurutan
-dan melewati file yang sudah diterapkan — jejaknya dicatat di tabel
-`_point_flow_schema_migrations` (satu file = satu transaksi). Migrasi baru cukup
-ditambahkan sebagai file SQL bernomor urut, dia akan jalan otomatis di deploy
-berikutnya.
-
-### Batasan free tier yang perlu diingat
-
-- Render Free **spin down setelah 15 menit tanpa trafik**; request pertama
-  selanjutnya menunggu ~1 menit (bisa di-offset dengan uptime ping tiap ~10
-  menit, tapi 750 jam/bulan free tier muat pas-pasan untuk 1 service selalu nyala).
-- Supabase Free **pause project setelah 1 minggu tanpa aktivitas** — restore
-  sekali klik di dashboard, data tidak hilang. Endpoint `/health` tidak menyentuh
-  DB, jadi ping uptime tidak menghitung sebagai aktivitas Supabase.
-- Supabase Free: 500 MB DB, 5 GB egress/bulan, direct connection IPv6-only.
-
 ## Production Deploy (Fly.io + Supabase)
 
-Jalur deployment backend alternatif ke **Fly.io** (Machines) — menarik image
-dari **Docker Hub**, database tetap di **Supabase**, frontend tetap di
-**Netlify**. Jalur Render (section atas) **tidak diganti**: kedua workflow bisa
-jalan paralel karena schema migrasi & data tidak berubah — hanya host runtime
-backend yang berubah.
+Jalur deployment backend **aktif** ke **Fly.io** (Machines) — menarik image
+dari **Docker Hub**, database di **Supabase** (project region
+`ap-southeast-1`/Singapore), frontend tetap di **Netlify**. Jalur lama (VPS
+dan Render) sudah dinonaktifkan; workflow Render sudah dihapus dari repo.
 
 ```text
 push manual (Actions > Deploy to Fly.io)
   └─▶ job push-image : build linux/amd64 -> push docker.io/<user>/point-flow:latest
   └─▶ job migrate    : psql via session pooler, migrasi SQL dengan tabel penjejak
-                       (tabel sama dengan jalur Render -> tidak dijalankan dobel)
+                       (tabel penjejak yang sama -> migrasi tidak dijalankan dobel)
   └─▶ job deploy     : flyctl deploy --image -> Fly menarik image, Machines
                        di-update rolling + health check /api/v1/health
 ```
@@ -395,8 +316,8 @@ konfigurasi app: `fly.toml` di root repo, worksheet env: `.env.flyio.example`
    `point-flow` di region `sin`/Singapore, machine `shared-cpu-1x` 512 MB).
 
 2. **GitHub secrets** (Settings → Secrets and variables → Actions → Secrets):
-   `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `SUPABASE_DATABASE_URL` bisa
-   disalin dari jalur Render (nilainya sama). `FLY_API_TOKEN` dibuat dari
+   `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `SUPABASE_DATABASE_URL`
+   (connection string session pooler Supabase). `FLY_API_TOKEN` dibuat dari
    terminal dengan deploy-scoped token (pilihan yang direkomendasikan Fly.io
    untuk CI, bukan `fly auth token`):
 
@@ -409,8 +330,8 @@ konfigurasi app: `fly.toml` di root repo, worksheet env: `.env.flyio.example`
    sundulkan `app =` di `fly.toml` — prioritas: input → variable → fly.toml.
 4. **Env runtime backend** — di-set sekali sebagai secrets app Fly (bukan di
    workflow) lewat `fly secrets set`, daftar lengkap + urutan langkahnya di
-   `.env.flyio.example`. Catatan: **jangan** set `APP_PORT` di Fly — beda dari
-   Render, `fly.toml` memakai `internal_port = 8080` yang sudah cocok dengan
+   `.env.flyio.example`. Catatan: **jangan** set `APP_PORT` di Fly —
+   `fly.toml` memakai `internal_port = 8080` yang sudah cocok dengan
    default Dockerfile.
 5. Jalankan workflow **Deploy to Fly.io** sekali. Deploy pertama membuat
    machine di `primary_region` + release; run berikutnya update machine

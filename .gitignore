@@ -16,7 +16,8 @@ build/
 /storages/*
 !/storages/.gitkeep
 
-!.env.render.example
 !.env.flyio.example
 
 notes.txt
+# state lokal Supabase CLI (bukan secret, tapi tidak perlu di-track)
+supabase/.temp/

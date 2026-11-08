@@ -5,15 +5,15 @@ name: Deploy to Fly.io
 # Dockerfile di sisi Fly. Frontend tidak disentuh: tetap di Netlify lewat
 # .github/workflows/deploy-frontend.yml.
 #
-# Trigger-nya manual (workflow_dispatch) supaya sepenuhnya terpisah dari jalur
-# Render (.github/workflows/deploy-render.yml) dan jalur VPS lama
-# (deploy-backend.yml). Database yang dipakai sama (Supabase) — job migrate
-# memakai tabel penjejak yang sama, jadi migrasi tidak akan dijalankan dobel.
+# Trigger-nya manual (workflow_dispatch), terpisah dari jalur VPS lama
+# (deploy-backend.yml, kini manual-only & tidak dipakai). Database yang dipakai
+# Supabase — job migrate memakai tabel penjejak, jadi migrasi tidak dijalankan
+# dobel.
 #
 # Secrets yang harus diisi di repo (Settings > Secrets and variables > Actions):
-#   DOCKERHUB_USERNAME     — username Docker Hub (sama dengan deploy-render.yml)
-#   DOCKERHUB_TOKEN        — access token Docker Hub (sama dengan deploy-render.yml)
-#   SUPABASE_DATABASE_URL  — connection string session pooler Supabase (sama)
+#   DOCKERHUB_USERNAME     — username Docker Hub
+#   DOCKERHUB_TOKEN        — access token Docker Hub (push image)
+#   SUPABASE_DATABASE_URL  — connection string session pooler Supabase
 #   FLY_API_TOKEN          — token API Fly.io; pilihan paling pas untuk CI:
 #                            fly tokens create deploy -a <nama-app>
 # Variables (tab Variables, bukan Secret):
@@ -90,8 +90,7 @@ jobs:
       # Migrasi dijalankan satu file per transaksi sesuai urutan nama file.
       # Tabel _point_flow_schema_migrations mencatat file yang sudah jalan,
       # sehingga deploy berikutnya tidak menjalankan ulang (CREATE TABLE tanpa
-      # IF NOT EXISTS akan gagal kalau dijalankan dobel). Tabel ini juga dipakai
-      # bersama jalur Render, jadi urutan antar-jalur tetap aman.
+      # IF NOT EXISTS akan gagal kalau dijalankan dobel).
       - name: Apply pending migrations in order
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
