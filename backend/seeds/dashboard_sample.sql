@@ -17,6 +17,10 @@
 --                           correction / sale_return
 --   * Employees ........... active + inactive
 --   * Payroll slips ....... last 3 months per active employee
+--   * Members ............. 3 active members; ~3/4 of sample sales attributed
+--   * Financial cats/txns . income + expense, cash + non-cash, one cancelled
+--   * Profit sharing ...... one draft 'Tahun Buku 2026' period with manual pool
+--                           (calculate via UI/API to snapshot distributions)
 --
 -- Self-contained: if the database has no usable master data it creates a small
 -- sample catalog (categories, suppliers, products + SKUs, a multi-SKU product for
@@ -33,6 +37,10 @@
 --   * product_skus.sku      LIKE 'SAMPLE-%'   (only the fallback catalog)
 --   * cash_registers.code   = 'REG-01'
 --   * sample cashier emails   dewi@/budi@/sari@example.com
+--   * members.notes           = 'sample-seed' (phones 08123456780..2)
+--   * financial_categories.description = 'sample-seed'
+--   * financial_transactions.description LIKE '[SAMPLE]%' (no notes column)
+--   * profit_sharing_periods.notes = 'sample-seed'
 --
 -- Run:
 --   docker compose exec -T postgres psql -U point_flow -d point_flow < backend/seeds/dashboard_sample.sql
@@ -51,6 +59,13 @@
 --   DELETE FROM purchase_orders      WHERE notes = 'sample-seed'; -- cascades purchase_order_items
 --   DELETE FROM stock_adjustments    WHERE notes = 'sample-seed'; -- cascades items
 --   DELETE FROM stock_conversions    WHERE notes = 'sample-seed'; -- cascades items
+--   DELETE FROM profit_sharing_distributions WHERE profit_sharing_period_id IN (SELECT id FROM profit_sharing_periods WHERE notes = 'sample-seed');
+--   DELETE FROM profit_sharing_periods WHERE notes = 'sample-seed';
+--   DELETE FROM financial_transactions WHERE description LIKE '[SAMPLE]%';
+--   DELETE FROM financial_categories   WHERE description = 'sample-seed';
+--   UPDATE sales SET member_id = NULL WHERE notes = 'sample-seed';
+--   DELETE FROM member_refresh_tokens  WHERE member_id IN (SELECT id FROM members WHERE notes = 'sample-seed');
+--   DELETE FROM members                WHERE notes = 'sample-seed';
 --   DELETE FROM payroll_slips        WHERE employee_id IN (SELECT id FROM employees WHERE phone = 'sample-seed');
 --   DELETE FROM cash_register_sessions WHERE opening_notes = 'sample-seed';
 --   DELETE FROM cash_registers       WHERE lower(code) = 'reg-01';
@@ -106,6 +121,13 @@ DECLARE
 	v_ordered_pos    bigint[] := ARRAY[]::bigint[];
 	v_period_start   date;
 	v_period_end     date;
+	v_m1             bigint;
+	v_m2             bigint;
+	v_m3             bigint;
+	v_cat_svc        bigint;
+	v_cat_other      bigint;
+	v_cat_ops        bigint;
+	v_cat_fix        bigint;
 	v_count          int;
 	i                int;
 	j                int;
@@ -811,6 +833,82 @@ BEGIN
 	JOIN (VALUES (1, 24, 10), (2, 30, 12), (3, 5, 2), (4, 1, 0), (5, 2, 1)) AS v(rn, min_stock, cur_stock)
 		ON v.rn = picks.rn
 	WHERE ps.id = picks.id;
+
+	-- 18. Members + attribute sample sales ----------------------------------
+	IF NOT EXISTS (SELECT 1 FROM members WHERE notes = 'sample-seed') THEN
+		INSERT INTO members (full_name, phone, email, password_hash, address, notes)
+		VALUES
+			('Siti Aminah',    '08123456780', 'siti@example.com',   v_pw_hash, 'Jl. Anggrek 5', 'sample-seed'),
+			('Budi Hartono',   '08123456781', 'budi.h@example.com', v_pw_hash, 'Jl. Mawar 12',  'sample-seed'),
+			('Dewi Anggraini', '08123456782', NULL,                 v_pw_hash, 'Jl. Melati 3',  'sample-seed');
+	END IF;
+
+	SELECT id INTO v_m1 FROM members WHERE phone = '08123456780';
+	SELECT id INTO v_m2 FROM members WHERE phone = '08123456781';
+	SELECT id INTO v_m3 FROM members WHERE phone = '08123456782';
+
+	-- Spread ~3/4 of completed sample sales across members (rest stay guests).
+	UPDATE sales SET member_id = v_m1, updated_at = now()
+	WHERE notes = 'sample-seed' AND status = 'completed' AND member_id IS NULL AND id % 4 = 1;
+	UPDATE sales SET member_id = v_m2, updated_at = now()
+	WHERE notes = 'sample-seed' AND status = 'completed' AND member_id IS NULL AND id % 4 = 2;
+	UPDATE sales SET member_id = v_m3, updated_at = now()
+	WHERE notes = 'sample-seed' AND status = 'completed' AND member_id IS NULL AND id % 4 = 3;
+
+	-- 19. Financial categories + manual transactions -------------------------
+	INSERT INTO financial_categories (name, type, description, created_by)
+	SELECT x.name, x.type::financial_transaction_type, 'sample-seed', v_admin_id
+	FROM (VALUES
+		('Pendapatan Jasa Servis', 'income'),
+		('Pendapatan Lainnya',     'income'),
+		('Operasional Toko',       'expense'),
+		('Perbaikan & Perawatan',  'expense')
+	) AS x(name, type)
+	WHERE NOT EXISTS (
+		SELECT 1 FROM financial_categories c WHERE c.name = x.name
+	);
+
+	SELECT id INTO v_cat_svc   FROM financial_categories WHERE name = 'Pendapatan Jasa Servis';
+	SELECT id INTO v_cat_other FROM financial_categories WHERE name = 'Pendapatan Lainnya';
+	SELECT id INTO v_cat_ops   FROM financial_categories WHERE name = 'Operasional Toko';
+	SELECT id INTO v_cat_fix   FROM financial_categories WHERE name = 'Perbaikan & Perawatan';
+
+	INSERT INTO financial_transactions
+		(occurred_at, type, financial_category_id, amount, is_cash, description, recorded_by)
+	SELECT * FROM (VALUES
+		(now() - INTERVAL '45 days', 'income'::financial_transaction_type,  v_cat_svc,   250000, TRUE,  '[SAMPLE] Jasa servis elektronik', v_admin_id),
+		(now() - INTERVAL '30 days', 'income'::financial_transaction_type,  v_cat_svc,   175000, TRUE,  '[SAMPLE] Jasa servis kipas angin', v_admin_id),
+		(now() - INTERVAL '20 days', 'income'::financial_transaction_type,  v_cat_other, 100000, TRUE,  '[SAMPLE] Penjualan kardus bekas', v_admin_id),
+		(now() - INTERVAL '12 days', 'income'::financial_transaction_type,  v_cat_svc,   300000, FALSE, '[SAMPLE] Jasa servis AC (transfer)', v_admin_id),
+		(now() - INTERVAL '40 days', 'expense'::financial_transaction_type, v_cat_ops,    85000, TRUE,  '[SAMPLE] Belanja plastik & kantong', v_admin_id),
+		(now() - INTERVAL '25 days', 'expense'::financial_transaction_type, v_cat_ops,   120000, TRUE,  '[SAMPLE] Token listrik toko', v_admin_id),
+		(now() - INTERVAL '15 days', 'expense'::financial_transaction_type, v_cat_fix,   200000, TRUE,  '[SAMPLE] Servis pintu rolling door', v_admin_id),
+		(now() - INTERVAL '5 days',  'expense'::financial_transaction_type, v_cat_ops,    60000, TRUE,  '[SAMPLE] Air galon & gas', v_admin_id),
+		(now() - INTERVAL '2 days',  'expense'::financial_transaction_type, v_cat_ops,    45000, FALSE, '[SAMPLE] Langganan internet (transfer)', v_admin_id)
+	) AS t(occurred_at, type, financial_category_id, amount, is_cash, description, recorded_by)
+	WHERE NOT EXISTS (
+		SELECT 1 FROM financial_transactions ft WHERE ft.description = t.description
+	);
+
+	INSERT INTO financial_transactions
+		(occurred_at, type, financial_category_id, amount, is_cash, description, recorded_by,
+		 status, cancelled_at, cancelled_by, cancel_reason)
+	SELECT now() - INTERVAL '8 days', 'expense'::financial_transaction_type, v_cat_ops, 99999, TRUE,
+		'[SAMPLE] Salah input (dibatalkan)', v_admin_id,
+		'cancelled'::financial_transaction_status, now() - INTERVAL '7 days', v_admin_id, 'Salah input nominal'
+	WHERE NOT EXISTS (
+		SELECT 1 FROM financial_transactions ft WHERE ft.description = '[SAMPLE] Salah input (dibatalkan)'
+	);
+
+	-- 20. Profit sharing draft period (manual pool; calculate via UI/API) ----
+	-- NOTE: the income-statement auto profit over sample data is negative
+	-- (seed payroll outweighs 90 days of sales), so the sample period carries
+	-- an explicit manual pool to showcase positive distributions.
+	INSERT INTO profit_sharing_periods
+		(period_name, start_date, end_date, member_pct, reserve_pct, management_pct,
+		 supervisor_pct, social_pct, education_pct, total_pool, notes)
+	SELECT 'Tahun Buku 2026', '2026-01-01', '2026-12-31', 50, 10, 15, 10, 10, 5, 25000000, 'sample-seed'
+	WHERE NOT EXISTS (SELECT 1 FROM profit_sharing_periods WHERE period_name = 'Tahun Buku 2026');
 
 	RAISE NOTICE 'Sample seed complete.';
 END $$;
