@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getMember } from '$lib/api/members.js';
 	import { getSale, type SaleDetail } from '$lib/api/sales.js';
 	import { ApiError } from '$lib/api/types.js';
 	import DetailField from '$lib/components/detail-field.svelte';
@@ -19,6 +20,7 @@
 	} = $props();
 
 	let sale = $state<SaleDetail | null>(null);
+	let memberLabel = $state<string | null>(null);
 	let isLoading = $state(false);
 	let errorMessage = $state<string | null>(null);
 	let latestRequestId = 0;
@@ -37,14 +39,27 @@
 			const result = await getSale(id);
 			if (requestId !== latestRequestId) return;
 			sale = result;
+			memberLabel = await resolveMemberLabel(result.member_id, requestId);
 		} catch (error) {
 			if (requestId !== latestRequestId) return;
 			sale = null;
+			memberLabel = null;
 			errorMessage = getErrorMessage(error);
 		} finally {
 			if (requestId === latestRequestId) {
 				isLoading = false;
 			}
+		}
+	}
+
+	async function resolveMemberLabel(memberId: number | null, requestId: number) {
+		if (!memberId) return null;
+		try {
+			const member = await getMember(memberId);
+			if (requestId !== latestRequestId) return null;
+			return `${member.full_name} (${member.member_no})`;
+		} catch {
+			return null;
 		}
 	}
 
@@ -74,19 +89,35 @@
 		{:else if sale}
 			<div class="grid gap-5">
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					<DetailField label={t('point_flow.sales.detail.transactionNo')} value={sale.transaction_no} />
+					<DetailField
+						label={t('point_flow.sales.detail.transactionNo')}
+						value={sale.transaction_no}
+					/>
 					<DetailField label={t('point_flow.sales.detail.status')}>
 						<SaleStatusBadge status={sale.status} />
 					</DetailField>
-					<DetailField label={t('point_flow.sales.detail.soldAt')} value={formatDateTime(sale.sold_at)} />
+					<DetailField
+						label={t('point_flow.sales.detail.soldAt')}
+						value={formatDateTime(sale.sold_at)}
+					/>
 					<DetailField label={t('point_flow.sales.detail.cashier')} value={sale.cashier_name} />
+					<DetailField label={t('point_flow.sales.detail.member')} value={memberLabel || '-'} />
 					<DetailField
 						label={t('point_flow.sales.detail.register')}
 						value={sale.cash_register_code || '-'}
 					/>
-					<DetailField label={t('point_flow.sales.detail.total')} value={formatIdr(sale.total_amount)} />
-					<DetailField label={t('point_flow.sales.detail.paid')} value={formatIdr(sale.paid_amount)} />
-					<DetailField label={t('point_flow.sales.detail.change')} value={formatIdr(sale.change_amount)} />
+					<DetailField
+						label={t('point_flow.sales.detail.total')}
+						value={formatIdr(sale.total_amount)}
+					/>
+					<DetailField
+						label={t('point_flow.sales.detail.paid')}
+						value={formatIdr(sale.paid_amount)}
+					/>
+					<DetailField
+						label={t('point_flow.sales.detail.change')}
+						value={formatIdr(sale.change_amount)}
+					/>
 					<DetailField
 						label={t('point_flow.sales.detail.cancelledAt')}
 						value={formatDateTime(sale.cancelled_at)}

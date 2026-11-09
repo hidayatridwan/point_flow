@@ -14,6 +14,12 @@ type ApiRequestOptions = Omit<RequestInit, 'body' | 'method'> & {
 	params?: ApiQueryParams;
 	retryOnUnauthorized?: boolean;
 	unwrapEnvelope?: boolean;
+	/**
+	 * Token eksplisit per request. `undefined` (default) memakai token staff
+	 * global; string memakai token itu; `null` tidak mengirim header
+	 * Authorization sama sekali (untuk endpoint publik/member).
+	 */
+	authToken?: string | null;
 };
 
 type RefreshTokenResponse = {
@@ -85,13 +91,21 @@ async function apiRequest<TResponse>(
 	options: ApiRequestOptions,
 	hasRetried = false
 ): Promise<TResponse> {
-	const { body, headers, params, retryOnUnauthorized, unwrapEnvelope, ...requestOptions } = options;
+	const {
+		body,
+		headers,
+		params,
+		retryOnUnauthorized,
+		unwrapEnvelope,
+		authToken,
+		...requestOptions
+	} = options;
 
 	const response = await fetch(buildUrl(path, params), {
 		...requestOptions,
 		method,
 		credentials: 'include',
-		headers: buildHeaders(body, headers),
+		headers: buildHeaders(body, headers, authToken),
 		body: encodeBody(body)
 	});
 
@@ -145,7 +159,7 @@ function appendQueryParamValue(
 	query.append(key, String(value));
 }
 
-function buildHeaders(body: unknown, headers: HeadersInit = {}) {
+function buildHeaders(body: unknown, headers: HeadersInit = {}, authToken?: string | null) {
 	const nextHeaders = new Headers(headers);
 	nextHeaders.set('Accept', 'application/json');
 
@@ -153,7 +167,9 @@ function buildHeaders(body: unknown, headers: HeadersInit = {}) {
 		nextHeaders.set('Content-Type', 'application/json');
 	}
 
-	const accessToken = getAccessToken();
+	// authToken === null: tanpa header Authorization (endpoint publik/member).
+	// authToken === undefined: fallback ke token staff global.
+	const accessToken = authToken === undefined ? getAccessToken() : authToken;
 	if (accessToken) nextHeaders.set('Authorization', `Bearer ${accessToken}`);
 
 	return nextHeaders;

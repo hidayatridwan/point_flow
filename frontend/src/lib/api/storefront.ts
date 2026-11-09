@@ -99,8 +99,97 @@ export function getPublicStoreInfo(): Promise<StoreInfo> {
 	return apiGet<StoreInfo>('/public/store-info');
 }
 
-export function postPublicOrder(input: CheckoutInput): Promise<CheckoutResult> {
-	return apiPost<CheckoutResult, CheckoutInput>('/public/orders', input);
+export type MemberProfile = {
+	id: number;
+	member_no: string;
+	full_name: string;
+	phone: string;
+	email: string | null;
+	address: string | null;
+	joined_at: string;
+	is_active: boolean;
+	notes: string | null;
+	created_at: string;
+	updated_at: string;
+};
+
+export type MemberLoginResponse = {
+	access_token: string;
+	token_type: string;
+	expires_in: number;
+	member: MemberProfile;
+};
+
+export type MemberRefreshResponse = MemberLoginResponse;
+
+export async function memberLogin(phone: string, password: string): Promise<MemberLoginResponse> {
+	return apiPost<MemberLoginResponse>(
+		'/members/auth/login',
+		{ phone, password },
+		{
+			authToken: null,
+			retryOnUnauthorized: false
+		}
+	);
+}
+
+export async function refreshMemberSession(): Promise<string | null> {
+	try {
+		const session = await apiPost<MemberRefreshResponse>('/members/auth/refresh', undefined, {
+			authToken: null,
+			retryOnUnauthorized: false
+		});
+		return session.access_token;
+	} catch {
+		return null;
+	}
+}
+
+export async function memberLogout(): Promise<void> {
+	try {
+		await apiPost('/members/auth/logout', undefined, {
+			authToken: null,
+			retryOnUnauthorized: false
+		});
+	} catch {
+		// Cookie kedaluwarsa duluan: anggap sudah logout.
+	}
+}
+
+export function getMemberProfile(token: string | null): Promise<MemberProfile> {
+	return apiGet<MemberProfile>('/members/auth/me', {
+		authToken: token,
+		retryOnUnauthorized: false
+	});
+}
+
+export function changeMemberPassword(
+	token: string | null,
+	current_password: string,
+	new_password: string
+): Promise<void> {
+	return apiPost<void>(
+		'/members/auth/change-password',
+		{
+			current_password,
+			new_password
+		},
+		{
+			authToken: token,
+			retryOnUnauthorized: false
+		}
+	);
+}
+
+export function postPublicOrder(
+	input: CheckoutInput,
+	token: string | null = null
+): Promise<CheckoutResult> {
+	// Member yang login teratribusi otomatis via token; guest tanpa token.
+	return apiPost<CheckoutResult, CheckoutInput>('/public/orders', input, {
+		authToken: token,
+		retryOnUnauthorized: false
+	});
 }
 
 export type { ApiEnvelope };

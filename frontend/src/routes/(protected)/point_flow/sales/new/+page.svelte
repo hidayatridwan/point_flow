@@ -6,6 +6,8 @@
 	import SearchIcon from '@lucide/svelte/icons/search';
 	import ShoppingCartIcon from '@lucide/svelte/icons/shopping-cart';
 	import TrashIcon from '@lucide/svelte/icons/trash';
+	import UserPlusIcon from '@lucide/svelte/icons/user-plus';
+	import XIcon from '@lucide/svelte/icons/x';
 	import {
 		clearStoredActiveCashRegisterSessionId,
 		getStoredActiveCashRegisterSessionId,
@@ -13,8 +15,10 @@
 		setStoredActiveCashRegisterSessionId,
 		type CashRegisterSession
 	} from '$lib/api/cash-registers.js';
+	import { type Member } from '$lib/api/members.js';
 	import { listProductSkus, type ProductSku } from '$lib/api/product-skus.js';
 	import { createSale, type SaleDetail } from '$lib/api/sales.js';
+	import MemberPickerDialog from '../components/member-picker-dialog.svelte';
 	import { ApiError } from '$lib/api/types.js';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -51,6 +55,8 @@
 	let notes = $state('');
 	let completedSale = $state<SaleDetail | null>(null);
 	let isReceiptOpen = $state(false);
+	let selectedMember = $state<Member | null>(null);
+	let isMemberPickerOpen = $state(false);
 	let isLoadingSkus = $state(true);
 	let isLoadingSession = $state(true);
 	let isSubmitting = $state(false);
@@ -137,6 +143,7 @@
 		try {
 			const sale = await createSale({
 				cash_register_session_id: activeSession?.id ?? 0,
+				member_id: selectedMember?.id ?? null,
 				paid_amount: paidAmountValue,
 				notes: emptyToNull(notes),
 				items: cartItems.map((item) => ({
@@ -204,6 +211,11 @@
 	function resetSale() {
 		clearCart();
 		skuSearch = '';
+		selectedMember = null;
+	}
+
+	function removeSelectedMember() {
+		selectedMember = null;
 	}
 
 	function getSaleValidationError() {
@@ -496,7 +508,10 @@
 					<h2 id="cart-title" class="text-base font-semibold text-slate-950 dark:text-slate-50">
 						{t('point_flow.newSale.cart')}
 					</h2>
-					<p class="text-sm text-muted-foreground">{cartItems.length} {t('point_flow.newSale.items')}</p>
+					<p class="text-sm text-muted-foreground">
+						{cartItems.length}
+						{t('point_flow.newSale.items')}
+					</p>
 				</div>
 				<Button
 					type="button"
@@ -543,7 +558,9 @@
 
 								<div class="mt-3 flex items-end justify-between gap-3">
 									<div>
-										<Label class="text-xs text-muted-foreground">{t('point_flow.newSale.qty')}</Label>
+										<Label class="text-xs text-muted-foreground"
+											>{t('point_flow.newSale.qty')}</Label
+										>
 										<div class="mt-1 flex items-center gap-3">
 											<Input
 												type="number"
@@ -594,6 +611,46 @@
 						<span class="text-muted-foreground">{t('point_flow.newSale.total')}</span>
 						<span class="text-lg font-semibold">{formatIdr(subtotalAmount)}</span>
 					</div>
+				</div>
+
+				<div class="grid gap-2">
+					<span class="text-xs text-muted-foreground">{t('point_flow.newSale.memberLabel')}</span>
+					{#if selectedMember}
+						<div
+							class="flex items-center justify-between gap-3 rounded-2xl bg-white p-3 dark:bg-slate-950"
+						>
+							<div class="min-w-0">
+								<p class="truncate text-sm font-semibold">{selectedMember.full_name}</p>
+								<p class="truncate text-xs text-muted-foreground">
+									{selectedMember.member_no} · {selectedMember.phone}
+								</p>
+							</div>
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-sm"
+								class="size-8 shrink-0 rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive"
+								disabled={isSubmitting}
+								onclick={removeSelectedMember}
+								title={t('point_flow.newSale.removeMember')}
+							>
+								<XIcon />
+								<span class="sr-only">{t('point_flow.newSale.removeMember')}</span>
+							</Button>
+						</div>
+					{:else}
+						<Button
+							type="button"
+							variant="outline"
+							class="h-10 rounded-xl bg-white dark:bg-slate-950"
+							disabled={isSubmitting || !canTransact}
+							onclick={() => (isMemberPickerOpen = true)}
+						>
+							<UserPlusIcon />
+							{t('point_flow.newSale.selectMemberBtn')}
+						</Button>
+						<p class="text-xs text-muted-foreground">{t('point_flow.newSale.guestBuyer')}</p>
+					{/if}
 				</div>
 
 				<div class="space-y-2">
@@ -665,3 +722,8 @@
 </form>
 
 <SaleReceiptDialog saleDetail={completedSale} bind:open={isReceiptOpen} />
+
+<MemberPickerDialog
+	bind:open={isMemberPickerOpen}
+	onSelected={(member) => (selectedMember = member)}
+/>

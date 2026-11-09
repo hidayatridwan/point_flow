@@ -50,6 +50,7 @@
 		'/master/suppliers': 'nav.suppliers',
 		'/master/cash-registers': 'nav.cashRegisters',
 		'/master/employees': 'nav.employees',
+		'/master/members': 'nav.members',
 		'/procurement/purchase-orders': 'nav.purchaseOrders',
 		'/procurement/goods-receipts': 'nav.goodsReceipts',
 		'/inventory/stock-adjustments': 'nav.stockAdjustments',

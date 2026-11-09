@@ -91,6 +91,10 @@
 							{
 								titleKey: 'nav.employees',
 								url: '/master/employees'
+							},
+							{
+								titleKey: 'nav.members',
+								url: '/master/members'
 							}
 						]
 					},

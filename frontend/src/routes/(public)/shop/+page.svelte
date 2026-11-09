@@ -14,6 +14,7 @@
 	} from '$lib/api/storefront.js';
 	import { ApiError } from '$lib/api/types.js';
 	import { addToCart, cartCount, cartEstimate } from '$lib/cart.svelte.js';
+	import { memberAuthState } from '$lib/api/member-auth.svelte.js';
 	import { t } from '$lib/i18n/locale.svelte.js';
 
 	let storeInfo = $state<StoreInfo | null>(null);
@@ -99,12 +100,34 @@
 
 <div class="mx-auto max-w-xl px-4 pt-12 pb-32">
 	{#if storeInfo?.store_name || storeInfo?.operating_hours}
-		<header class="mb-4">
-			{#if storeInfo?.store_name}
-				<h1 class="text-2xl font-bold text-[#333333]">{storeInfo.store_name}</h1>
-			{/if}
-			{#if storeInfo?.operating_hours}
-				<p class="mt-0.5 text-xs text-neutral-500">{storeInfo.operating_hours}</p>
+		<header class="mb-4 flex items-start justify-between gap-3">
+			<div class="min-w-0">
+				{#if storeInfo?.store_name}
+					<h1 class="text-2xl font-bold text-[#333333]">{storeInfo.store_name}</h1>
+				{/if}
+				{#if storeInfo?.operating_hours}
+					<p class="mt-0.5 text-xs text-neutral-500">{storeInfo.operating_hours}</p>
+				{/if}
+			</div>
+			{#if memberAuthState.member}
+				<a
+					href={resolve('/shop/account/profile')}
+					class="flex shrink-0 items-center gap-2 rounded-full bg-white py-2 pr-4 pl-2 text-xs font-bold text-[#333333] shadow-sm"
+				>
+					<span
+						class="flex size-7 items-center justify-center rounded-full bg-[#ff6534] text-xs font-bold text-white"
+					>
+						{memberAuthState.member.full_name.trim().charAt(0).toUpperCase() || '•'}
+					</span>
+					<span class="max-w-24 truncate">{memberAuthState.member.full_name}</span>
+				</a>
+			{:else}
+				<a
+					href={resolve('/shop/account/login')}
+					class="shrink-0 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-[#333333] shadow-sm"
+				>
+					{t('shop.accountButton')}
+				</a>
 			{/if}
 		</header>
 	{/if}

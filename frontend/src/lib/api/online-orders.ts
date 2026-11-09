@@ -28,6 +28,7 @@ export type OnlineOrder = {
 	notes: string | null;
 	sale_id: number | null;
 	cancel_reason: string | null;
+	member_id: number | null;
 };
 
 export type OnlineOrderItem = {

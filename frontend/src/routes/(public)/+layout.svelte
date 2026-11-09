@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { restoreMemberSession } from '$lib/api/member-auth.svelte.js';
 	import LocaleSwitch from '$lib/components/storefront/locale-switch.svelte';
 	import { reloadCartFromStorage } from '$lib/cart.svelte.js';
 
@@ -7,6 +8,8 @@
 
 	onMount(() => {
 		reloadCartFromStorage();
+		// Pulihkan sesi member dari cookie refresh (gagal diam-diam = guest).
+		void restoreMemberSession();
 		const onStorage = (event: StorageEvent) => {
 			if (event.key === 'pointflow:cart:v1') reloadCartFromStorage();
 		};

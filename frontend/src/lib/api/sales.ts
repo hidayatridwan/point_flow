@@ -17,6 +17,7 @@ export type Sale = {
 	cash_register_id: number | null;
 	cash_register_code: string | null;
 	cash_register_name: string | null;
+	member_id: number | null;
 	subtotal_amount: number;
 	total_amount: number;
 	paid_amount: number;
@@ -144,6 +145,7 @@ export type CreateSaleItemPayload = {
 export type CreateSalePayload = {
 	sold_at?: string;
 	cash_register_session_id: number;
+	member_id?: number | null;
 	paid_amount: number;
 	notes?: string | null;
 	items: CreateSaleItemPayload[];

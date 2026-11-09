@@ -208,18 +208,23 @@ Gate review: matriks token scope di atas + hasil e2e.
 Tujuan: admin mengelola member, anggota login & belanja di storefront, kasir bisa
 menandai pembeli member di POS.
 
-- [ ] Dashboard `master/members` (CRUD) — form: telepon wajib & unique, password awal
+- [x] Dashboard `master/members` (CRUD) — form: telepon wajib & unique, password awal
       di-set admin, aksi reset password per member (desain Bagian 3.3)
-- [ ] Picker anggota opsional di alur kasir POS: cari via member_no/telepon, member
+- [x] Picker anggota opsional di alur kasir POS: cari via member_no/telepon, member
       tampil di detail transaksi
-- [ ] Storefront: login/logout, halaman profil + ganti password; checkout terdeteksi
+- [x] Storefront: login/logout, halaman profil + ganti password; checkout terdeteksi
       login → identitas prefill dari profil (alamat bisa diedit); alur guest tetap
-- [ ] `lib/api/members.ts` (dashboard); auth & profil member di `lib/api/storefront.ts`
-- [ ] i18n id/en untuk semua string baru
+- [x] `lib/api/members.ts` (dashboard); auth & profil member di `lib/api/storefront.ts`
+- [x] i18n id/en untuk semua string baru
 
-Validasi: `bun run check` 0 error, lint bersih di file tersentuh, `bun run build`
-sukses; alur manual di browser: daftar member (admin) → login storefront → checkout
-member → order muncul teratribusi di dashboard; alur guest tak berubah.
+Validasi (2026-11-09): `bun run check` 0 error 0 warning, eslint + prettier bersih
+di file tersentuh (file pre-existing yang belum prettier-clean tidak disentuh —
+`bun run lint` repo masih merah di file lain yang tidak terkait Fase 8),
+`bun run build` sukses. Tanpa smoke browser (tidak ada Chromium di mesin ini;
+tidak install apa pun).
+Alur manual di browser (gate review, belum dijalankan): daftar member (admin) →
+login storefront → checkout member → order muncul teratribusi di dashboard;
+alur guest tak berubah.
 Gate review: coba dua checkout dari HP (member & guest), bandingkan hasilnya.
 
 ## Fase 9 — Migrasi `013_add_profit_sharing.sql`

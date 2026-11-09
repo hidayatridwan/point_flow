@@ -2,7 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
-	import { getPublicStoreInfo, postPublicOrder, type StoreInfo } from '$lib/api/storefront.js';
+	import { memberAuthState, submitMemberOrder } from '$lib/api/member-auth.svelte.js';
+	import { getPublicStoreInfo, type StoreInfo } from '$lib/api/storefront.js';
 	import { ApiError } from '$lib/api/types.js';
 	import { cartEstimate, cartState, clearCart } from '$lib/cart.svelte.js';
 	import { formatIdr } from '$lib/formatters.js';
@@ -20,6 +21,7 @@
 	let notes = $state('');
 	let isSubmitting = $state(false);
 	let errorMessage = $state<string | null>(null);
+	let addressPrefilledFor: number | null = null;
 
 	const deliveryFee = $derived(fulfillment === 'delivery' ? (storeInfo?.delivery_fee ?? 0) : 0);
 	const total = $derived(cartEstimate() + deliveryFee);
@@ -32,6 +34,21 @@
 		void loadStoreInfo();
 	});
 
+	// Member login: alamat default dari profil (tetap bisa diedit per order).
+	$effect(() => {
+		const member = memberAuthState.member;
+		if (!member) {
+			addressPrefilledFor = null;
+			return;
+		}
+		if (addressPrefilledFor !== member.id) {
+			addressPrefilledFor = member.id;
+			if (!deliveryAddress.trim() && member.address?.trim()) {
+				deliveryAddress = member.address.trim();
+			}
+		}
+	});
+
 	async function loadStoreInfo() {
 		try {
 			storeInfo = await getPublicStoreInfo();
@@ -41,7 +58,10 @@
 	}
 
 	function validate(): string | null {
-		if (!customerName.trim() || !customerPhone.trim()) return t('shop.checkoutFailed');
+		// Identitas member diambil dari profil (readonly); guest wajib isi.
+		if (!memberAuthState.member && (!customerName.trim() || !customerPhone.trim())) {
+			return t('shop.checkoutFailed');
+		}
 		if (fulfillment === 'delivery' && !deliveryAddress.trim()) return t('shop.checkoutFailed');
 		return null;
 	}
@@ -51,9 +71,10 @@
 		if (errorMessage) return;
 		isSubmitting = true;
 		try {
-			const result = await postPublicOrder({
-				customer_name: customerName.trim(),
-				customer_phone: customerPhone.trim(),
+			const member = memberAuthState.member;
+			const result = await submitMemberOrder({
+				customer_name: member ? member.full_name : customerName.trim(),
+				customer_phone: member ? member.phone : customerPhone.trim(),
 				fulfillment_method: fulfillment,
 				delivery_address: fulfillment === 'delivery' ? deliveryAddress.trim() : undefined,
 				payment_method: payment,
@@ -117,32 +138,51 @@
 		class="space-y-4"
 	>
 		<section class="rounded-2xl bg-white p-4 shadow-sm">
-			<label class="mb-1 block text-xs font-semibold text-[#333333]" for="shop-name">
-				{t('shop.customerName')}
-			</label>
-			<input
-				id="shop-name"
-				type="text"
-				bind:value={customerName}
-				required
-				maxlength={120}
-				placeholder={t('shop.customerNamePlaceholder')}
-				autocomplete="name"
-				class="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-[#333333] outline-none placeholder:text-neutral-400 focus:border-[#ff6534]"
-			/>
-			<label class="mt-3 mb-1 block text-xs font-semibold text-[#333333]" for="shop-phone">
-				{t('shop.customerPhone')}
-			</label>
-			<input
-				id="shop-phone"
-				type="tel"
-				bind:value={customerPhone}
-				required
-				maxlength={30}
-				placeholder={t('shop.customerPhonePlaceholder')}
-				autocomplete="tel"
-				class="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-[#333333] outline-none placeholder:text-neutral-400 focus:border-[#ff6534]"
-			/>
+			{#if memberAuthState.member}
+				{@const member = memberAuthState.member}
+				<p class="text-sm font-bold text-[#333333]">
+					{member.full_name} <span class="font-normal text-neutral-500">({member.member_no})</span>
+				</p>
+				<p class="mt-0.5 text-sm text-neutral-500">{member.phone}</p>
+				<p class="mt-2 rounded-xl bg-emerald-50 p-2.5 text-xs text-emerald-700">
+					{t('shop.checkoutAsMember')
+						.replace('{name}', member.full_name)
+						.replace('{memberNo}', member.member_no)}
+				</p>
+			{:else}
+				<label class="mb-1 block text-xs font-semibold text-[#333333]" for="shop-name">
+					{t('shop.customerName')}
+				</label>
+				<input
+					id="shop-name"
+					type="text"
+					bind:value={customerName}
+					required
+					maxlength={120}
+					placeholder={t('shop.customerNamePlaceholder')}
+					autocomplete="name"
+					class="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-[#333333] outline-none placeholder:text-neutral-400 focus:border-[#ff6534]"
+				/>
+				<label class="mt-3 mb-1 block text-xs font-semibold text-[#333333]" for="shop-phone">
+					{t('shop.customerPhone')}
+				</label>
+				<input
+					id="shop-phone"
+					type="tel"
+					bind:value={customerPhone}
+					required
+					maxlength={30}
+					placeholder={t('shop.customerPhonePlaceholder')}
+					autocomplete="tel"
+					class="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-[#333333] outline-none placeholder:text-neutral-400 focus:border-[#ff6534]"
+				/>
+				<a
+					href={resolve('/shop/account/login')}
+					class="mt-3 block text-xs font-semibold text-[#ff6534] hover:underline"
+				>
+					{t('shop.loginPrompt')}
+				</a>
+			{/if}
 		</section>
 
 		<section class="rounded-2xl bg-white p-4 shadow-sm">

@@ -6,6 +6,7 @@
 	import PackageCheckIcon from '@lucide/svelte/icons/package-check';
 	import PackageIcon from '@lucide/svelte/icons/package';
 	import TruckIcon from '@lucide/svelte/icons/truck';
+	import { getMember } from '$lib/api/members.js';
 	import { getOnlineOrder, type OnlineOrderDetail } from '$lib/api/online-orders.js';
 	import { ApiError } from '$lib/api/types.js';
 	import DetailField from '$lib/components/detail-field.svelte';
@@ -32,6 +33,7 @@
 	} = $props();
 
 	let detail = $state<OnlineOrderDetail | null>(null);
+	let memberLabel = $state<string | null>(null);
 	let isLoading = $state(false);
 	let errorMessage = $state<string | null>(null);
 	let latestRequestId = 0;
@@ -108,9 +110,11 @@
 			const result = await getOnlineOrder(id);
 			if (requestId !== latestRequestId) return;
 			detail = result;
+			memberLabel = await resolveMemberLabel(result.order.member_id, requestId);
 		} catch (error) {
 			if (requestId !== latestRequestId) return;
 			detail = null;
+			memberLabel = null;
 			errorMessage = getErrorMessage(error);
 		} finally {
 			if (requestId === latestRequestId) {
@@ -126,7 +130,19 @@
 
 	async function handleActionDone(next: OnlineOrderDetail) {
 		detail = next;
+		memberLabel = await resolveMemberLabel(next.order.member_id, latestRequestId);
 		await onChanged?.();
+	}
+
+	async function resolveMemberLabel(memberId: number | null, requestId: number) {
+		if (!memberId) return null;
+		try {
+			const member = await getMember(memberId);
+			if (requestId !== latestRequestId) return null;
+			return `${member.full_name} (${member.member_no})`;
+		} catch {
+			return null;
+		}
 	}
 
 	function fulfillmentLabel(value: string) {
@@ -187,6 +203,7 @@
 						label={t('point_flow.onlineOrders.customerPhone')}
 						value={order.customer_phone}
 					/>
+					<DetailField label={t('point_flow.onlineOrders.member')} value={memberLabel || '-'} />
 					<DetailField
 						label={t('point_flow.onlineOrders.colFulfillment')}
 						value={fulfillmentLabel(order.fulfillment_method)}
