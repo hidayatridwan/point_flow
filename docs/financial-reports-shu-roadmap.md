@@ -101,16 +101,21 @@ Gate review: JSON contoh ketiga laporan dari fixture yang sama.
 
 Tujuan: admin mencatat keuangan manual dan membaca tiga laporan dari dashboard.
 
-- [ ] Halaman `finances/transactions`: list (filter tanggal/type/kategori, paginasi) +
+- [x] Halaman `finances/transactions`: list (filter tanggal/type/kategori, paginasi) +
       dialog create/edit + cancel dengan alasan + dialog kategori (Bagian 2.3)
-- [ ] Laporan `reports/income-statement`, `reports/cash-flow`, `reports/financial-position`
+- [x] Laporan `reports/income-statement`, `reports/cash-flow`, `reports/financial-position`
       (kartu ringkasan + tabel, filter periode)
-- [ ] `lib/api/finances.ts` + extend `lib/api/reports.ts`
-- [ ] i18n `finances.*`, `reports.incomeStatement.*`, `reports.cashFlow.*`,
-      `reports.financialPosition.*` (id/en) + registrasi nav sidebar
+- [x] `lib/api/finances.ts` + extend `lib/api/reports.ts`
+- [x] i18n `finances.*`, `reports.incomeStatement.*`, `reports.cashFlow.*`,
+      `reports.financialPosition.*` (id/en) + registrasi nav sidebar (grup Keuangan,
+      ikon wallet; `common.all` baru untuk opsi "Semua")
 
-Validasi: `bun run check` 0 error, `bun run lint` bersih di file tersentuh,
-`bun run build` sukses; angka di halaman cocok dengan JSON backend (fixture Fase 3).
+Validasi (2026-11-09): `bun run check` 0 error, `bun run lint` bersih di file
+tersentuh (file pre-existing yang belum prettier-clean tidak disentuh),
+`bun run build` sukses. Smoke API dengan bentuk request persis seperti frontend
+kirim (scratch `point_flow_fase4`): filter `type`+`status`, `financial_category_id`+
+`search`, `date_from` saja, `as_of` — semua cocok. Tanpa smoke browser (tidak ada
+Chromium di mesin ini; tidak install apa pun).
 Gate review: buka halaman di browser, satu alur penuh: catat expense → lihat laporan berubah.
 
 ## Fase 5 — Migrasi `012_add_members.sql`

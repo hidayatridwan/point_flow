@@ -10,6 +10,7 @@
 	import TruckIcon from '@lucide/svelte/icons/truck';
 	import SettingsIcon from '@lucide/svelte/icons/settings';
 	import UserCogIcon from '@lucide/svelte/icons/user-cog';
+	import WalletIcon from '@lucide/svelte/icons/wallet';
 	import WarehouseIcon from '@lucide/svelte/icons/warehouse';
 
 	const data = {
@@ -143,6 +144,29 @@
 							{
 								titleKey: 'nav.payrollReport',
 								url: '/payroll/report'
+							}
+						]
+					},
+					{
+						titleKey: 'nav.finances',
+						url: '/finances/transactions',
+						icon: WalletIcon,
+						items: [
+							{
+								titleKey: 'nav.financialTransactions',
+								url: '/finances/transactions'
+							},
+							{
+								titleKey: 'nav.incomeStatement',
+								url: '/reports/income-statement'
+							},
+							{
+								titleKey: 'nav.cashFlow',
+								url: '/reports/cash-flow'
+							},
+							{
+								titleKey: 'nav.financialPosition',
+								url: '/reports/financial-position'
 							}
 						]
 					},

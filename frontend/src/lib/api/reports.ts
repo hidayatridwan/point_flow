@@ -1,4 +1,4 @@
-import { apiGetEnvelope } from './client.js';
+import { apiGet, apiGetEnvelope } from './client.js';
 import type { GoodsReceiptStatus } from './goods-receipts.js';
 import { goodsReceiptStatuses } from './goods-receipts.js';
 import type { PurchaseOrderStatus } from './purchase-orders.js';
@@ -304,4 +304,72 @@ function normalizeStatuses<TStatus extends string>(
 	return value.filter(
 		(status, index) => allowedStatuses.includes(status) && value.indexOf(status) === index
 	);
+}
+
+export type IncomeStatement = {
+	gross_revenue: number;
+	return_amount: number;
+	net_revenue: number;
+	cogs: number;
+	gross_profit: number;
+	payroll_expense: number;
+	other_expense: number;
+	net_profit: number;
+};
+
+export type CashFlow = {
+	cash_in_sales: number;
+	cash_in_manual: number;
+	total_cash_in: number;
+	cash_out_drawer: number;
+	cash_out_manual: number;
+	total_cash_out: number;
+	net_cash_flow: number;
+};
+
+export type FinancialPosition = {
+	as_of: string;
+	cash: number;
+	inventory_value: number;
+	total_assets: number;
+	cumulative_net_profit: number;
+};
+
+export type FinancialPeriodParams = {
+	date_from?: string;
+	date_to?: string;
+};
+
+export type FinancialPositionParams = {
+	as_of?: string;
+};
+
+export async function getIncomeStatement(
+	params: FinancialPeriodParams = {}
+): Promise<IncomeStatement> {
+	return apiGet<IncomeStatement>('/reports/income-statement', {
+		params: {
+			date_from: params.date_from?.trim() || undefined,
+			date_to: params.date_to?.trim() || undefined
+		}
+	});
+}
+
+export async function getCashFlow(params: FinancialPeriodParams = {}): Promise<CashFlow> {
+	return apiGet<CashFlow>('/reports/cash-flow', {
+		params: {
+			date_from: params.date_from?.trim() || undefined,
+			date_to: params.date_to?.trim() || undefined
+		}
+	});
+}
+
+export async function getFinancialPosition(
+	params: FinancialPositionParams = {}
+): Promise<FinancialPosition> {
+	return apiGet<FinancialPosition>('/reports/financial-position', {
+		params: {
+			as_of: params.as_of?.trim() || undefined
+		}
+	});
 }
