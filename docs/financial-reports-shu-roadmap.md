@@ -231,15 +231,26 @@ Gate review: coba dua checkout dari HP (member & guest), bandingkan hasilnya.
 
 Tujuan: skema periode profit sharing (SHU) dan snapshot distribusi.
 
-- [ ] Tabel `profit_sharing_periods` — 6 bucket kolom fixed + CHECK total 100%
+- [x] Tabel `profit_sharing_periods` — 6 bucket kolom fixed + CHECK total 100%
       (desain Bagian 4.1)
-- [ ] Tabel `profit_sharing_distributions` + UNIQUE (period, member) (desain Bagian 4.1)
-- [ ] Enum status `draft/calculated/finalized/cancelled` + kolom jejak
+- [x] Tabel `profit_sharing_distributions` + UNIQUE (period, member) (desain Bagian 4.1)
+- [x] Enum status `draft/calculated/finalized/cancelled` + kolom jejak
       (`auto_net_profit`, `finalized_by`, `cancel_reason`, dst.)
-- [ ] Seed permission `profit_sharing` ke role yang sesuai
-- [ ] Uji di database kosong dan salinan data (001–013 berurutan; CHECK 100% enforced)
+- [x] Seed permission `profit_sharing` ke role yang sesuai — `admin` saja
+      (pola `finances` 011; kasir → 403 di Fase 10)
+- [x] Uji di database kosong dan salinan data (001–013 berurutan; CHECK 100% enforced)
 
-Validasi: migrasi naik bersih; insert persentase ≠ 100 ditolak.
+Validasi (2026-11-09, scratch Postgres `point_flow_fase9`, 001–013): migrasi naik
+bersih; insert pct 50+10+10+10+10+5 (= 105) ditolak
+(`profit_sharing_periods_pct_sum`); insert 50+10+15+10+10+5 (= 100) lolos +
+default `draft`; status `archived` ditolak (enum); `end_date < start_date`
+ditolak; duplikat (period, member) ditolak; hapus member terpakai → RESTRICT,
+hapus periode → distribusi ikut terhapus (CASCADE); trigger `set_updated_at`
+jalan; permission `profit_sharing` ter-grant ke `admin` saja;
+`cargo test` 22 passed.
+Catatan deviasi kecil: tambah CHECK `start_date <= end_date` (tidak ada di
+desain Bagian 4.1; mencegah periode terbalik) + trigger `set_updated_at` dan
+index tanggal/status (konvensi 011/012).
 Gate review: diff `backend/migrations/013_add_profit_sharing.sql`.
 
 ## Fase 10 — Backend modul profit sharing
