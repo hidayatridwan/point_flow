@@ -4,11 +4,11 @@ use sqlx::PgPool;
 use crate::{
     error::{AppError, AppResult},
     models::{
-        CashierPerformance, DailySalesReport, DashboardResponse, GoodsReceiptReport,
-        HourlySalesPoint, ListQuery, MonthlySalesReport, PayrollReport, ProcurementFunnel,
-        ProductScatterItem, PurchaseOrderReport, SalesByCategoryItem, SalesTrendPoint,
-        StockAdjustmentReport, StockMovementReport, StockMovementReportQuery, StockReport,
-        TopProductItem,
+        CashFlowResponse, CashierPerformance, DailySalesReport, DashboardResponse,
+        FinancialPositionResponse, GoodsReceiptReport, HourlySalesPoint, IncomeStatementResponse,
+        ListQuery, MonthlySalesReport, PayrollReport, ProcurementFunnel, ProductScatterItem,
+        PurchaseOrderReport, SalesByCategoryItem, SalesTrendPoint, StockAdjustmentReport,
+        StockMovementReport, StockMovementReportQuery, StockReport, TopProductItem,
     },
 };
 
@@ -594,6 +594,209 @@ pub async fn cashier_performance(pool: &PgPool, days: i32) -> AppResult<Vec<Cash
     )
     .bind(days)
     .fetch_all(pool)
+    .await
+    .map_err(Into::into)
+}
+
+/// Laba rugi derivatif (desain Bagian 2.2). HPP memakai snapshot
+/// `sale_items.unit_cost`, fallback ke harga beli berjalan untuk penjualan
+/// pra-migrasi (`unit_cost = 0`). Retur mengurangi pendapatan dan HPP
+/// proporsional berdasarkan tanggal retur.
+pub async fn income_statement(
+    pool: &PgPool,
+    from: Option<NaiveDate>,
+    to: Option<NaiveDate>,
+) -> AppResult<IncomeStatementResponse> {
+    sqlx::query_as::<_, IncomeStatementResponse>(
+        r#"
+        WITH base AS (
+            SELECT
+                (SELECT COALESCE(SUM(total_amount), 0)
+                 FROM sales
+                 WHERE status = 'completed'
+                     AND ($1::date IS NULL OR sold_at::date >= $1)
+                     AND ($2::date IS NULL OR sold_at::date <= $2)) AS gross_revenue,
+                (SELECT COALESCE(SUM(subtotal_amount), 0)
+                 FROM sale_returns
+                 WHERE status = 'completed'
+                     AND ($1::date IS NULL OR returned_at::date >= $1)
+                     AND ($2::date IS NULL OR returned_at::date <= $2)) AS return_amount,
+                (SELECT COALESCE(SUM(si.quantity * COALESCE(NULLIF(si.unit_cost, 0), ps.purchase_price)), 0)
+                 FROM sale_items si
+                 JOIN sales s ON s.id = si.sale_id
+                 JOIN product_skus ps ON ps.id = si.product_sku_id
+                 WHERE s.status = 'completed'
+                     AND ($1::date IS NULL OR s.sold_at::date >= $1)
+                     AND ($2::date IS NULL OR s.sold_at::date <= $2)) AS cogs_gross,
+                (SELECT COALESCE(SUM(sri.quantity * COALESCE(NULLIF(si.unit_cost, 0), ps.purchase_price)), 0)
+                 FROM sale_return_items sri
+                 JOIN sale_returns sr ON sr.id = sri.sale_return_id
+                 JOIN sale_items si ON si.id = sri.sale_item_id
+                 JOIN product_skus ps ON ps.id = si.product_sku_id
+                 WHERE sr.status = 'completed'
+                     AND ($1::date IS NULL OR sr.returned_at::date >= $1)
+                     AND ($2::date IS NULL OR sr.returned_at::date <= $2)) AS cogs_returned,
+                (SELECT COALESCE(SUM(net_salary), 0)
+                 FROM payroll_slips
+                 WHERE ($1::date IS NULL OR period_start >= $1)
+                     AND ($2::date IS NULL OR period_end <= $2)) AS payroll_expense,
+                (SELECT COALESCE(SUM(amount), 0)
+                 FROM financial_transactions
+                 WHERE type = 'expense'
+                     AND status = 'completed'
+                     AND ($1::date IS NULL OR occurred_at::date >= $1)
+                     AND ($2::date IS NULL OR occurred_at::date <= $2)) AS other_expense
+        )
+        SELECT
+            gross_revenue::float8 AS gross_revenue,
+            return_amount::float8 AS return_amount,
+            (gross_revenue - return_amount)::float8 AS net_revenue,
+            (cogs_gross - cogs_returned)::float8 AS cogs,
+            (gross_revenue - return_amount - (cogs_gross - cogs_returned))::float8 AS gross_profit,
+            payroll_expense::float8 AS payroll_expense,
+            other_expense::float8 AS other_expense,
+            (gross_revenue - return_amount - (cogs_gross - cogs_returned) - payroll_expense - other_expense)::float8 AS net_profit
+        FROM base
+        "#,
+    )
+    .bind(from)
+    .bind(to)
+    .fetch_one(pool)
+    .await
+    .map_err(Into::into)
+}
+
+/// Arus kas derivatif (desain Bagian 2.2). Hanya transaksi tunai
+/// (`is_cash = TRUE`) yang dihitung; pergerakan drawer `cash_in` bukan kas keluar.
+pub async fn cash_flow(
+    pool: &PgPool,
+    from: Option<NaiveDate>,
+    to: Option<NaiveDate>,
+) -> AppResult<CashFlowResponse> {
+    sqlx::query_as::<_, CashFlowResponse>(
+        r#"
+        WITH base AS (
+            SELECT
+                (SELECT COALESCE(SUM(total_amount), 0)
+                 FROM sales
+                 WHERE status = 'completed'
+                     AND ($1::date IS NULL OR sold_at::date >= $1)
+                     AND ($2::date IS NULL OR sold_at::date <= $2)) AS cash_in_sales,
+                (SELECT COALESCE(SUM(amount), 0)
+                 FROM financial_transactions
+                 WHERE type = 'income'
+                     AND status = 'completed'
+                     AND is_cash = TRUE
+                     AND ($1::date IS NULL OR occurred_at::date >= $1)
+                     AND ($2::date IS NULL OR occurred_at::date <= $2)) AS cash_in_manual,
+                (SELECT COALESCE(SUM(amount), 0)
+                 FROM cash_drawer_movements
+                 WHERE movement_type IN ('cash_out', 'cash_drop', 'petty_cash')
+                     AND status = 'completed'
+                     AND ($1::date IS NULL OR occurred_at::date >= $1)
+                     AND ($2::date IS NULL OR occurred_at::date <= $2)) AS cash_out_drawer,
+                (SELECT COALESCE(SUM(amount), 0)
+                 FROM financial_transactions
+                 WHERE type = 'expense'
+                     AND status = 'completed'
+                     AND is_cash = TRUE
+                     AND ($1::date IS NULL OR occurred_at::date >= $1)
+                     AND ($2::date IS NULL OR occurred_at::date <= $2)) AS cash_out_manual
+        )
+        SELECT
+            cash_in_sales::float8 AS cash_in_sales,
+            cash_in_manual::float8 AS cash_in_manual,
+            (cash_in_sales + cash_in_manual)::float8 AS total_cash_in,
+            cash_out_drawer::float8 AS cash_out_drawer,
+            cash_out_manual::float8 AS cash_out_manual,
+            (cash_out_drawer + cash_out_manual)::float8 AS total_cash_out,
+            ((cash_in_sales + cash_in_manual) - (cash_out_drawer + cash_out_manual))::float8 AS net_cash_flow
+        FROM base
+        "#,
+    )
+    .bind(from)
+    .bind(to)
+    .fetch_one(pool)
+    .await
+    .map_err(Into::into)
+}
+
+/// Posisi keuangan sederhana (desain Bagian 2.2): kas dan laba dihitung
+/// kumulatif dari transaksi pertama s/d `as_of` (default hari ini);
+/// persediaan memakai snapshot stok × harga beli saat ini.
+pub async fn financial_position(
+    pool: &PgPool,
+    as_of: Option<NaiveDate>,
+) -> AppResult<FinancialPositionResponse> {
+    sqlx::query_as::<_, FinancialPositionResponse>(
+        r#"
+        WITH base AS (
+            SELECT
+                COALESCE($1, CURRENT_DATE)::date AS cutoff,
+                (SELECT COALESCE(SUM(total_amount), 0)
+                 FROM sales
+                 WHERE status = 'completed'
+                     AND sold_at::date <= COALESCE($1, CURRENT_DATE)) AS cash_in_sales,
+                (SELECT COALESCE(SUM(amount), 0)
+                 FROM financial_transactions
+                 WHERE type = 'income'
+                     AND status = 'completed'
+                     AND is_cash = TRUE
+                     AND occurred_at::date <= COALESCE($1, CURRENT_DATE)) AS cash_in_manual,
+                (SELECT COALESCE(SUM(amount), 0)
+                 FROM cash_drawer_movements
+                 WHERE movement_type IN ('cash_out', 'cash_drop', 'petty_cash')
+                     AND status = 'completed'
+                     AND occurred_at::date <= COALESCE($1, CURRENT_DATE)) AS cash_out_drawer,
+                (SELECT COALESCE(SUM(amount), 0)
+                 FROM financial_transactions
+                 WHERE type = 'expense'
+                     AND status = 'completed'
+                     AND is_cash = TRUE
+                     AND occurred_at::date <= COALESCE($1, CURRENT_DATE)) AS cash_out_manual,
+                (SELECT COALESCE(SUM(stock * purchase_price), 0)
+                 FROM v_stock_report) AS inventory_value,
+                (SELECT COALESCE(SUM(total_amount), 0)
+                 FROM sales
+                 WHERE status = 'completed'
+                     AND sold_at::date <= COALESCE($1, CURRENT_DATE)) AS gross_revenue,
+                (SELECT COALESCE(SUM(subtotal_amount), 0)
+                 FROM sale_returns
+                 WHERE status = 'completed'
+                     AND returned_at::date <= COALESCE($1, CURRENT_DATE)) AS return_amount,
+                (SELECT COALESCE(SUM(si.quantity * COALESCE(NULLIF(si.unit_cost, 0), ps.purchase_price)), 0)
+                 FROM sale_items si
+                 JOIN sales s ON s.id = si.sale_id
+                 JOIN product_skus ps ON ps.id = si.product_sku_id
+                 WHERE s.status = 'completed'
+                     AND s.sold_at::date <= COALESCE($1, CURRENT_DATE)) AS cogs_gross,
+                (SELECT COALESCE(SUM(sri.quantity * COALESCE(NULLIF(si.unit_cost, 0), ps.purchase_price)), 0)
+                 FROM sale_return_items sri
+                 JOIN sale_returns sr ON sr.id = sri.sale_return_id
+                 JOIN sale_items si ON si.id = sri.sale_item_id
+                 JOIN product_skus ps ON ps.id = si.product_sku_id
+                 WHERE sr.status = 'completed'
+                     AND sr.returned_at::date <= COALESCE($1, CURRENT_DATE)) AS cogs_returned,
+                (SELECT COALESCE(SUM(net_salary), 0)
+                 FROM payroll_slips
+                 WHERE period_end <= COALESCE($1, CURRENT_DATE)) AS payroll_expense,
+                (SELECT COALESCE(SUM(amount), 0)
+                 FROM financial_transactions
+                 WHERE type = 'expense'
+                     AND status = 'completed'
+                     AND occurred_at::date <= COALESCE($1, CURRENT_DATE)) AS other_expense
+        )
+        SELECT
+            cutoff AS as_of,
+            ((cash_in_sales + cash_in_manual) - (cash_out_drawer + cash_out_manual))::float8 AS cash,
+            inventory_value::float8 AS inventory_value,
+            (((cash_in_sales + cash_in_manual) - (cash_out_drawer + cash_out_manual)) + inventory_value)::float8 AS total_assets,
+            (gross_revenue - return_amount - (cogs_gross - cogs_returned) - payroll_expense - other_expense)::float8 AS cumulative_net_profit
+        FROM base
+        "#,
+    )
+    .bind(as_of)
+    .fetch_one(pool)
     .await
     .map_err(Into::into)
 }

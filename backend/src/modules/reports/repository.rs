@@ -4,11 +4,11 @@ use sqlx::PgPool;
 use crate::{
     error::AppResult,
     models::{
-        CashierPerformance, DailySalesReport, DashboardResponse, GoodsReceiptReport,
-        HourlySalesPoint, ListQuery, MonthlySalesReport, PayrollReport, ProcurementFunnel,
-        ProductScatterItem, PurchaseOrderReport, SalesByCategoryItem, SalesTrendPoint,
-        StockAdjustmentReport, StockMovementReport, StockMovementReportQuery, StockReport,
-        TopProductItem,
+        CashFlowResponse, CashierPerformance, DailySalesReport, DashboardResponse,
+        FinancialPositionResponse, GoodsReceiptReport, HourlySalesPoint, IncomeStatementResponse,
+        ListQuery, MonthlySalesReport, PayrollReport, ProcurementFunnel, ProductScatterItem,
+        PurchaseOrderReport, SalesByCategoryItem, SalesTrendPoint, StockAdjustmentReport,
+        StockMovementReport, StockMovementReportQuery, StockReport, TopProductItem,
     },
     services::reports,
 };
@@ -92,4 +92,27 @@ pub async fn cashier_performance(pool: &PgPool, days: i32) -> AppResult<Vec<Cash
 
 pub async fn procurement_funnel(pool: &PgPool) -> AppResult<ProcurementFunnel> {
     reports::procurement_funnel(pool).await
+}
+
+pub async fn income_statement(
+    pool: &PgPool,
+    from: Option<NaiveDate>,
+    to: Option<NaiveDate>,
+) -> AppResult<IncomeStatementResponse> {
+    reports::income_statement(pool, from, to).await
+}
+
+pub async fn cash_flow(
+    pool: &PgPool,
+    from: Option<NaiveDate>,
+    to: Option<NaiveDate>,
+) -> AppResult<CashFlowResponse> {
+    reports::cash_flow(pool, from, to).await
+}
+
+pub async fn financial_position(
+    pool: &PgPool,
+    as_of: Option<NaiveDate>,
+) -> AppResult<FinancialPositionResponse> {
+    reports::financial_position(pool, as_of).await
 }

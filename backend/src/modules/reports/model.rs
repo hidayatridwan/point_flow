@@ -1,4 +1,5 @@
 pub use crate::models::{
-    DailySalesReport, DashboardResponse, GoodsReceiptReport, MonthlySalesReport, PayrollReport,
+    CashFlowResponse, DailySalesReport, DashboardResponse, FinancialPositionResponse,
+    GoodsReceiptReport, IncomeStatementResponse, MonthlySalesReport, PayrollReport,
     PurchaseOrderReport, StockAdjustmentReport, StockMovementReport, StockReport,
 };

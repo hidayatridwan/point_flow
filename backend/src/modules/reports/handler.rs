@@ -9,18 +9,19 @@ use crate::{
     auth::AuthUser,
     error::AppResult,
     models::{
-        ApiResponse, CashierPerformance, DailySalesReport, DashboardResponse, GoodsReceiptReport,
-        HourlySalesPoint, ListQuery, MonthlySalesReport, PayrollReport, ProcurementFunnel,
-        ProductScatterItem, PurchaseOrderReport, SalesByCategoryItem, SalesTrendPoint,
-        StockAdjustmentReport, StockMovementReport, StockMovementReportQuery, StockReport,
-        TopProductItem,
+        ApiResponse, CashFlowResponse, CashierPerformance, DailySalesReport, DashboardResponse,
+        FinancialPositionResponse, GoodsReceiptReport, HourlySalesPoint, IncomeStatementResponse,
+        ListQuery, MonthlySalesReport, PayrollReport, ProcurementFunnel, ProductScatterItem,
+        PurchaseOrderReport, SalesByCategoryItem, SalesTrendPoint, StockAdjustmentReport,
+        StockMovementReport, StockMovementReportQuery, StockReport, TopProductItem,
     },
 };
 
 use super::{
     dto::{
-        CashierPerformanceQuery, HourlySalesQuery, LowStockQuery, ProductScatterQuery,
-        SalesByCategoryQuery, SalesTrendQuery, TopProductsQuery,
+        CashierPerformanceQuery, FinancialPeriodQuery, FinancialPositionQuery, HourlySalesQuery,
+        LowStockQuery, ProductScatterQuery, SalesByCategoryQuery, SalesTrendQuery,
+        TopProductsQuery,
     },
     service,
 };
@@ -219,5 +220,38 @@ pub async fn procurement_funnel(
     user.require_permission(&state.db, "dashboard").await?;
     Ok(Json(ApiResponse::success(
         service::procurement_funnel(&state.db).await?,
+    )))
+}
+
+pub async fn income_statement(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(query): Query<FinancialPeriodQuery>,
+) -> AppResult<Json<ApiResponse<IncomeStatementResponse>>> {
+    user.require_permission(&state.db, "finances").await?;
+    Ok(Json(ApiResponse::success(
+        service::income_statement(&state.db, query.date_from, query.date_to).await?,
+    )))
+}
+
+pub async fn cash_flow(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(query): Query<FinancialPeriodQuery>,
+) -> AppResult<Json<ApiResponse<CashFlowResponse>>> {
+    user.require_permission(&state.db, "finances").await?;
+    Ok(Json(ApiResponse::success(
+        service::cash_flow(&state.db, query.date_from, query.date_to).await?,
+    )))
+}
+
+pub async fn financial_position(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(query): Query<FinancialPositionQuery>,
+) -> AppResult<Json<ApiResponse<FinancialPositionResponse>>> {
+    user.require_permission(&state.db, "finances").await?;
+    Ok(Json(ApiResponse::success(
+        service::financial_position(&state.db, query.as_of).await?,
     )))
 }

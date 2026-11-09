@@ -1337,3 +1337,42 @@ pub struct UpdateFinancialTransactionRequest {
     pub is_cash: Option<bool>,
     pub description: Option<String>,
 }
+
+/// Laba rugi derivatif (desain 2.2): pendapatan net retur, HPP snapshot
+/// `unit_cost` (fallback harga beli berjalan untuk penjualan pra-migrasi),
+/// beban gaji + beban manual, laba kotor & bersih.
+#[derive(Debug, Serialize, FromRow)]
+pub struct IncomeStatementResponse {
+    pub gross_revenue: f64,
+    pub return_amount: f64,
+    pub net_revenue: f64,
+    pub cogs: f64,
+    pub gross_profit: f64,
+    pub payroll_expense: f64,
+    pub other_expense: f64,
+    pub net_profit: f64,
+}
+
+/// Arus kas derivatif (desain 2.2): transaksi non-tunai (`is_cash = false`)
+/// tidak masuk kas; pergerakan drawer `cash_in` bukan kas keluar.
+#[derive(Debug, Serialize, FromRow)]
+pub struct CashFlowResponse {
+    pub cash_in_sales: f64,
+    pub cash_in_manual: f64,
+    pub total_cash_in: f64,
+    pub cash_out_drawer: f64,
+    pub cash_out_manual: f64,
+    pub total_cash_out: f64,
+    pub net_cash_flow: f64,
+}
+
+/// Posisi keuangan sederhana (desain 2.2): kas kumulatif + persediaan
+/// (stok × harga beli saat ini) + laba kumulatif.
+#[derive(Debug, Serialize, FromRow)]
+pub struct FinancialPositionResponse {
+    pub as_of: NaiveDate,
+    pub cash: f64,
+    pub inventory_value: f64,
+    pub total_assets: f64,
+    pub cumulative_net_profit: f64,
+}

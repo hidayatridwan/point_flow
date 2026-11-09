@@ -35,4 +35,10 @@ pub fn routes() -> Router<AppState> {
             get(handler::stock_adjustments),
         )
         .route("/reports/payroll", get(handler::payroll))
+        .route("/reports/income-statement", get(handler::income_statement))
+        .route("/reports/cash-flow", get(handler::cash_flow))
+        .route(
+            "/reports/financial-position",
+            get(handler::financial_position),
+        )
 }

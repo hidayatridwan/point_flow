@@ -67,17 +67,34 @@ Gate review: daftar endpoint + contoh respons create/cancel transaksi.
 
 Tujuan: laba rugi, arus kas, dan posisi keuangan tersaji dari data operasional + transaksi manual.
 
-- [ ] `GET /reports/income-statement?date_from&date_to` — pendapatan net retur, HPP dari
+- [x] `GET /reports/income-statement?date_from&date_to` — pendapatan net retur, HPP dari
       `unit_cost`, beban payroll + manual, laba kotor & bersih (formula desain Bagian 2.2)
-- [ ] `GET /reports/cash-flow?date_from&date_to` — masuk: sales + income `is_cash`;
+- [x] `GET /reports/cash-flow?date_from&date_to` — masuk: sales + income `is_cash`;
       keluar: drawer movements + expense `is_cash`
-- [ ] `GET /reports/financial-position?as_of` — kas kumulatif, persediaan (stok × harga
+- [x] `GET /reports/financial-position?as_of` — kas kumulatif, persediaan (stok × harga
       beli), laba kumulatif (desain Bagian 2.2)
-- [ ] RBAC: laporan keuangan hanya role berpermission (default admin)
-- [ ] Registrasi route di modul reports tanpa mengubah struktur yang ada
+- [x] RBAC: laporan keuangan hanya role berpermission (default admin) — dipakai permission
+      `finances` (seed 011); kasir → 403, tanpa token → 401
+- [x] Registrasi route di modul reports tanpa mengubah struktur yang ada (tambah handler +
+      repository wrapper + query struct `FinancialPeriodQuery`/`FinancialPositionQuery`)
 
-Validasi: `curl` dengan fixture (sales + retur + payroll + expense manual) — rekonsiliasi
-angka laporan vs hitungan manual, termasuk kasus `is_cash=false` dan retur.
+Validasi (2026-11-09, scratch Postgres `point_flow_fase3`, 001–011 + fixture: 3 sales —
+satu `sold_at` Okt, 1 retur parsial restock, 1 slip gaji Nov 3300000, expense cash
+150000 + non-cash 25000 + 1 cancelled, income cash 100000, drawer `petty_cash`
+50000): `cargo test` 16 passed, clippy bersih kecuali 2 warning pre-existing
+`master.rs`, `fmt --check` bersih. Rekonsiliasi cocok semua — laba rugi full:
+440000/75000/365000/215000/150000/3300000/175000/−3325000; filter Nov:
+370000/…/−3355000; arus kas: masuk 540000, keluar 200000, net 340000 (non-cash
+25000 terdepak dari kas tapi masuk beban); posisi default: kas 340000, persediaan
+5285000, aset 5625000; `as_of=2026-10-15`: kas 70000, laba 30000; `as_of=2026-12-01`:
+laba −3325000 (slip Nov masuk setelah `period_end`, konsisten predikat laporan
+payroll repo `period_end <= to`).
+Catatan deviasi kecil: HPP memakai `COALESCE(NULLIF(unit_cost,0), purchase_price)`
+karena kolom `unit_cost NOT NULL DEFAULT 0` membuat `COALESCE(unit_cost, …)` desain
+tidak pernah fallback untuk penjualan pra-migrasi — intent "harga berjalan" tetap
+terpenuhi. Observasi (sesuai desain, tidak diubah): pendapatan manual (`income`)
+tidak masuk laba rugi; retur tidak mengurangi arus kas; `cash_in` drawer tidak
+dihitung; persediaan posisi selalu snapshot saat ini.
 Gate review: JSON contoh ketiga laporan dari fixture yang sama.
 
 ## Fase 4 — Frontend keuangan

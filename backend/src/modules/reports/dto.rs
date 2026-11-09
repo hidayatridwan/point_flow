@@ -39,3 +39,14 @@ pub struct ProductScatterQuery {
 pub struct CashierPerformanceQuery {
     pub days: Option<i32>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct FinancialPeriodQuery {
+    pub date_from: Option<NaiveDate>,
+    pub date_to: Option<NaiveDate>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct FinancialPositionQuery {
+    pub as_of: Option<NaiveDate>,
+}
