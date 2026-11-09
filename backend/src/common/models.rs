@@ -883,6 +883,7 @@ pub struct SaleResponse {
     pub sold_at: DateTime<Utc>,
     pub cashier_id: i64,
     pub cashier_name: String,
+    pub member_id: Option<i64>,
     pub cash_register_session_id: Option<i64>,
     pub cash_register_id: Option<i64>,
     pub cash_register_code: Option<String>,
@@ -994,6 +995,7 @@ pub struct ReturnableSaleItemResponse {
 pub struct CreateSaleRequest {
     pub sold_at: Option<DateTime<Utc>>,
     pub cash_register_session_id: Option<i64>,
+    pub member_id: Option<i64>,
     pub paid_amount: f64,
     pub notes: Option<String>,
     pub items: Vec<SaleItemInput>,
@@ -1336,6 +1338,70 @@ pub struct UpdateFinancialTransactionRequest {
     pub amount: Option<f64>,
     pub is_cash: Option<bool>,
     pub description: Option<String>,
+}
+
+/// Filter list anggota: pencarian nama/telepon/nomor + status aktif.
+#[derive(Debug, Deserialize)]
+pub struct MemberQuery {
+    pub search: Option<String>,
+    pub is_active: Option<bool>,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+
+impl MemberQuery {
+    pub fn limit(&self) -> i64 {
+        self.limit.unwrap_or(50).clamp(1, 100)
+    }
+
+    pub fn offset(&self) -> i64 {
+        self.offset.unwrap_or(0).max(0)
+    }
+
+    pub fn search_pattern(&self) -> String {
+        format!("%{}%", self.search.as_deref().unwrap_or("").to_lowercase())
+    }
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct MemberResponse {
+    pub id: i64,
+    pub member_no: String,
+    pub full_name: String,
+    pub phone: String,
+    pub email: Option<String>,
+    pub address: Option<String>,
+    pub joined_at: DateTime<Utc>,
+    pub is_active: bool,
+    pub notes: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateMemberRequest {
+    pub full_name: String,
+    pub phone: String,
+    pub email: Option<String>,
+    pub password: String,
+    pub address: Option<String>,
+    pub is_active: Option<bool>,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateMemberRequest {
+    pub full_name: Option<String>,
+    pub phone: Option<String>,
+    pub email: Option<String>,
+    pub address: Option<String>,
+    pub is_active: Option<bool>,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ResetMemberPasswordRequest {
+    pub new_password: String,
 }
 
 /// Laba rugi derivatif (desain 2.2): pendapatan net retur, HPP snapshot

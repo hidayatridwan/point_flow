@@ -194,6 +194,7 @@ const SALE_SELECT: &str = r#"
         s.sold_at,
         s.cashier_id,
         u.name AS cashier_name,
+        s.member_id,
         s.cash_register_session_id,
         crs.cash_register_id,
         cr.code AS cash_register_code,
@@ -1312,6 +1313,24 @@ pub async fn create_sale(
         .cash_register_session_id
         .ok_or_else(|| AppError::Validation("cash_register_session_id is required".to_string()))?;
 
+    let member_id = match request.member_id {
+        Some(member_id) => {
+            let is_active: Option<bool> =
+                sqlx::query_scalar::<_, bool>("SELECT is_active FROM members WHERE id = $1")
+                    .bind(member_id)
+                    .fetch_optional(pool)
+                    .await?;
+            match is_active {
+                Some(true) => Some(member_id),
+                Some(false) => {
+                    return Err(AppError::Validation("member is not active".to_string()));
+                }
+                None => return Err(AppError::NotFound),
+            }
+        }
+        None => None,
+    };
+
     let mut tx = pool.begin().await?;
     cash_registers::ensure_open_cash_register_session(&mut tx, cash_register_session_id).await?;
 
@@ -1340,12 +1359,12 @@ pub async fn create_sale(
     let sale_id: i64 = sqlx::query_scalar(
         r#"
         INSERT INTO sales (
-            sold_at, cashier_id, cash_register_session_id, subtotal_amount, total_amount,
-            paid_amount, change_amount, notes
+            sold_at, cashier_id, cash_register_session_id, member_id, subtotal_amount,
+            total_amount, paid_amount, change_amount, notes
         )
         VALUES (
-            COALESCE($1, now()), $2, $3, $4::numeric, $4::numeric, $5::numeric,
-            ($5::numeric - $4::numeric), $6
+            COALESCE($1, now()), $2, $3, $4, $5::numeric, $5::numeric, $6::numeric,
+            ($6::numeric - $5::numeric), $7
         )
         RETURNING id
         "#,
@@ -1353,6 +1372,7 @@ pub async fn create_sale(
     .bind(request.sold_at)
     .bind(user.id)
     .bind(cash_register_session_id)
+    .bind(member_id)
     .bind(subtotal)
     .bind(request.paid_amount)
     .bind(request.notes)

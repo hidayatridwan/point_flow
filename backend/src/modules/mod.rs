@@ -4,6 +4,7 @@ pub mod cash_registers;
 pub mod employees;
 pub mod finances;
 pub mod inventory;
+pub mod members;
 pub mod online_orders;
 pub mod payroll;
 pub mod procurement;

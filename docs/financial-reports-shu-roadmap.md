@@ -145,15 +145,23 @@ Gate review: diff `backend/migrations/012_add_members.sql`.
 
 Tujuan: admin mendaftarkan dan mengelola member beserta kredensialnya.
 
-- [ ] Modul `backend/src/modules/members/` — CRUD `/members` (search name/phone/member_no,
+- [x] Modul `backend/src/modules/members/` — CRUD `/members` (search name/phone/member_no,
       filter `is_active`, soft-delete/hard-delete sesuai pemakaian) (desain Bagian 3.2)
-- [ ] `POST /members/{id}/reset-password` (staff, admin) — set password baru
-- [ ] Password di-hash Argon2 (pola auth staff yang ada)
-- [ ] DTO sale: field `member_id` opsional — validasi member ada & `is_active`
-- [ ] RBAC permission `members`
+- [x] `POST /members/{id}/reset-password` (staff, admin) — set password baru
+- [x] Password di-hash Argon2 (pola auth staff yang ada)
+- [x] DTO sale: field `member_id` opsional — validasi member ada & `is_active`
+- [x] RBAC permission `members`
 
-Validasi: `cargo test` + clippy; `curl` e2e: create member (telepon unik), search,
-update, deactivate → tidak bisa login (uji menyusul di Fase 7), reset password.
+Validasi (2026-11-09, scratch Postgres `point_flow_fase6`, 001–012): `cargo test`
+16 passed; clippy bersih di file tersentuh; `fmt --check` bersih. `curl` e2e:
+create → `MBR-20261109-000001` tanpa `password_hash` di respons; duplikat telepon
+→ 409 (create & update), email jelek → 422, password < 8 → 422, nama kosong → 422;
+search nama/telepon/nomor + filter `is_active` cocok; reset → hash berputar
+(verifikasi SQL), reset pendek → 422, reset id tak ada → 404; sale dengan
+`member_id` aktif → teratribusi, member nonaktif → 422, id tak ada → 404, tanpa
+`member_id` → guest NULL; hapus member terpakai → soft (`is_active=false`, tetap
+ada), hapus yang tak terpakai → hard (lalu 404); tanpa token → 401. Login member
+nonaktif diuji di Fase 7 (endpoint auth belum ada).
 Gate review: daftar endpoint + contoh respons create/reset.
 
 ## Fase 7 — Backend member auth & atribusi checkout
