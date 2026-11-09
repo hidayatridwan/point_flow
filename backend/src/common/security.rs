@@ -17,6 +17,17 @@ pub struct Claims {
     pub exp: usize,
 }
 
+/// Nilai `role` pada JWT milik member. Berfungsi sebagai scope terpisah:
+/// extractor staff menolak token dengan role ini, extractor member hanya
+/// menerima token dengan role ini (dua dunia tidak saling menembus).
+/// Kode role staff `member` dicadangkan dan tidak boleh dipakai.
+pub const MEMBER_TOKEN_ROLE: &str = "member";
+
+/// `true` bila klaim berasal dari token member-scope.
+pub fn is_member_scope(role: &str) -> bool {
+    role == MEMBER_TOKEN_ROLE
+}
+
 pub fn hash_password(password: &str) -> AppResult<String> {
     if password.len() < 8 {
         return Err(AppError::Validation(
@@ -80,4 +91,35 @@ pub fn generate_refresh_token() -> String {
 
 pub fn hash_refresh_token(token: &str) -> String {
     hex::encode(Sha256::digest(token.as_bytes()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn member_scope_round_trips_through_token() {
+        let secret = "test-secret";
+        let member_token =
+            create_token(42, MEMBER_TOKEN_ROLE, secret, 900).expect("member token encodes");
+        let staff_token = create_token(7, "cashier", secret, 900).expect("staff token encodes");
+
+        let member_claims = verify_token(&member_token, secret).expect("member token verifies");
+        let staff_claims = verify_token(&staff_token, secret).expect("staff token verifies");
+
+        assert_eq!(member_claims.sub, 42);
+        assert!(is_member_scope(&member_claims.role));
+        assert!(!is_member_scope(&staff_claims.role));
+    }
+
+    #[test]
+    fn staff_role_codes_are_not_member_scope() {
+        for role in ["admin", "cashier", "owner", ""] {
+            assert!(
+                !is_member_scope(role),
+                "role {role} must not be member scope"
+            );
+        }
+        assert!(is_member_scope("member"));
+    }
 }

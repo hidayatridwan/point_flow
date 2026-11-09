@@ -5,8 +5,8 @@ use uuid::Uuid;
 use crate::{
     error::{AppError, AppResult},
     infra::s3::{self, ObjectStorage},
-    models::{ListQuery, PaginationMeta, UploadResponse},
-    services::audit,
+    models::{ListQuery, MemberResponse, PaginationMeta, UploadResponse},
+    services::{audit, member_auth},
 };
 
 use super::{
@@ -193,12 +193,71 @@ pub async fn get_store_info(
     })
 }
 
+/// Identitas pembeli hasil resolusi checkout: member teratribusi memakai
+/// profil (nama/telepon body diabaikan — anti-spoof), guest memakai body.
+#[derive(Debug, PartialEq)]
+pub struct ResolvedCheckoutIdentity {
+    pub customer_name: String,
+    pub customer_phone: String,
+    pub delivery_address: Option<String>,
+    pub member_id: Option<i64>,
+}
+
+fn normalize_address(value: Option<&str>) -> Option<String> {
+    value
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+/// Tentukan identitas pembeli sebelum validasi. Murni (tanpa database)
+/// agar bisa diuji unit.
+pub fn resolve_checkout_identity(
+    request: &CheckoutRequest,
+    member: Option<&MemberResponse>,
+) -> ResolvedCheckoutIdentity {
+    match member {
+        Some(member) => ResolvedCheckoutIdentity {
+            customer_name: member.full_name.clone(),
+            customer_phone: member.phone.clone(),
+            // Alamat body hanya override; default dari profil member.
+            delivery_address: normalize_address(request.delivery_address.as_deref())
+                .or_else(|| normalize_address(member.address.as_deref())),
+            member_id: Some(member.id),
+        },
+        None => ResolvedCheckoutIdentity {
+            customer_name: request.customer_name.trim().to_string(),
+            customer_phone: request.customer_phone.trim().to_string(),
+            delivery_address: normalize_address(request.delivery_address.as_deref()),
+            member_id: None,
+        },
+    }
+}
+
 pub async fn checkout(
     pool: &PgPool,
     s3: Option<&ObjectStorage>,
     request: CheckoutRequest,
+    member_id: Option<i64>,
 ) -> AppResult<CheckoutResponse> {
-    let order = validate_checkout(&request).map_err(AppError::Validation)?;
+    // Token member → profil (wajib aktif, bila tidak 401). Tanpa token → guest.
+    let member = match member_id {
+        Some(id) => Some(member_auth::find_active_member(pool, id).await?),
+        None => None,
+    };
+    let identity = resolve_checkout_identity(&request, member.as_ref());
+    // Validasi berjalan di atas identitas efektif agar aturan alamat/nama
+    // tetap sama untuk member maupun guest.
+    let effective = CheckoutRequest {
+        customer_name: identity.customer_name,
+        customer_phone: identity.customer_phone,
+        fulfillment_method: request.fulfillment_method,
+        delivery_address: identity.delivery_address,
+        payment_method: request.payment_method,
+        notes: request.notes,
+        items: request.items,
+    };
+    let order = validate_checkout(&effective).map_err(AppError::Validation)?;
 
     let sku_ids: Vec<i64> = order.items.iter().map(|i| i.product_sku_id).collect();
     let sku_rows = repository::load_checkout_skus(pool, &sku_ids).await?;
@@ -271,6 +330,7 @@ pub async fn checkout(
             notes: order.notes.clone(),
             subtotal,
             delivery_fee,
+            member_id: identity.member_id,
             items,
         },
     )
@@ -550,6 +610,7 @@ fn to_response(order: OrderRow) -> OnlineOrderResponse {
         notes: order.notes,
         sale_id: order.sale_id,
         cancel_reason: order.cancel_reason,
+        member_id: order.member_id,
     }
 }
 
@@ -815,6 +876,84 @@ mod tests {
                 quantity: 2.0,
             }],
         }
+    }
+
+    fn member_profile() -> MemberResponse {
+        MemberResponse {
+            id: 9,
+            member_no: "MBR-20261109-000001".to_string(),
+            full_name: "Siti Member".to_string(),
+            phone: "0899000111222".to_string(),
+            email: None,
+            address: Some("Jl. Anggrek 5".to_string()),
+            joined_at: chrono::Utc::now(),
+            is_active: true,
+            notes: None,
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        }
+    }
+
+    #[test]
+    fn resolve_identity_prefers_member_profile_over_body() {
+        // Anti-spoof: nama/telepon body (guest) diabaikan saat member login.
+        let mut request = checkout_request();
+        request.customer_name = "Penyusup".to_string();
+        request.customer_phone = "080000000000".to_string();
+
+        let identity = resolve_checkout_identity(&request, Some(&member_profile()));
+
+        assert_eq!(identity.customer_name, "Siti Member");
+        assert_eq!(identity.customer_phone, "0899000111222");
+        assert_eq!(identity.member_id, Some(9));
+    }
+
+    #[test]
+    fn resolve_identity_defaults_address_from_profile_but_body_wins() {
+        let member = member_profile();
+
+        let request = checkout_request();
+        let identity = resolve_checkout_identity(&request, Some(&member));
+        assert_eq!(identity.delivery_address.as_deref(), Some("Jl. Anggrek 5"));
+
+        let mut request = checkout_request();
+        request.delivery_address = Some("  Kantor Cabang 2  ".to_string());
+        let identity = resolve_checkout_identity(&request, Some(&member));
+        assert_eq!(
+            identity.delivery_address.as_deref(),
+            Some("Kantor Cabang 2")
+        );
+    }
+
+    #[test]
+    fn resolve_identity_guest_uses_body_without_attribution() {
+        let request = checkout_request();
+        let identity = resolve_checkout_identity(&request, None);
+
+        assert_eq!(identity.customer_name, "Budi");
+        assert_eq!(identity.customer_phone, "08123456789");
+        assert_eq!(identity.member_id, None);
+    }
+
+    #[test]
+    fn resolve_identity_member_checkout_valid_despite_empty_body_identity() {
+        // Body boleh kosong untuk member: identitas efektif dari profil.
+        let mut request = checkout_request();
+        request.customer_name = String::new();
+        request.customer_phone = "   ".to_string();
+
+        let identity = resolve_checkout_identity(&request, Some(&member_profile()));
+        let effective = CheckoutRequest {
+            customer_name: identity.customer_name,
+            customer_phone: identity.customer_phone,
+            fulfillment_method: request.fulfillment_method,
+            delivery_address: identity.delivery_address,
+            payment_method: request.payment_method,
+            notes: request.notes,
+            items: request.items,
+        };
+
+        assert!(validate_checkout(&effective).is_ok());
     }
 
     #[test]

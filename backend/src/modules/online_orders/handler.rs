@@ -5,7 +5,7 @@ use axum::{
 
 use crate::{
     app::AppState,
-    auth::AuthUser,
+    auth::{AuthUser, OptionalMember},
     error::{AppError, AppResult},
     infra::s3::MAX_IMAGE_BYTES,
     models::{ApiResponse, CancelRequest, ListQuery, PaginationMeta, UploadResponse},
@@ -75,10 +75,17 @@ pub async fn get_public_store_info(
 
 pub async fn checkout(
     State(state): State<AppState>,
+    member: OptionalMember,
     Json(payload): Json<CheckoutRequest>,
 ) -> AppResult<Json<ApiResponse<CheckoutResponse>>> {
     Ok(Json(ApiResponse::success(
-        service::checkout(&state.db, state.s3.as_deref(), payload).await?,
+        service::checkout(
+            &state.db,
+            state.s3.as_deref(),
+            payload,
+            member.0.map(|member| member.id),
+        )
+        .await?,
     )))
 }
 

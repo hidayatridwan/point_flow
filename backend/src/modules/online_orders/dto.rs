@@ -61,6 +61,9 @@ pub struct CheckoutItemRequest {
     pub quantity: f64,
 }
 
+/// Body checkout publik. Sengaja TIDAK ada field `member_id`: atribusi member
+/// selalu diambil dari JWT member (`OptionalMember`), tidak pernah dari body
+/// (anti-spoof). Checkout member memakai nama/telepon profil; guest memakai body.
 #[derive(Debug, Deserialize)]
 pub struct CheckoutRequest {
     pub customer_name: String,
@@ -129,6 +132,7 @@ pub struct OnlineOrderResponse {
     pub notes: Option<String>,
     pub sale_id: Option<i64>,
     pub cancel_reason: Option<String>,
+    pub member_id: Option<i64>,
 }
 
 #[derive(Debug, Serialize)]

@@ -10,7 +10,7 @@ use crate::{
 };
 
 pub fn public_router() -> Router<AppState> {
-    online_orders::routes::public_routes()
+    online_orders::routes::public_routes().merge(members::routes::public_routes())
 }
 
 pub fn router() -> Router<AppState> {

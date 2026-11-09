@@ -1,3 +1,4 @@
 pub use crate::models::{
-    CreateMemberRequest, MemberQuery, ResetMemberPasswordRequest, UpdateMemberRequest,
+    ChangePasswordRequest, CreateMemberRequest, MemberLoginRequest, MemberLoginResponse,
+    MemberQuery, MemberResponse, ResetMemberPasswordRequest, UpdateMemberRequest,
 };

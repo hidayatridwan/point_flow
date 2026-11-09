@@ -64,6 +64,7 @@ pub struct OrderRow {
     pub notes: Option<String>,
     pub sale_id: Option<i64>,
     pub cancel_reason: Option<String>,
+    pub member_id: Option<i64>,
     pub created_at: DateTime<Utc>,
 }
 

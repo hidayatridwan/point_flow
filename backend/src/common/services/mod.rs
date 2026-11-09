@@ -3,6 +3,7 @@ pub mod auth;
 pub mod cash_registers;
 pub mod documents;
 pub mod master;
+pub mod member_auth;
 pub mod rbac;
 pub mod reports;
 

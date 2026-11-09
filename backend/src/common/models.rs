@@ -1404,6 +1404,22 @@ pub struct ResetMemberPasswordRequest {
     pub new_password: String,
 }
 
+/// Login storefront: identitas member adalah telepon (unique) + password.
+/// `ChangePasswordRequest` yang sudah ada dipakai ulang untuk ganti password.
+#[derive(Debug, Deserialize)]
+pub struct MemberLoginRequest {
+    pub phone: String,
+    pub password: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct MemberLoginResponse {
+    pub access_token: String,
+    pub token_type: &'static str,
+    pub expires_in: i64,
+    pub member: MemberResponse,
+}
+
 /// Laba rugi derivatif (desain 2.2): pendapatan net retur, HPP snapshot
 /// `unit_cost` (fallback harga beli berjalan untuk penjualan pra-migrasi),
 /// beban gaji + beban manual, laba kotor & bersih.

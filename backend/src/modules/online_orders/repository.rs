@@ -169,6 +169,8 @@ pub struct NewOrderData {
     pub notes: Option<String>,
     pub subtotal: f64,
     pub delivery_fee: f64,
+    /// Atribusi member dari JWT (anti-spoof: tidak pernah dari request body).
+    pub member_id: Option<i64>,
     pub items: Vec<NewOrderItem>,
 }
 
@@ -179,11 +181,11 @@ pub async fn insert_order(pool: &PgPool, order: NewOrderData) -> AppResult<NewOr
         r#"
         INSERT INTO online_orders (
             customer_name, customer_phone, fulfillment_method, delivery_address,
-            payment_method, notes, subtotal_amount, delivery_fee, total_amount
+            payment_method, notes, subtotal_amount, delivery_fee, total_amount, member_id
         )
         VALUES (
             $1, $2, $3::online_order_fulfillment_method, $4,
-            $5::online_order_payment_method, $6, $7, $8, $7 + $8
+            $5::online_order_payment_method, $6, $7, $8, $7 + $8, $9
         )
         RETURNING id, order_no
         "#,
@@ -196,6 +198,7 @@ pub async fn insert_order(pool: &PgPool, order: NewOrderData) -> AppResult<NewOr
     .bind(&order.notes)
     .bind(order.subtotal)
     .bind(order.delivery_fee)
+    .bind(order.member_id)
     .fetch_one(&mut *tx)
     .await?;
 
@@ -287,6 +290,7 @@ const ORDER_SELECT: &str = r#"
         notes,
         sale_id,
         cancel_reason,
+        member_id,
         created_at
     FROM online_orders
 "#;
@@ -692,9 +696,9 @@ pub async fn insert_online_sale(
         r#"
         INSERT INTO sales (
             cashier_id, cash_register_session_id, subtotal_amount, total_amount,
-            paid_amount, change_amount, channel, online_order_id, notes
+            paid_amount, change_amount, channel, online_order_id, notes, member_id
         )
-        VALUES ($1, $2, $3::numeric, $4::numeric, $4::numeric, 0, 'online', $5, $6)
+        VALUES ($1, $2, $3::numeric, $4::numeric, $4::numeric, 0, 'online', $5, $6, $7)
         RETURNING id
         "#,
     )
@@ -704,6 +708,7 @@ pub async fn insert_online_sale(
     .bind(order.total_amount)
     .bind(order.id)
     .bind(format!("Online order {}", order.order_no))
+    .bind(order.member_id)
     .fetch_one(&mut **tx)
     .await?;
 

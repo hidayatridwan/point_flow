@@ -168,23 +168,40 @@ Gate review: daftar endpoint + contoh respons create/reset.
 
 Tujuan: member bisa login di storefront dan belanjanya teratribusi otomatis untuk SHU.
 
-- [ ] `/members/auth/login|refresh|logout|me|change-password` — public, masuk sub-router
-      `/public/*` terenkripsi modul online_orders (desain Bagian 3.2)
-- [ ] JWT member-scope terpisah + refresh cookie HttpOnly; `member_refresh_tokens`
+- [x] `/members/auth/login|refresh|logout|me|change-password` — public, digabung ke
+      `public_router` (pola sub-router `/public/*` modul online_orders, desain Bagian 3.2)
+- [x] JWT member-scope terpisah + refresh cookie HttpOnly; `member_refresh_tokens`
       digunakan untuk refresh/revocation
-- [ ] Isolasi token: extractor staff menolak token member, extractor member menolak
+- [x] Isolasi token: extractor staff menolak token member, extractor member menolak
       token staff (dua dunia tidak saling menembus)
-- [ ] Checkout: `member_id` diambil **dari token**, bukan request body (anti-spoof);
+- [x] Checkout: `member_id` diambil **dari token**, bukan request body (anti-spoof);
       identitas pembeli dari profil member; tanpa token → guest, `member_id` NULL
-- [ ] Konversi order → sale (pembayaran online dikonfirmasi) menyalin `member_id` ke sales
-- [ ] Member `is_active=false` → login ditolak; rate limit ketat di endpoint auth
+- [x] Konversi order → sale (pembayaran online dikonfirmasi) menyalin `member_id` ke sales
+- [x] Member `is_active=false` → login ditolak; rate limit ketat di endpoint auth
       (pola `tower_governor` checkout)
 
-Validasi: `cargo test` (termasuk unit test scope token) + `curl` e2e di scratch DB:
-login member → checkout teratribusi (`member_id` terisi) → complete → sale punya
-`member_id`; checkout guest tetap NULL; token member dipakai ke endpoint dashboard →
-ditolak; token staff dipakai ke `/members/auth/me` → ditolak; deaktif member → login ditolak.
-Gate review: matriks token scope (endpoint × jenis token) + hasil e2e.
+Validasi (2026-11-09, scratch Postgres `point_flow_fase7`, 001–012): `cargo test`
+22 passed, 0 failed (16 lama + 6 baru: 2 round-trip scope token, 4 resolusi
+identitas checkout); `cargo clippy --all-targets` bersih di file tersentuh
+(4 warning sisa pre-existing di `master.rs`); `cargo fmt --check` bersih.
+`curl` e2e: login member → `MBR-20261109-000001` + cookie `member_refresh_token`
+(HttpOnly, `Path=/api/v1/members/auth`) tanpa `password_hash` di body; checkout
+member (body nama "Guest Bohongan") → order `member_id=1`, nama/telepon dari
+profil, alamat default profil; pack → ready → complete → sale `member_id=1`;
+checkout guest → order + sale `member_id` NULL; refresh rotasi (token lama 401),
+change-password mencabut sesi lama (login lama 401, baru 200), logout mencabut
+refresh (401); deaktif member → login 401 dan `/me` 401; burst 14 login salah →
+13× 429.
+Matriks scope (diamati): token member → `GET /members` 401, token staff →
+`GET /members/auth/me` 401, token staff → `POST /public/orders` 401 (tidak turun
+diam-diam jadi guest).
+Catatan deviasi kecil: scope member diwujudkan sebagai JWT `role="member"`
+(tanpa kolom klaim baru; kompatibel dengan token staff lama); extractor staff
+menolak `role="member"` sebelum lookup DB (menutup lubang tabrakan id
+member↔user); cookie refresh member `"member_refresh_token"` terpisah dari
+cookie staff agar dua sesi tidak saling menimpa; rate limit = burst 10 +
+1/menit sustained, persis parameter checkout (bukan bucket terpisah per endpoint).
+Gate review: matriks token scope di atas + hasil e2e.
 
 ## Fase 8 — Frontend anggota & storefront auth
 
