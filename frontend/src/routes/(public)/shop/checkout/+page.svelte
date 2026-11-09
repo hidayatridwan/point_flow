@@ -253,6 +253,27 @@
 					<p class="mt-0.5 text-[11px] text-neutral-500">{t('shop.transferHint')}</p>
 				</button>
 			</div>
+			{#if payment === 'transfer' && storeInfo}
+				<div class="mt-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+					{#if storeInfo.bank_accounts}
+						<p class="text-xs font-semibold text-neutral-500">{t('shop.bankAccounts')}</p>
+						<p class="text-sm whitespace-pre-line text-[#333333]">{storeInfo.bank_accounts}</p>
+					{/if}
+					{#if storeInfo.ewallet_numbers}
+						<p class="mt-2 text-xs font-semibold text-neutral-500">{t('shop.ewallets')}</p>
+						<p class="text-sm whitespace-pre-line text-[#333333]">{storeInfo.ewallet_numbers}</p>
+					{/if}
+					{#if storeInfo.qris_image_url}
+						<p class="mt-2 text-xs font-semibold text-neutral-500">{t('shop.qrisImage')}</p>
+						<img
+							src={storeInfo.qris_image_url}
+							alt="QRIS"
+							loading="lazy"
+							class="mt-1 w-full max-w-55 rounded-xl border border-neutral-200 bg-white"
+						/>
+					{/if}
+				</div>
+			{/if}
 		</section>
 
 		<section class="rounded-2xl bg-white p-4 shadow-sm">
