@@ -30,6 +30,7 @@
 		inventory: 'nav.inventory',
 		payroll: 'nav.payroll',
 		reports: 'nav.reports',
+		'profit-sharing': 'nav.profitSharing',
 		config: 'nav.config',
 		account: 'nav.account',
 		'help-desk': 'nav.helpDesk'
@@ -59,6 +60,7 @@
 		'/inventory/stock-movements': 'nav.stockMovements',
 		'/payroll/slips': 'nav.payrollSlips',
 		'/payroll/report': 'nav.payrollReport',
+		'/profit-sharing': 'nav.profitSharing',
 		'/reports/daily-sales': 'nav.dailySales',
 		'/reports/monthly-sales': 'nav.monthlySales',
 		'/reports/purchase-orders': 'nav.purchaseOrders',

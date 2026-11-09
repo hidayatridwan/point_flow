@@ -117,6 +117,49 @@ async function apiRequest<TResponse>(
 	return parseResponse<TResponse>(response, unwrapEnvelope !== false);
 }
 
+export async function apiDownloadBlob(
+	path: string,
+	options: ApiRequestOptions = {}
+): Promise<Blob> {
+	const {
+		params,
+		headers,
+		authToken,
+		body,
+		retryOnUnauthorized,
+		unwrapEnvelope,
+		...requestOptions
+	} = options;
+	void body;
+	void retryOnUnauthorized;
+	void unwrapEnvelope;
+	const response = await fetch(buildUrl(path, params), {
+		...requestOptions,
+		method: 'GET',
+		credentials: 'include',
+		headers: buildHeaders(undefined, headers, authToken)
+	});
+
+	if (!response.ok) {
+		throw await toApiError(response);
+	}
+
+	return response.blob();
+}
+
+async function toApiError(response: Response): Promise<ApiError> {
+	const payload = await response
+		.json()
+		.then((value) => value as ApiEnvelope<unknown>)
+		.catch(() => null);
+	const body = payload?.error;
+	return new ApiError(
+		body?.message ?? 'Request failed. Please try again.',
+		response.status,
+		payload
+	);
+}
+
 function buildUrl(path: string, params?: ApiQueryParams) {
 	const url = /^https?:\/\//.test(path)
 		? path

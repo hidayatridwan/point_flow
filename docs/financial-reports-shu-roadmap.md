@@ -287,16 +287,19 @@ Gate review: hasil rekonsiliasi fixture + screenshot CSV.
 
 Tujuan: admin menjalankan siklus SHU dari dashboard: konfigurasi → hitung → final → distribusi.
 
-- [ ] Route `(protected)/profit-sharing/`: list periode + dialog konfigurasi (nama,
+- [x] Route `(protected)/profit-sharing/`: list periode + dialog konfigurasi (nama,
       rentang tanggal, pool opsional, 6 persentase dengan validasi total 100%)
-- [ ] Detail periode: ringkasan (pool, auto net profit, alokasi per bucket, total
+- [x] Detail periode: ringkasan (pool, auto net profit, alokasi per bucket, total
       transaksi anggota) + tabel distribusi per anggota + aksi calculate/finalize/cancel
       + export CSV (desain Bagian 4.4)
-- [ ] Label UI: locale `id` istilah "SHU", locale `en` "Profit Sharing"
-- [ ] `lib/api/profit-sharing.ts` + nav sidebar + i18n id/en
+- [x] Label UI: locale `id` istilah "SHU", locale `en` "Profit Sharing"
+- [x] `lib/api/profit-sharing.ts` + nav sidebar + i18n id/en
 
-Validasi: `bun run check`, lint file tersentuh, `bun run build`; alur manual: buat
-periode → calculate → cek angka vs backend → finalize → export CSV.
+Validasi (2026-11-09): `bun run check` 0 error 0 warning, eslint + prettier bersih
+di file tersentuh, `bun run build` sukses. Tanpa smoke browser (tidak ada Chromium
+di mesin ini; tidak install apa pun).
+Alur manual di browser (gate review, belum dijalankan): buat periode → calculate →
+cek angka vs backend → finalize → export CSV.
 Gate review: siklus penuh SHU di browser dengan data nyata dev.
 
 ## Fase 12 — Validasi akhir & integrasi

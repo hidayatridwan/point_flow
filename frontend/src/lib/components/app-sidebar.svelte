@@ -171,6 +171,10 @@
 							{
 								titleKey: 'nav.financialPosition',
 								url: '/reports/financial-position'
+							},
+							{
+								titleKey: 'nav.profitSharing',
+								url: '/profit-sharing'
 							}
 						]
 					},
