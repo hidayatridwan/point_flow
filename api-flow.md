@@ -1,6 +1,6 @@
 # Point Flow Backend API Flow
 
-Dokumen ini menjelaskan urutan penggunaan API Point Flow dari awal sampai akhir berdasarkan file Postman collection `point_flow.postman_collection.json`.
+Dokumen ini menjelaskan urutan penggunaan API Point Flow dari awal sampai akhir berdasarkan file Postman collection `point_flow-backend.postman_collection.json`.
 
 Base URL yang dipakai collection:
 
@@ -18,8 +18,8 @@ Authorization: Bearer {{access_token}}
 
 Catatan:
 
-- Kolom Postman request memakai format `Folder > Request` di dalam file `point_flow.postman_collection.json`.
-- Placeholder seperti `{{audit_log_id}}`, `{{cash_register_id}}`, `{{cash_register_session_id}}`, `{{cash_drawer_movement_id}}`, `{{product_id}}`, `{{product_sku_id}}`, `{{sale_id}}`, `{{sale_item_id}}`, `{{sale_return_id}}`, `{{unit_pcs_id}}`, `{{unit_dus_id}}`, `{{product_sku_from_id}}`, dan `{{product_sku_to_id}}` adalah variable Postman collection.
+- Kolom Postman request memakai format `Folder > Request` di dalam file `point_flow-backend.postman_collection.json`.
+- Placeholder seperti `{{audit_log_id}}`, `{{cash_register_id}}`, `{{cash_register_session_id}}`, `{{cash_drawer_movement_id}}`, `{{product_id}}`, `{{product_sku_id}}`, `{{sale_id}}`, `{{sale_item_id}}`, `{{sale_return_id}}`, `{{unit_pcs_id}}`, `{{unit_dus_id}}`, `{{product_sku_from_id}}`, `{{product_sku_to_id}}`, `{{member_id}}`, `{{online_order_id}}`, `{{financial_category_id}}`, `{{financial_transaction_id}}`, dan `{{profit_sharing_period_id}}` adalah variable Postman collection. `{{member_access_token}}` adalah variable terpisah untuk token member storefront agar tidak tertukar dengan `{{access_token}}` milik staff.
 - Response aktual selalu memakai envelope `data`, `meta`, `error`, dan `request_id`. Beberapa contoh response di dokumen ini menampilkan isi `data` saja agar alurnya lebih ringkas.
 - Response error umum berbentuk:
 
@@ -854,6 +854,9 @@ Contoh create package unit request:
 | `Products > Get Product` | `GET {{base_url}}/products/{{product_id}}` |
 | `Products > Update Product` | `PUT {{base_url}}/products/{{product_id}}` |
 | `Products > Delete Product` | `DELETE {{base_url}}/products/{{product_id}}` |
+| `Products > Upload Product Photo` | `POST {{base_url}}/products/{{product_id}}/photo` |
+
+Upload foto memakai multipart form-data (field pertama berisi file gambar, maks 2 MB dengan content-type image), bukan JSON. Membutuhkan permission `master_data`. Foto tampil di katalog publik. Di Postman, pilih file pada key `file` di tab Body form-data.
 
 Relasi: `products` adalah produk induk. Produk seperti Mineral Water dibuat satu kali di sini, lalu kemasan eceran/dus dibuat di `product_skus`.
 
@@ -1770,6 +1773,7 @@ Relasi:
 - Goods receipt report membaca penerimaan barang.
 - Stock adjustment report membaca koreksi stok.
 - Payroll report membaca agregasi slip gaji.
+- Laporan keuangan derivatif (income statement, cash flow, financial position) dibahas di bagian 19 karena datanya berasal dari transaksi keuangan manual; di Postman ketiganya ada di folder `Finances >`, bukan `Reports >`.
 
 Contoh dashboard response:
 
@@ -1913,7 +1917,360 @@ Contoh payroll report response:
 ]
 ```
 
-## 16. Urutan Uji End-to-End di Postman
+## 16. Members
+
+Anggota (member) adalah master data pelanggan terdaftar untuk storefront online. CRUD member membutuhkan permission `members`.
+
+| Postman request | Endpoint |
+| --- | --- |
+| `Members > List Members` | `GET {{base_url}}/members?search=&is_active=&limit=50&offset=0` |
+| `Members > Create Member` | `POST {{base_url}}/members` |
+| `Members > Get Member` | `GET {{base_url}}/members/{{member_id}}` |
+| `Members > Update Member` | `PUT {{base_url}}/members/{{member_id}}` |
+| `Members > Delete Member` | `DELETE {{base_url}}/members/{{member_id}}` |
+| `Members > Reset Member Password` | `POST {{base_url}}/members/{{member_id}}/reset-password` |
+
+Relasi: `member_no` dibuat otomatis oleh backend. Telepon bersifat unique dan dipakai sebagai identitas login storefront (bagian 17). Delete member yang sudah punya transaksi tidak menghapus row — hanya menonaktifkan (`is_active = false`, soft delete).
+
+Contoh create request:
+
+```json
+{
+  "full_name": "Siti Aminah",
+  "phone": "08123456780",
+  "email": "siti@example.com",
+  "password": "password123",
+  "address": "Jl. Anggrek 5",
+  "is_active": true,
+  "notes": null
+}
+```
+
+Semua field update bersifat opsional. Reset password memakai body `{"new_password": "newpassword123"}` (minimal 8 karakter).
+
+Contoh response:
+
+```json
+{
+  "id": 1,
+  "member_no": "MBR-20260518-000001",
+  "full_name": "Siti Aminah",
+  "phone": "08123456780",
+  "email": "siti@example.com",
+  "address": "Jl. Anggrek 5",
+  "joined_at": "2026-05-18T10:00:00Z",
+  "is_active": true,
+  "notes": null,
+  "created_at": "2026-05-18T10:00:00Z",
+  "updated_at": "2026-05-18T10:00:00Z"
+}
+```
+
+## 17. Member Auth
+
+Sesi login storefront untuk member. Lima endpoint ini bersifat publik (tanpa `AuthUser`) dan dibatasi rate limit 10 request/menit per IP karena rawan brute-force. Refresh memakai cookie HttpOnly `member_refresh_token` (terpisah dari cookie `refresh_token` milik staff).
+
+| Postman request | Endpoint |
+| --- | --- |
+| `Member Auth > Member Login` | `POST {{base_url}}/members/auth/login` |
+| `Member Auth > Member Refresh` | `POST {{base_url}}/members/auth/refresh` |
+| `Member Auth > Member Logout` | `POST {{base_url}}/members/auth/logout` |
+| `Member Auth > Member Me` | `GET {{base_url}}/members/auth/me` |
+| `Member Auth > Member Change Password` | `POST {{base_url}}/members/auth/change-password` |
+
+Relasi: login memakai `phone` + `password`, mengembalikan `access_token` member dan profil member, lalu mengirim cookie `member_refresh_token`. Test script request `Member Login` otomatis menyimpan `member_access_token` dan `member_id` ke collection variable. Endpoint `Member Me` dan `Member Change Password` memakai header `Authorization: Bearer {{member_access_token}}` — token staff (`{{access_token}}`) tidak berlaku di sini dan sebaliknya.
+
+Contoh login request:
+
+```json
+{
+  "phone": "08123456780",
+  "password": "password123"
+}
+```
+
+Contoh login response:
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 900,
+  "member": {
+    "id": 1,
+    "member_no": "MBR-20260518-000001",
+    "full_name": "Siti Aminah",
+    "phone": "08123456780",
+    "email": "siti@example.com",
+    "address": "Jl. Anggrek 5",
+    "joined_at": "2026-05-18T10:00:00Z",
+    "is_active": true,
+    "notes": null,
+    "created_at": "2026-05-18T10:00:00Z",
+    "updated_at": "2026-05-18T10:00:00Z"
+  }
+}
+```
+
+Refresh dan logout tidak memakai JSON body — cookie `member_refresh_token` dikirim otomatis oleh client. Change password memakai body yang sama dengan staff (`current_password`, `new_password`) dan mencabut semua refresh token member tersebut.
+
+## 18. Online Orders dan Public Storefront
+
+Pesanan online dibuat publik lewat checkout storefront, lalu diproses kasir/admin lewat pipeline order. Endpoint staff memakai JWT + permission `online_orders`. Endpoint publik tanpa auth dan dibatasi rate limit per IP: katalog/info toko 60 request/menit, checkout 10 request/menit. Kelebihan kuota mengembalikan envelope error `rate_limited` dengan status 429.
+
+### 18.1 Store Settings
+
+Pengaturan toko yang tampil di storefront (nama, jam operasional, rekening, e-wallet, ongkir, WhatsApp).
+
+| Postman request | Endpoint |
+| --- | --- |
+| `Online Orders > Get Store Settings` | `GET {{base_url}}/store-settings` |
+| `Online Orders > Update Store Settings` | `PUT {{base_url}}/store-settings` |
+| `Online Orders > Upload QRIS Image` | `POST {{base_url}}/store-settings/qris-image` |
+
+Upload QRIS memakai multipart form-data seperti foto produk (maks 2 MB) dan tampil di `Public Storefront > Get Store Info`. Membutuhkan permission `online_orders`.
+
+Semua field update opsional. Contoh request:
+
+```json
+{
+  "store_name": "Toko Point Flow",
+  "operating_hours": "08:00-21:00",
+  "bank_accounts": "BCA 1234567890 a.n. Toko",
+  "ewallet_numbers": "08123456780 (DANA)",
+  "delivery_fee": 10000,
+  "shop_whatsapp": "08123456780"
+}
+```
+
+### 18.2 Pipeline Order (Staff)
+
+| Postman request | Endpoint |
+| --- | --- |
+| `Online Orders > List Orders` | `GET {{base_url}}/online-orders?search=&from=&to=&status=new,packing,ready&limit=50&offset=0` |
+| `Online Orders > Get Order` | `GET {{base_url}}/online-orders/{{online_order_id}}` |
+| `Online Orders > Pack Order` | `POST {{base_url}}/online-orders/{{online_order_id}}/pack` |
+| `Online Orders > Ready Order` | `POST {{base_url}}/online-orders/{{online_order_id}}/ready` |
+| `Online Orders > Deliver Order` | `POST {{base_url}}/online-orders/{{online_order_id}}/deliver` |
+| `Online Orders > Complete Order` | `POST {{base_url}}/online-orders/{{online_order_id}}/complete` |
+| `Online Orders > Mark Order Paid` | `POST {{base_url}}/online-orders/{{online_order_id}}/mark-paid` |
+| `Online Orders > Cancel Order` | `POST {{base_url}}/online-orders/{{online_order_id}}/cancel` |
+
+Relasi status: `new` → `pack` → `packing`. Order pickup: `packing` → `ready` → `complete`. Order delivery: `packing` → `delivering` → `complete` (hanya jika sudah dibayar, atau metode `pay_at_store`). Cancel hanya dari status `new`/`packing` memakai body `{"reason": "..."}`. `Mark Order Paid` tanpa body, dipakai untuk order transfer yang pelunasannya dikonfirmasi manual. Aksi pipeline tanpa body selain cancel.
+
+### 18.3 Katalog dan Checkout Publik
+
+| Postman request | Endpoint |
+| --- | --- |
+| `Public Storefront > List Public Products` | `GET {{base_url}}/public/products?search=&category_id=&limit=50&offset=0` |
+| `Public Storefront > List Public Categories` | `GET {{base_url}}/public/categories` |
+| `Public Storefront > Get Store Info` | `GET {{base_url}}/public/store-info` |
+| `Public Storefront > Checkout (Guest)` | `POST {{base_url}}/public/orders` |
+| `Public Storefront > Checkout (Member)` | `POST {{base_url}}/public/orders` |
+
+Relasi: katalog hanya menampilkan SKU aktif yang stoknya tersedia. `fulfillment_method` wajib `pickup` atau `delivery`; `payment_method` wajib `pay_at_store` atau `transfer`. Atribusi member selalu diambil dari JWT member (`Authorization: Bearer {{member_access_token}}`), tidak pernah dari body — body checkout tidak punya field `member_id` (anti-spoof). Checkout guest memakai nama/telepon dari body; checkout member memakai nama/telepon dari profil. Checkout guest wajib tanpa header Authorization — token staff yang terbawa akan ditolak 401.
+
+Contoh checkout guest request:
+
+```json
+{
+  "customer_name": "Guest",
+  "customer_phone": "0811111111",
+  "fulfillment_method": "pickup",
+  "payment_method": "pay_at_store",
+  "items": [
+    { "product_sku_id": 1, "quantity": 2 }
+  ]
+}
+```
+
+Contoh checkout member request (dengan header `Authorization: Bearer {{member_access_token}}`):
+
+```json
+{
+  "customer_name": "Siti Aminah",
+  "customer_phone": "08123456780",
+  "fulfillment_method": "delivery",
+  "delivery_address": "Jl. Anggrek 5",
+  "payment_method": "transfer",
+  "items": [
+    { "product_sku_id": 1, "quantity": 1 }
+  ]
+}
+```
+
+Contoh checkout response:
+
+```json
+{
+  "order_id": 1,
+  "order_no": "OO-20260518-000001",
+  "fulfillment_method": "pickup",
+  "payment_method": "pay_at_store",
+  "total_amount": 8000,
+  "items": [
+    {
+      "product_sku": "WTR-001-PCS",
+      "product_name": "Mineral Water",
+      "quantity": 2,
+      "unit_price": 4000,
+      "line_total": 8000
+    }
+  ],
+  "payment_info": null
+}
+```
+
+`payment_info` berisi rekening/e-wallet toko dan total tagihan untuk order `transfer`/`delivery`.
+
+## 19. Finances
+
+Keuangan mencatat kategori dan transaksi manual (`income`/`expense`) di luar Point Flow dan sale. Semua endpoint membutuhkan permission `finances`, termasuk tiga laporan derivatif di bawah. Di Postman ketiganya ada di folder `Finances >`.
+
+| Postman request | Endpoint |
+| --- | --- |
+| `Finances > List Financial Categories` | `GET {{base_url}}/financial-categories?search=&limit=50&offset=0` |
+| `Finances > Create Financial Category` | `POST {{base_url}}/financial-categories` |
+| `Finances > Get Financial Category` | `GET {{base_url}}/financial-categories/{{financial_category_id}}` |
+| `Finances > Update Financial Category` | `PUT {{base_url}}/financial-categories/{{financial_category_id}}` |
+| `Finances > Delete Financial Category` | `DELETE {{base_url}}/financial-categories/{{financial_category_id}}` |
+| `Finances > List Financial Transactions` | `GET {{base_url}}/financial-transactions?search=&from=&to=&type=&status=&limit=50&offset=0` |
+| `Finances > Create Financial Transaction` | `POST {{base_url}}/financial-transactions` |
+| `Finances > Get Financial Transaction` | `GET {{base_url}}/financial-transactions/{{financial_transaction_id}}` |
+| `Finances > Update Financial Transaction` | `PUT {{base_url}}/financial-transactions/{{financial_transaction_id}}` |
+| `Finances > Cancel Financial Transaction` | `POST {{base_url}}/financial-transactions/{{financial_transaction_id}}/cancel` |
+| `Finances > Income Statement` | `GET {{base_url}}/reports/income-statement?from=&to=` |
+| `Finances > Cash Flow` | `GET {{base_url}}/reports/cash-flow?from=&to=` |
+| `Finances > Financial Position` | `GET {{base_url}}/reports/financial-position?as_of=` |
+
+Relasi: `category_type` dan `transaction_type` hanya menerima `income` atau `expense`. Kategori yang sudah dipakai transaksi tidak bisa dihapus. Transaksi `is_cash = false` bersifat non-tunai dan tidak masuk arus kas. Cancel transaksi memakai body `{"reason": "..."}` dan mengubah status menjadi `cancelled`. Update transaksi tidak bisa mengubah `transaction_type`.
+
+Contoh create category request:
+
+```json
+{
+  "name": "Operasional Toko",
+  "category_type": "expense",
+  "description": "Belanja plastik, listrik, air",
+  "is_active": true
+}
+```
+
+Contoh create transaction request:
+
+```json
+{
+  "transaction_type": "expense",
+  "financial_category_id": 1,
+  "amount": 50000,
+  "is_cash": true,
+  "description": "Belanja plastik"
+}
+```
+
+Contoh income statement response (pendapatan net retur, HPP dari snapshot `unit_cost`, beban gaji + beban manual):
+
+```json
+{
+  "gross_revenue": 8000,
+  "return_amount": 0,
+  "net_revenue": 8000,
+  "cogs": 5000,
+  "gross_profit": 3000,
+  "payroll_expense": 0,
+  "other_expense": 50000,
+  "net_profit": -47000
+}
+```
+
+Contoh cash flow response:
+
+```json
+{
+  "cash_in_sales": 8000,
+  "cash_in_manual": 0,
+  "total_cash_in": 8000,
+  "cash_out_drawer": 0,
+  "cash_out_manual": 50000,
+  "total_cash_out": 50000,
+  "net_cash_flow": -42000
+}
+```
+
+Contoh financial position response (kas kumulatif + nilai persediaan + laba kumulatif):
+
+```json
+{
+  "as_of": "2026-05-18",
+  "cash": 458000,
+  "inventory_value": 250000,
+  "total_assets": 708000,
+  "cumulative_net_profit": -47000
+}
+```
+
+## 20. Profit Sharing (SHU)
+
+Periode bagi hasil (SHU) dihitung dari laba bersih income statement pada rentang periode. Semua endpoint membutuhkan permission `profit_sharing` (admin).
+
+| Postman request | Endpoint |
+| --- | --- |
+| `Profit Sharing > List Periods` | `GET {{base_url}}/profit-sharing/periods?search=&status=draft,calculated&limit=50&offset=0` |
+| `Profit Sharing > Create Period` | `POST {{base_url}}/profit-sharing/periods` |
+| `Profit Sharing > Get Period Detail` | `GET {{base_url}}/profit-sharing/periods/{{profit_sharing_period_id}}` |
+| `Profit Sharing > Update Period (Draft Only)` | `PUT {{base_url}}/profit-sharing/periods/{{profit_sharing_period_id}}` |
+| `Profit Sharing > Calculate Period` | `POST {{base_url}}/profit-sharing/periods/{{profit_sharing_period_id}}/calculate` |
+| `Profit Sharing > Finalize Period` | `POST {{base_url}}/profit-sharing/periods/{{profit_sharing_period_id}}/finalize` |
+| `Profit Sharing > Cancel Period` | `POST {{base_url}}/profit-sharing/periods/{{profit_sharing_period_id}}/cancel` |
+| `Profit Sharing > List Distributions` | `GET {{base_url}}/profit-sharing/periods/{{profit_sharing_period_id}}/distributions?search=&limit=50&offset=0` |
+| `Profit Sharing > Export Distributions CSV` | `GET {{base_url}}/profit-sharing/periods/{{profit_sharing_period_id}}/distributions/export` |
+
+Relasi lifecycle: `draft` → `calculate` → `calculated` → `finalize` → `finalized`, atau `cancel` (dengan reason) dari `draft`/`calculated`. Update hanya boleh saat `draft`. Calculate mengambil laba bersih otomatis dari income statement sebagai `auto_net_profit`, lalu membuat snapshot distribusi per member; pool yang dipakai adalah `total_pool` manual jika diisi, jika tidak maka laba otomatis. Porsi member dibagi antar member sebanding dengan nilai transaksi masing-masing pada rentang periode. Finalize mengunci periode. Export mengembalikan file `text/csv`, bukan envelope JSON.
+
+Contoh create request:
+
+```json
+{
+  "period_name": "Tahun Buku 2026",
+  "start_date": "2026-01-01",
+  "end_date": "2026-12-31",
+  "member_pct": 50,
+  "reserve_pct": 10,
+  "management_pct": 15,
+  "supervisor_pct": 10,
+  "social_pct": 10,
+  "education_pct": 5
+}
+```
+
+Contoh detail response (field periode di-flatten, ditambah hasil kalkulasi):
+
+```json
+{
+  "id": 1,
+  "period_name": "Tahun Buku 2026",
+  "start_date": "2026-01-01",
+  "end_date": "2026-12-31",
+  "status": "calculated",
+  "total_pool": null,
+  "auto_net_profit": 1200000,
+  "member_pct": 50,
+  "reserve_pct": 10,
+  "management_pct": 15,
+  "supervisor_pct": 10,
+  "social_pct": 10,
+  "education_pct": 5,
+  "notes": null,
+  "calculated_at": "2026-05-18T12:00:00Z",
+  "finalized_at": null,
+  "pool_used": 1200000,
+  "member_pool": 600000,
+  "member_count": 2,
+  "total_member_transaction": 500000
+}
+```
+
+## 21. Urutan Uji End-to-End di Postman
 
 Urutan yang disarankan saat menjalankan collection:
 
@@ -1924,34 +2281,46 @@ Urutan yang disarankan saat menjalankan collection:
 5. `Roles & Permissions > List Permissions` dan `Roles & Permissions > List Roles` jika perlu memeriksa RBAC.
 6. `Cash Registers > Create Cash Register`
 7. `Users > Create User` jika perlu akun cashier
-8. `Product Categories > Create Product Category`
-9. `Units > Create Base Unit (PCS)`
-10. `Units > Create Package Unit (DUS)`
-11. `Products > Create Product`
-12. `Product SKUs > Create Retail Product SKU`
-13. `Product SKUs > Create Package Product SKU`
-14. `Suppliers > Create Supplier`
-15. `Purchase Orders > Create Purchase Order`
-16. `Purchase Orders > Order Purchase Order`
-17. `Goods Receipts > Create Goods Receipt`
-18. `Goods Receipts > Post Goods Receipt`
-19. `Stock Adjustments > Create Stock Adjustment` jika butuh koreksi stok
-20. `Stock Adjustments > Post Stock Adjustment`
-21. `Stock Conversions > Create Stock Conversion` jika butuh pecah/gabung kemasan
-22. `Stock Conversions > Post Stock Conversion`
-23. `Cash Registers > Open Cash Register Session`
-24. `Cash Registers > Create Cash Drawer Cash In` jika perlu tambah modal laci
-25. `Sales > Create Sale`
-26. `Sale Returns > Get Returnable Sale Items` jika perlu refund
-27. `Sale Returns > Create Sale Return Restock` atau `Sale Returns > Create Sale Return No Restock`
-28. `Cash Registers > Create Cash Drawer Cash Drop`, `Create Cash Drawer Cash Out`, atau `Create Cash Drawer Petty Cash` jika ada uang keluar dari laci
-29. `Cash Registers > Close Cash Register Session` setelah transaksi/refund/movement selesai
-30. `Employees > Create Employee`
-31. `Payroll Slips > Create Payroll Slip`
-32. Jalankan `Reports > Dashboard` dan report lain untuk memeriksa hasil agregasi.
-33. `Audit Logs > List Audit Logs` untuk memeriksa event audit yang sudah tercatat.
-34. Opsional: `Auth > Change Password` untuk menguji ganti password akun aktif. Setelah berhasil, login ulang jika masih ingin menjalankan endpoint protected lain.
-35. `Auth > Logout` untuk mencabut refresh token aktif.
+8. `Members > Create Member` untuk akun storefront
+9. `Product Categories > Create Product Category`
+10. `Units > Create Base Unit (PCS)`
+11. `Units > Create Package Unit (DUS)`
+12. `Products > Create Product`
+13. `Product SKUs > Create Retail Product SKU`
+14. `Product SKUs > Create Package Product SKU`
+15. `Suppliers > Create Supplier`
+16. `Purchase Orders > Create Purchase Order`
+17. `Purchase Orders > Order Purchase Order`
+18. `Goods Receipts > Create Goods Receipt`
+19. `Goods Receipts > Post Goods Receipt`
+20. `Stock Adjustments > Create Stock Adjustment` jika butuh koreksi stok
+21. `Stock Adjustments > Post Stock Adjustment`
+22. `Stock Conversions > Create Stock Conversion` jika butuh pecah/gabung kemasan
+23. `Stock Conversions > Post Stock Conversion`
+24. `Online Orders > Update Store Settings` untuk info toko dan ongkir
+25. `Public Storefront > List Public Products` untuk memastikan katalog tampil
+26. `Member Auth > Member Login` sebagai member yang dibuat di langkah 8
+27. `Public Storefront > Checkout (Guest)` tanpa header Authorization untuk order pickup
+28. `Public Storefront > Checkout (Member)` dengan `Bearer {{member_access_token}}` untuk order delivery
+29. `Online Orders > Pack Order`, lalu `Ready Order` (pickup) atau `Deliver Order` (delivery, setelah `Mark Order Paid` bila transfer)
+30. `Online Orders > Complete Order` setelah order diterima
+31. `Cash Registers > Open Cash Register Session`
+32. `Cash Registers > Create Cash Drawer Cash In` jika perlu tambah modal laci
+33. `Sales > Create Sale`
+34. `Sale Returns > Get Returnable Sale Items` jika perlu refund
+35. `Sale Returns > Create Sale Return Restock` atau `Sale Returns > Create Sale Return No Restock`
+36. `Cash Registers > Create Cash Drawer Cash Drop`, `Create Cash Drawer Cash Out`, atau `Create Cash Drawer Petty Cash` jika ada uang keluar dari laci
+37. `Cash Registers > Close Cash Register Session` setelah transaksi/refund/movement selesai
+38. `Employees > Create Employee`
+39. `Payroll Slips > Create Payroll Slip`
+40. `Finances > Create Financial Category` lalu `Finances > Create Financial Transaction` untuk kas/beban manual
+41. Jalankan `Reports > Dashboard` dan report lain untuk memeriksa hasil agregasi.
+42. Jalankan `Finances > Income Statement`, `Finances > Cash Flow`, dan `Finances > Financial Position` untuk memeriksa laporan keuangan.
+43. `Profit Sharing > Create Period`, `Profit Sharing > Calculate Period`, lalu periksa `Profit Sharing > Get Period Detail` dan `Profit Sharing > List Distributions`
+44. `Profit Sharing > Finalize Period` setelah distribusi benar, atau `Profit Sharing > Cancel Period` jika periode salah
+45. `Audit Logs > List Audit Logs` untuk memeriksa event audit yang sudah tercatat.
+46. Opsional: `Auth > Change Password` untuk menguji ganti password akun aktif. Setelah berhasil, login ulang jika masih ingin menjalankan endpoint protected lain.
+47. `Auth > Logout` untuk mencabut refresh token aktif.
 
 Ringkasan relasi utama:
 
@@ -2037,4 +2406,30 @@ sale_returns cancelled after restock
 
 employees
   -> payroll_slips.employee_id
+
+members
+  -> member_refresh_tokens.member_id
+  -> online_orders.member_id (nullable, dari JWT saat checkout member)
+  -> profit_sharing_distributions.member_id (snapshot per periode)
+
+member_refresh_tokens
+  -> token_hash for member_refresh cookie validation
+  -> revoked_at when rotated or logged out
+
+online_orders
+  -> online_order_items.online_order_id
+  -> status flow: new -> packing -> ready -> completed (pickup)
+  -> status flow: new -> packing -> delivering -> completed (delivery, harus lunas atau pay_at_store)
+  -> cancel only from new/packing
+
+financial_categories
+  -> financial_transactions.financial_category_id
+
+financial_transactions cancelled
+  -> excluded from income statement, cash flow, and financial position
+
+profit_sharing_periods
+  -> profit_sharing_distributions.profit_sharing_period_id
+  -> auto_net_profit from income statement at calculate time
+  -> pool_used = total_pool manual if set, else auto_net_profit
 ```

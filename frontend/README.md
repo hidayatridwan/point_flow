@@ -1,42 +1,27 @@
-# sv
+# Point Flow Frontend
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Aplikasi kasir + storefront Point Flow: SvelteKit 2 + Svelte 5 (runes), Tailwind CSS 4, shadcn-svelte, TanStack Table, superforms+zod, svelte-sonner. Dokumentasi pengembangan ada di root [`CLAUDE.md`](../CLAUDE.md).
 
-## Creating a project
-
-If you're seeing this, you've probably already done this step. Congrats!
-
-```sh
-# create a new project
-npx sv create my-app
-```
-
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-bun x sv@0.15.3 create --template minimal --types ts --add prettier eslint tailwindcss="plugins:none" sveltekit-adapter="adapter:node" --install bun frontend
-```
+- Rute kasir di `src/routes/(protected)/` (butuh login, cek token saat mount).
+- Storefront publik di `src/routes/(public)/shop` (katalog, checkout guest/member).
+- API client di `src/lib/api/` (`client.ts` unwrapping envelope + auto-refresh 401, satu file per domain).
+- i18n ID/EN di `src/lib/i18n/` (`t()` + `localeState`, persisten di `localStorage`).
+- Mata uang selalu IDR (`src/lib/formatters.ts`).
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+```bash
+bun install
+bun run dev      # http://localhost:5173
 ```
 
-## Building
+Backend default `http://localhost:8080/api/v1`; override dengan env `PUBLIC_API_BASE_URL`.
 
-To create a production version of your app:
+## Checks & build
 
-```sh
-npm run build
+```bash
+bun run check    # svelte-check + tsc
+bun run lint     # prettier + eslint
+bun run build
+bun run format   # auto-fix formatting
 ```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.

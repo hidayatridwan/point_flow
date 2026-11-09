@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "3f9ef2a2-53c5-4b6a-aed1-7e2d9f5c8b10",
     "name": "Point Flow Backend API",
-    "description": "Postman collection for the Point Flow backend REST API. Import this file, set `base_url`, run Bootstrap Admin or Login, then reuse `access_token` for protected endpoints. API responses use a standard envelope: `data`, `meta`, `error`, and `request_id`. Refresh tokens are stored as backend-generated HttpOnly cookies. Includes current auth, RBAC, cash register sessions, cash drawer movements, sales, sale returns, audit logs, inventory, procurement, payroll, reports, and dashboard analytics endpoints (sales trend, top products, hourly sales, low stock, sales by category, product scatter, cashier performance, procurement funnel).",
+    "description": "Postman collection for the Point Flow backend REST API. Import this file, set `base_url`, run Bootstrap Admin or Login, then reuse `access_token` for protected endpoints. API responses use a standard envelope: `data`, `meta`, `error`, and `request_id`. Refresh tokens are stored as backend-generated HttpOnly cookies. Includes current auth, RBAC, cash register sessions, cash drawer movements, sales, sale returns, audit logs, inventory, procurement, payroll, reports, and dashboard analytics endpoints (sales trend, top products, hourly sales, low stock, sales by category, product scatter, cashier performance, procurement funnel). Also covers members, storefront member auth, online orders (staff + public storefront), finances, and profit sharing (SHU) endpoints.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -146,6 +146,30 @@
     },
     {
       "key": "audit_log_id",
+      "value": "1"
+    },
+    {
+      "key": "member_access_token",
+      "value": ""
+    },
+    {
+      "key": "member_id",
+      "value": "1"
+    },
+    {
+      "key": "online_order_id",
+      "value": "1"
+    },
+    {
+      "key": "financial_category_id",
+      "value": "1"
+    },
+    {
+      "key": "financial_transaction_id",
+      "value": "1"
+    },
+    {
+      "key": "profit_sharing_period_id",
       "value": "1"
     }
   ],
@@ -1018,6 +1042,27 @@
             "method": "DELETE",
             "header": [],
             "url": "{{base_url}}/products/{{product_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Product Photo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/products/{{product_id}}/photo",
+            "description": "Multipart gambar (field pertama, maks 2 MB). Permission `master_data`.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/path/to/image.jpg",
+                  "description": "Pilih file gambar di Postman (diambil field pertama). Maks 2 MB, harus ada content-type image."
+                }
+              ]
+            }
           },
           "response": []
         }
@@ -2173,6 +2218,716 @@
             "method": "GET",
             "header": [],
             "url": "{{base_url}}/reports/payroll?from=&to=&limit=50&offset=0"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Members",
+      "description": "Member master data. Deleting a member with transactions only deactivates it (soft delete).",
+      "item": [
+        {
+          "name": "List Members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/members?search=&is_active=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Member",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/members",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Siti Aminah\",\n  \"phone\": \"08123456780\",\n  \"email\": \"siti@example.com\",\n  \"password\": \"password123\",\n  \"address\": \"Jl. Anggrek 5\",\n  \"is_active\": true,\n  \"notes\": null\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Member",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/members/{{member_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Member",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/members/{{member_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Siti Aminah\",\n  \"phone\": \"08123456780\",\n  \"address\": \"Jl. Anggrek 6\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Member",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/members/{{member_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Member Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/members/{{member_id}}/reset-password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"new_password\": \"newpassword123\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Member Auth",
+      "description": "Storefront member sessions. Login/refresh/logout are public (refresh uses the HttpOnly `member_refresh_token` cookie, handled by Postman's cookie jar). Authenticated calls use the separate `member_access_token` variable so staff and member tokens never mix.",
+      "item": [
+        {
+          "name": "Member Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/members/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"08123456780\",\n  \"password\": \"password123\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const body = pm.response.json();",
+                  "  const json = body.data || body;",
+                  "  if (json.access_token) pm.collectionVariables.set('member_access_token', json.access_token);",
+                  "  if (json.member && json.member.id) pm.collectionVariables.set('member_id', json.member.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Member Refresh",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/members/auth/refresh",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Member Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/members/auth/logout",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Member Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/members/auth/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{member_access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Member Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/members/auth/change-password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"password123\",\n  \"new_password\": \"newpassword123\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{member_access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Online Orders",
+      "description": "Staff order pipeline (permission `online_orders`): new -> packing -> ready -> delivering -> completed. Includes store settings used by the storefront.",
+      "item": [
+        {
+          "name": "List Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/online-orders?search=&from=&to=&status=new,packing,ready&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/online-orders/{{online_order_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload QRIS Image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/store-settings/qris-image",
+            "description": "Multipart gambar QRIS (field pertama, maks 2 MB). Tampil di /public/store-info. Permission `online_orders`.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/path/to/image.jpg",
+                  "description": "Pilih file gambar di Postman (diambil field pertama). Maks 2 MB, harus ada content-type image."
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Pack Order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/online-orders/{{online_order_id}}/pack"
+          },
+          "response": []
+        },
+        {
+          "name": "Ready Order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/online-orders/{{online_order_id}}/ready"
+          },
+          "response": []
+        },
+        {
+          "name": "Deliver Order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/online-orders/{{online_order_id}}/deliver"
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/online-orders/{{online_order_id}}/complete"
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Order Paid",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/online-orders/{{online_order_id}}/mark-paid"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/online-orders/{{online_order_id}}/cancel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Out of stock\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Store Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/store-settings"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Store Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/store-settings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"store_name\": \"Toko Point Flow\",\n  \"delivery_fee\": 10000\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Public Storefront",
+      "description": "Unauthenticated storefront endpoints (rate limited per IP). Member checkout sends the member JWT explicitly; the guest checkout must NOT send any Authorization header (a staff token would be rejected with 401).",
+      "item": [
+        {
+          "name": "List Public Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/public/products?search=&category_id=&limit=50&offset=0",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Public Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/public/categories",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Store Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/public/store-info",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Checkout (Guest)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/public/orders",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_name\": \"Guest\",\n  \"customer_phone\": \"0811111111\",\n  \"fulfillment_method\": \"pickup\",\n  \"payment_method\": \"pay_at_store\",\n  \"items\": [\n    {\n      \"product_sku_id\": 1,\n      \"quantity\": 2\n    }\n  ]\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Checkout (Member)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/public/orders",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_name\": \"Siti Aminah\",\n  \"customer_phone\": \"08123456780\",\n  \"fulfillment_method\": \"delivery\",\n  \"delivery_address\": \"Jl. Anggrek 5\",\n  \"payment_method\": \"transfer\",\n  \"items\": [\n    {\n      \"product_sku_id\": 1,\n      \"quantity\": 1\n    }\n  ]\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{member_access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Identity is taken from the member profile; member_id comes from the token, never the body."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Finances",
+      "description": "Financial categories, manual transactions, and derivative reports (permission `finances`).",
+      "item": [
+        {
+          "name": "List Financial Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/financial-categories?search=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Financial Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/financial-categories",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Operasional Toko\",\n  \"category_type\": \"expense\",\n  \"is_active\": true\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Financial Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/financial-categories/{{financial_category_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Financial Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/financial-categories/{{financial_category_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Operasional Toko\",\n  \"description\": \"Updated\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Financial Category",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/financial-categories/{{financial_category_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "List Financial Transactions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/financial-transactions?search=&from=&to=&type=&status=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Financial Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/financial-transactions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_type\": \"expense\",\n  \"financial_category_id\": 1,\n  \"amount\": 50000,\n  \"is_cash\": true,\n  \"description\": \"Belanja plastik\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Financial Transaction",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/financial-transactions/{{financial_transaction_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Financial Transaction",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/financial-transactions/{{financial_transaction_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 55000,\n  \"description\": \"Belanja plastik (revisi)\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Financial Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/financial-transactions/{{financial_transaction_id}}/cancel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Wrong input\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Income Statement",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/reports/income-statement?from=&to="
+          },
+          "response": []
+        },
+        {
+          "name": "Cash Flow",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/reports/cash-flow?from=&to="
+          },
+          "response": []
+        },
+        {
+          "name": "Financial Position",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/reports/financial-position?as_of="
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Profit Sharing",
+      "description": "SHU period lifecycle (permission `profit_sharing`, admin only): draft -> calculate -> finalized, or cancel with a reason. Calculates from the income statement; snapshots per-member distributions.",
+      "item": [
+        {
+          "name": "List Periods",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/profit-sharing/periods?search=&status=draft,calculated&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Period",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/profit-sharing/periods",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"period_name\": \"Tahun Buku 2026\",\n  \"start_date\": \"2026-01-01\",\n  \"end_date\": \"2026-12-31\",\n  \"member_pct\": 50,\n  \"reserve_pct\": 10,\n  \"management_pct\": 15,\n  \"supervisor_pct\": 10,\n  \"social_pct\": 10,\n  \"education_pct\": 5\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Period Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/profit-sharing/periods/{{profit_sharing_period_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Period (Draft Only)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/profit-sharing/periods/{{profit_sharing_period_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Pool final\",\n  \"total_pool\": 1000000\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Calculate Period",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/profit-sharing/periods/{{profit_sharing_period_id}}/calculate"
+          },
+          "response": []
+        },
+        {
+          "name": "Finalize Period",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/profit-sharing/periods/{{profit_sharing_period_id}}/finalize"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Period",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/profit-sharing/periods/{{profit_sharing_period_id}}/cancel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Salah rentang tanggal\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Distributions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/profit-sharing/periods/{{profit_sharing_period_id}}/distributions?search=&limit=50&offset=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Export Distributions CSV",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/profit-sharing/periods/{{profit_sharing_period_id}}/distributions/export"
           },
           "response": []
         }

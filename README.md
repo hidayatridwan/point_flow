@@ -1,6 +1,6 @@
 # Point Flow
 
-Point Flow adalah aplikasi kasir berbasis web untuk toko kecil. Sistem ini mencakup autentikasi, master data produk, manajemen SKU/kemasan, purchase order, penerimaan barang, stock adjustment, stock conversion, transaksi penjualan, payroll slip, dashboard, dan report operasional.
+Point Flow adalah aplikasi kasir berbasis web untuk toko kecil. Sistem ini mencakup autentikasi staff dan member, master data produk, manajemen SKU/kemasan, purchase order, penerimaan barang, stock adjustment, stock conversion, transaksi penjualan dan retur, sesi kasir dan laci, payroll slip, storefront online (katalog publik, checkout guest/member, order pipeline), keuangan manual, profit sharing (SHU), dashboard, dan report operasional dan keuangan.
 
 Repository ini berisi backend API berbasis Rust dan frontend berbasis SvelteKit. Backend sudah menjadi sumber utama business logic dan database schema, sedangkan frontend berisi scaffold SvelteKit beserta komponen UI awal untuk pengembangan aplikasi kasir.
 
@@ -46,15 +46,20 @@ Backend menyediakan REST API di bawah prefix:
 
 Area utama sistem:
 
-- Auth: bootstrap admin, login, refresh token, logout, current user.
-- Users: akun admin dan cashier.
-- Products: category, product induk, unit, dan product SKU.
+- Auth: bootstrap admin, login, refresh token, logout, change password, current user.
+- Users, Roles & Permissions: akun admin/cashier, role/permission RBAC, dan audit log.
+- Cash Registers: master register, sesi buka/tutup laci, dan pergerakan kas manual.
+- Products: category, product induk, unit, product SKU, dan upload foto produk.
 - Suppliers: data supplier.
 - Procurement: purchase order dan goods receipt.
 - Inventory: stock adjustment dan stock conversion.
-- Sales: transaksi kasir dan pembatalan transaksi.
+- Sales dan Sale Returns: transaksi kasir, pembatalan transaksi, dan retur dengan/tanpa restock.
+- Members dan Member Auth: master data anggota dan sesi login storefront (terpisah dari sesi staff).
+- Online Orders dan Public Storefront: katalog/kategori/info toko publik, checkout guest/member, pengaturan toko, dan pipeline order (pack, ready, deliver, complete, mark paid, cancel).
+- Finances: kategori dan transaksi keuangan manual, plus laporan income statement, cash flow, dan financial position.
+- Profit Sharing: periode SHU (calculate, finalize, cancel), distribusi per member, dan export CSV.
 - Employees dan Payroll: data karyawan dan slip gaji.
-- Reports: dashboard, sales report, stock report, purchase order report, goods receipt report, stock adjustment report, payroll report.
+- Reports: dashboard dan analitiknya, sales report, stock report, stock movement report, purchase order report, goods receipt report, stock adjustment report, payroll report.
 
 Model inventory memakai `product_skus` sebagai titik utama stok. Perubahan stok final dicatat lewat dokumen operasional:
 
@@ -62,6 +67,7 @@ Model inventory memakai `product_skus` sebagai titik utama stok. Perubahan stok 
 - Stock adjustment posted mengubah stock menjadi nilai hasil koreksi.
 - Stock conversion posted mengurangi stock SKU sumber dan menambah stock SKU tujuan.
 - Sale completed mengurangi stock.
+- Sale return completed dengan restock menambah stock; cancel retur setelah restock mengurangi stock (koreksi).
 
 ## Project Structure
 
@@ -76,14 +82,18 @@ Model inventory memakai `product_skus` sebagai titik utama stok. Perubahan stok 
 │       ├── config/                 # environment config parser
 │       ├── http/                   # root API router
 │       ├── infra/                  # database connection
-│       └── modules/                # auth, users, products, inventory, sales, dll
+│       └── modules/                # auth, users, roles, cash_registers, products,
+│                                   # suppliers, procurement, inventory, sales,
+│                                   # sale_returns, members, online_orders, payroll,
+│                                   # finances, profit_sharing, reports, employees, audit
 ├── frontend/
-│   ├── src/lib/components/         # komponen UI awal
-│   └── src/routes/                 # routes SvelteKit
+│   ├── src/lib/                    # API client, komponen UI, i18n, formatter
+│   └── src/routes/                 # rute kasir (protected), storefront (public), shop
 ├── docker-compose.yml
 ├── .env.example
 ├── api-flow.md
-└── point_flow.postman_collection.json
+├── docs/                           # roadmap dan desain fase (storefront, finansial/SHU)
+└── point_flow-backend.postman_collection.json
 ```
 
 ## Environment
@@ -408,8 +418,8 @@ bun run build
 
 Dokumen dan collection API:
 
-- `point_flow.postman_collection.json`: Postman collection untuk semua endpoint backend.
-- `api-flow.md`: urutan pemakaian API dari bootstrap admin sampai report.
+- `point_flow-backend.postman_collection.json`: Postman collection untuk semua endpoint backend.
+- `api-flow.md`: urutan pemakaian API dari bootstrap admin sampai profit sharing.
 
 Flow awal yang disarankan:
 
@@ -446,13 +456,37 @@ POST   /auth/bootstrap-admin
 POST   /auth/login
 POST   /auth/refresh
 POST   /auth/logout
+POST   /auth/change-password
 GET    /auth/me
+
+GET    /audit-logs
+GET    /audit-logs/{id}
 
 GET    /users
 POST   /users
 GET    /users/{id}
 PUT    /users/{id}
 DELETE /users/{id}
+
+GET    /roles
+POST   /roles
+GET    /roles/{id}
+PUT    /roles/{id}
+DELETE /roles/{id}
+PUT    /roles/{id}/permissions
+GET    /permissions
+
+GET    /cash-registers
+POST   /cash-registers
+PUT    /cash-registers/{id}
+DELETE /cash-registers/{id}
+GET    /cash-register-sessions
+POST   /cash-register-sessions/open
+POST   /cash-register-sessions/{id}/close
+GET    /cash-drawer-movements
+POST   /cash-drawer-movements
+GET    /cash-drawer-movements/{id}
+POST   /cash-drawer-movements/{id}/cancel
 
 GET    /product-categories
 POST   /product-categories
@@ -465,6 +499,7 @@ POST   /products
 GET    /products/{id}
 PUT    /products/{id}
 DELETE /products/{id}
+POST   /products/{id}/photo
 
 GET    /units
 POST   /units
@@ -513,6 +548,63 @@ POST   /sales
 GET    /sales/{id}
 POST   /sales/{id}/cancel
 
+GET    /sale-returns
+POST   /sale-returns
+GET    /sale-returns/{id}
+POST   /sale-returns/{id}/cancel
+GET    /sales/{id}/returnable-items
+
+GET    /members
+POST   /members
+GET    /members/{id}
+PUT    /members/{id}
+DELETE /members/{id}
+POST   /members/{id}/reset-password
+POST   /members/auth/login
+POST   /members/auth/refresh
+POST   /members/auth/logout
+GET    /members/auth/me
+POST   /members/auth/change-password
+
+GET    /public/products
+GET    /public/categories
+GET    /public/store-info
+POST   /public/orders
+
+GET    /store-settings
+PUT    /store-settings
+POST   /store-settings/qris-image
+
+GET    /online-orders
+GET    /online-orders/{id}
+POST   /online-orders/{id}/pack
+POST   /online-orders/{id}/ready
+POST   /online-orders/{id}/deliver
+POST   /online-orders/{id}/complete
+POST   /online-orders/{id}/cancel
+POST   /online-orders/{id}/mark-paid
+
+GET    /financial-categories
+POST   /financial-categories
+GET    /financial-categories/{id}
+PUT    /financial-categories/{id}
+DELETE /financial-categories/{id}
+GET    /financial-transactions
+POST   /financial-transactions
+GET    /financial-transactions/{id}
+PUT    /financial-transactions/{id}
+POST   /financial-transactions/{id}/cancel
+
+GET    /profit-sharing/periods
+POST   /profit-sharing/periods
+GET    /profit-sharing/periods/{id}
+PUT    /profit-sharing/periods/{id}
+POST   /profit-sharing/periods/{id}/calculate
+POST   /profit-sharing/periods/{id}/finalize
+POST   /profit-sharing/periods/{id}/cancel
+GET    /profit-sharing/periods/{id}/distributions
+GET    /profit-sharing/periods/{id}/distributions/export
+
 GET    /employees
 POST   /employees
 GET    /employees/{id}
@@ -524,13 +616,25 @@ POST   /payroll-slips
 GET    /payroll-slips/{id}
 
 GET    /dashboard
+GET    /dashboard/sales-trend
+GET    /dashboard/top-products
+GET    /dashboard/hourly-sales
+GET    /dashboard/low-stock
+GET    /dashboard/sales-by-category
+GET    /dashboard/product-scatter
+GET    /dashboard/cashier-performance
+GET    /dashboard/procurement-funnel
 GET    /reports/daily-sales
 GET    /reports/monthly-sales
 GET    /reports/stock
+GET    /reports/stock-movements
 GET    /reports/purchase-orders
 GET    /reports/goods-receipts
 GET    /reports/stock-adjustments
 GET    /reports/payroll
+GET    /reports/income-statement
+GET    /reports/cash-flow
+GET    /reports/financial-position
 ```
 
 ## Development Notes
@@ -539,4 +643,4 @@ GET    /reports/payroll
 - Request/response model utama ada di `backend/src/common/models.rs`.
 - Business logic utama untuk master data, dokumen, dan report ada di `backend/src/common/services/`.
 - Database schema ada di `backend/migrations/`.
-- Frontend masih bisa dikembangkan bertahap di atas scaffold SvelteKit dan komponen UI yang sudah ada.
+- Frontend adalah aplikasi kasir + storefront (rute protected, rute public/shop, i18n ID/EN, shadcn-svelte, TanStack Table, superforms+zod); detail pengembangan ada di `CLAUDE.md`.
