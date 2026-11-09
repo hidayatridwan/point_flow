@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { createMember, type Member } from '$lib/api/members.js';
 	import { ApiError } from '$lib/api/types.js';
+	import { generateStrongPassword } from '$lib/password.js';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
+	import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import * as Form from '$lib/components/ui/form/index.js';
@@ -87,8 +89,12 @@
 	$effect(() => {
 		if (!open) return;
 		errorMessage = null;
-		$formData = { ...defaultFormData };
+		$formData = { ...defaultFormData, password: generateStrongPassword() };
 	});
+
+	function regeneratePassword() {
+		$formData.password = generateStrongPassword();
+	}
 
 	async function handleSubmit(event: SubmitEvent) {
 		event.preventDefault();
@@ -196,14 +202,26 @@
 							<Form.Label>{t('master.members.initialPassword')}</Form.Label>
 							<Input
 								{...props}
-								type="password"
-								autocomplete="new-password"
+								type="text"
+								autocomplete="off"
 								disabled={isSubmitting}
 								bind:value={$formData.password}
 							/>
 						{/snippet}
 					</Form.Control>
 					<Form.Description>{t('master.members.passwordHint')}</Form.Description>
+					<div>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={isSubmitting}
+							onclick={regeneratePassword}
+						>
+							<RefreshCwIcon />
+							{t('master.members.regeneratePassword')}
+						</Button>
+					</div>
 					<Form.FieldErrors />
 				</Form.Field>
 
