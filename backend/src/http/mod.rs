@@ -5,7 +5,8 @@ use crate::{
     models::{ApiResponse, MessageResponse},
     modules::{
         audit, auth, cash_registers, employees, finances, inventory, members, online_orders,
-        payroll, procurement, products, reports, roles, sale_returns, sales, suppliers, users,
+        payroll, procurement, products, profit_sharing, reports, roles, sale_returns, sales,
+        suppliers, users,
     },
 };
 
@@ -21,6 +22,7 @@ pub fn router() -> Router<AppState> {
         .merge(cash_registers::routes::routes())
         .merge(users::routes::routes())
         .merge(products::routes::routes())
+        .merge(profit_sharing::routes::routes())
         .merge(suppliers::routes::routes())
         .merge(procurement::routes::routes())
         .merge(inventory::routes::routes())

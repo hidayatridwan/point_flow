@@ -257,20 +257,30 @@ Gate review: diff `backend/migrations/013_add_profit_sharing.sql`.
 
 Tujuan: kalkulasi SHU transparan dengan snapshot yang terkunci saat final.
 
-- [ ] CRUD `/profit-sharing/periods` — PUT hanya draft; calculate/finalize/cancel
+- [x] CRUD `/profit-sharing/periods` — PUT hanya draft; calculate/finalize/cancel
       (desain Bagian 4.2–4.3)
-- [ ] Kalkulasi: pool = `total_pool` ?? `auto_net_profit` (dari income-statement);
+- [x] Kalkulasi: pool = `total_pool` ?? `auto_net_profit` (dari income-statement);
       `member_pool` = pool × `member_pct`/100; per anggota net transaksi (penjualan −
       retur), hanya member `is_active`; `share_amount` = member_pool × share
-- [ ] Snapshot `profit_sharing_distributions`; recalc hanya sebelum finalize; setelah
+- [x] Snapshot `profit_sharing_distributions`; recalc hanya sebelum finalize; setelah
       `finalized` immutable (recalc ditolak); cancel wajib `cancel_reason`
-- [ ] `GET /profit-sharing/periods/{id}/distributions` (paginated + search) + export CSV
-- [ ] i18n keys: locale `id` "SHU"/"Periode SHU"/"Tahun Buku", locale `en`
+- [x] `GET /profit-sharing/periods/{id}/distributions` (paginated + search) + export CSV
+- [x] i18n keys: locale `id` "SHU"/"Periode SHU"/"Tahun Buku", locale `en`
       "Profit Sharing"/"Fiscal Year" (pemisahan layer — desain Bagian 4.4)
 
-Validasi: `cargo test` unit test kalkulasi (pool manual vs auto, tanpa anggota bertransaksi,
-member inactive dikecualikan, retur mengurangi kontribusi) + `curl` e2e dengan fixture:
-period → calculate → angka distribusi direkonsiliasi manual → finalize → recalc ditolak.
+Validasi (2026-11-09, scratch Postgres `point_flow_fase10`, 001–013): `cargo test`
+28 passed, 0 failed (22 lama + 6 unit kalkulasi murni: pool manual vs auto,
+tanpa anggota, inactive dikecualikan, retur mengurangi, net non-positif
+dikecualikan); `clippy --all-targets` + `fmt --check` bersih di file baru.
+`curl` e2e fixture (A 80rb, B 60rb−retur 20rb, C nonaktif 40rb, guest 20rb):
+calculate auto → `pool_used` = 90000 = laba bersih income-statement, `member_pool`
+45000, A 2/3 (30000) + B 1/3 (15000), C + guest dikecualikan; pool manual 1jt →
+recalc 500rb + CSV total = `member_pool`; finalized → update/recalc/cancel/
+finalize = 409; cancel tanpa alasan 422; kasir → 403.
+Catatan deviasi kecil: detail respons memakai `#[serde(flatten)]` (bukan
+`{period, ...}`); distribusi hanya net > 0 (nol/negatif dikecualikan —
+menghindari div-by-zero dan share negatif); PUT draft mendukung clear pool via
+`total_pool: null`.
 Gate review: hasil rekonsiliasi fixture + screenshot CSV.
 
 ## Fase 11 — Frontend profit sharing

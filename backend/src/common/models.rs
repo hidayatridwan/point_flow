@@ -1458,3 +1458,119 @@ pub struct FinancialPositionResponse {
     pub total_assets: f64,
     pub cumulative_net_profit: f64,
 }
+
+/// Profit sharing (SHU) — desain Bagian 4.1. Teknis full English; istilah "SHU"
+/// hanya tampil di UI via i18n (locale id), backend selalu English.
+#[derive(Debug, Deserialize)]
+pub struct CreateProfitSharingPeriodRequest {
+    pub period_name: String,
+    pub start_date: NaiveDate,
+    pub end_date: NaiveDate,
+    pub total_pool: Option<f64>,
+    pub member_pct: f64,
+    pub reserve_pct: f64,
+    pub management_pct: f64,
+    pub supervisor_pct: f64,
+    pub social_pct: f64,
+    pub education_pct: f64,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateProfitSharingPeriodRequest {
+    pub period_name: Option<String>,
+    pub start_date: Option<NaiveDate>,
+    pub end_date: Option<NaiveDate>,
+    /// Absent = tidak diubah; null = kembali ke auto (hapus pool manual).
+    #[serde(default)]
+    pub total_pool: Option<Option<f64>>,
+    pub member_pct: Option<f64>,
+    pub reserve_pct: Option<f64>,
+    pub management_pct: Option<f64>,
+    pub supervisor_pct: Option<f64>,
+    pub social_pct: Option<f64>,
+    pub education_pct: Option<f64>,
+    pub notes: Option<String>,
+}
+
+/// Filter distribusi: pencarian nama/telepon/nomor anggota.
+#[derive(Debug, Deserialize)]
+pub struct DistributionQuery {
+    pub search: Option<String>,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+
+impl DistributionQuery {
+    pub fn limit(&self) -> i64 {
+        self.limit.unwrap_or(50).clamp(1, 100)
+    }
+
+    pub fn offset(&self) -> i64 {
+        self.offset.unwrap_or(0).max(0)
+    }
+
+    pub fn search_pattern(&self) -> String {
+        format!("%{}%", self.search.as_deref().unwrap_or("").to_lowercase())
+    }
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct ProfitSharingPeriodResponse {
+    pub id: i64,
+    pub period_name: String,
+    pub start_date: NaiveDate,
+    pub end_date: NaiveDate,
+    pub status: String,
+    pub total_pool: Option<f64>,
+    pub auto_net_profit: Option<f64>,
+    pub member_pct: f64,
+    pub reserve_pct: f64,
+    pub management_pct: f64,
+    pub supervisor_pct: f64,
+    pub social_pct: f64,
+    pub education_pct: f64,
+    pub notes: Option<String>,
+    pub calculated_at: Option<DateTime<Utc>>,
+    pub finalized_at: Option<DateTime<Utc>>,
+    pub finalized_by: Option<i64>,
+    pub cancelled_at: Option<DateTime<Utc>>,
+    pub cancelled_by: Option<i64>,
+    pub cancel_reason: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+/// Satu bucket alokasi: kunci English stabil untuk i18n frontend (Fase 11).
+#[derive(Debug, Serialize)]
+pub struct BucketAllocation {
+    pub key: &'static str,
+    pub percentage: f64,
+    pub amount: f64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ProfitSharingPeriodDetailResponse {
+    #[serde(flatten)]
+    pub period: ProfitSharingPeriodResponse,
+    /// Pool yang dipakai kalkulasi terakhir (`total_pool` ?? `auto_net_profit`).
+    pub pool_used: f64,
+    pub member_pool: f64,
+    pub member_count: i64,
+    pub total_member_transaction: f64,
+    pub allocations: Vec<BucketAllocation>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct ProfitSharingDistributionResponse {
+    pub id: i64,
+    pub profit_sharing_period_id: i64,
+    pub member_id: i64,
+    pub member_no: String,
+    pub full_name: String,
+    pub phone: String,
+    pub transaction_amount: f64,
+    pub share_pct: f64,
+    pub share_amount: f64,
+    pub calculated_at: DateTime<Utc>,
+}

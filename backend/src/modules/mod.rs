@@ -9,6 +9,7 @@ pub mod online_orders;
 pub mod payroll;
 pub mod procurement;
 pub mod products;
+pub mod profit_sharing;
 pub mod reports;
 pub mod roles;
 pub mod sale_returns;
