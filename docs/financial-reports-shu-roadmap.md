@@ -10,14 +10,22 @@ Urutan mengikuti section 5 desain: Keuangan → Anggota + member auth → Profit
 
 Tujuan: skema keuangan manual + fondasi HPP snapshot dan permission.
 
-- [ ] Tabel `financial_categories` + `financial_transactions` (desain Bagian 2.1)
-- [ ] Sequence harian nomor transaksi (`FIN-YYYYMMDD-NNNNNN`, 6 digit ikut konvensi repo)
-- [ ] Kolom `unit_cost NUMERIC(14,2) NOT NULL DEFAULT 0` di `sale_items` (desain Bagian 2.4)
-- [ ] Field `is_cash BOOLEAN NOT NULL DEFAULT true` di `financial_transactions` (keputusan tercatat)
-- [ ] Seed permission `finances` + laporan keuangan ke role yang sesuai (pola `004_add_rbac.sql`)
-- [ ] Uji di database kosong dan salinan data (001–011 berurutan, uji negatif CHECK/UNIQUE)
+- [x] Tabel `financial_categories` + `financial_transactions` (desain Bagian 2.1)
+- [x] Sequence harian nomor transaksi (`FIN-YYYYMMDD-NNNNNN`, 6 digit ikut konvensi repo)
+- [x] Kolom `unit_cost NUMERIC(14,2) NOT NULL DEFAULT 0` di `sale_items` (desain Bagian 2.4)
+- [x] Field `is_cash BOOLEAN NOT NULL DEFAULT true` di `financial_transactions` (keputusan tercatat)
+- [x] Seed permission `finances` + laporan keuangan ke role yang sesuai (pola `004_add_rbac.sql`) —
+      permission baru `finances`, di-grant ke role `admin` (pola CROSS JOIN dari 009)
+- [x] Uji di database kosong dan salinan data (2026-11-09, scratch Postgres: 001–011 berurutan
+      + 6 uji: default `unit_cost = 0`, CHECK unit_cost negatif ditolak, UNIQUE kategori
+      (name, type) ditolak, nama sama type beda lolos, CHECK amount > 0 ditolak, nomor
+      `FIN-20261108-000002` terformat + default `is_cash`/`status` + trigger `set_updated_at`)
+- [x] `cargo test` hijau (16 passed, 0 failed)
 
-Validasi: migrasi naik bersih di scratch Postgres, `cargo test` tetap hijau.
+Validasi: ✅ migrasi naik bersih di scratch Postgres (2026-11-09), `cargo test` tetap hijau.
+Catatan deviasi kecil: ditambah `CONSTRAINT sale_items_unit_cost_non_negative CHECK
+(unit_cost >= 0)` — tidak ada di desain Bagian 2.4, tapi konsisten dengan konvensi CHECK
+non-negative repo (`unit_price_non_negative`, `purchase_price_non_negative`).
 Gate review: diff `backend/migrations/011_add_finances.sql`.
 
 ## Fase 2 — Backend modul finances & snapshot HPP

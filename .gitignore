@@ -19,5 +19,7 @@ build/
 !.env.flyio.example
 
 notes.txt
+PROPOSAL_PENAWARAN_HARGA.md
+
 # state lokal Supabase CLI (bukan secret, tapi tidak perlu di-track)
 supabase/.temp/
