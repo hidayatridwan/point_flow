@@ -122,14 +122,23 @@ Gate review: buka halaman di browser, satu alur penuh: catat expense → lihat l
 
 Tujuan: skema member + kredensial login dan kolom atribusi.
 
-- [ ] Tabel `members` — `phone` unique NOT NULL (identitas login), `email` opsional,
+- [x] Tabel `members` — `phone` unique NOT NULL (identitas login), `email` opsional,
       `password_hash` NOT NULL, `is_active` (desain Bagian 3.1)
-- [ ] Tabel `member_refresh_tokens` terpisah dari `refresh_tokens` staff (Bagian 3.1)
-- [ ] Kolom `member_id` di `sales` dan `online_orders` + index
-- [ ] Seed permission `members` ke role yang sesuai
-- [ ] Uji di database kosong dan salinan data (001–012 berurutan; unik telepon enforced)
+- [x] Tabel `member_refresh_tokens` terpisah dari `refresh_tokens` staff (Bagian 3.1)
+- [x] Kolom `member_id` di `sales` dan `online_orders` + index
+- [x] Seed permission `members` ke role yang sesuai — `admin` + `cashier` (kasir butuh
+      baca member untuk picker POS Fase 8; tulis tetap lewat endpoint berpermission sama)
+- [x] Uji di database kosong dan salinan data (001–012 berurutan; unik telepon enforced)
 
-Validasi: migrasi naik bersih di scratch Postgres, insert telepon ganda ditolak.
+Validasi (2026-11-09, scratch Postgres `point_flow_fase5`, 001–012): migrasi naik
+bersih; `MBR-20261109-000001` terformat + default `is_active`; duplikat telepon,
+nama kosong, telepon kosong ditolak (UNIQUE + CHECK); duplikat `token_hash`
+ditolak; trigger `set_updated_at` jalan; hapus member → `sales.member_id` jadi
+NULL (SET NULL), token ikut terhapus (CASCADE); `cargo test` 16 passed.
+Catatan deviasi kecil: tambah CHECK nama/telepon non-kosong (pola
+`customer_name/phone_required` order), UNIQUE `member_no` (pola nomor dokumen),
+trigger `set_updated_at` (konvensi 011), `token_hash VARCHAR(64)` menyerupai
+`refresh_tokens` staff (bukan TEXT desain).
 Gate review: diff `backend/migrations/012_add_members.sql`.
 
 ## Fase 6 — Backend modul members (CRUD dashboard)
