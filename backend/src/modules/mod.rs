@@ -2,6 +2,7 @@ pub mod audit;
 pub mod auth;
 pub mod cash_registers;
 pub mod employees;
+pub mod finances;
 pub mod inventory;
 pub mod online_orders;
 pub mod payroll;

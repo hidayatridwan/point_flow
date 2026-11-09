@@ -911,6 +911,7 @@ pub struct SaleItemResponse {
     pub unit: String,
     pub quantity: f64,
     pub unit_price: f64,
+    pub unit_cost: f64,
     pub line_total: f64,
     pub created_at: DateTime<Utc>,
 }
@@ -1241,4 +1242,98 @@ pub struct ProcurementFunnel {
     pub sa_draft: i64,
     pub sa_posted: i64,
     pub sa_cancelled: i64,
+}
+
+/// Filter list transaksi keuangan manual (desain 2.2).
+#[derive(Debug, Deserialize)]
+pub struct FinancialTransactionQuery {
+    pub search: Option<String>,
+    pub from: Option<NaiveDate>,
+    pub to: Option<NaiveDate>,
+    pub status: Option<String>,
+    #[serde(rename = "type")]
+    pub transaction_type: Option<String>,
+    pub financial_category_id: Option<i64>,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+
+impl FinancialTransactionQuery {
+    pub fn limit(&self) -> i64 {
+        self.limit.unwrap_or(50).clamp(1, 100)
+    }
+
+    pub fn offset(&self) -> i64 {
+        self.offset.unwrap_or(0).max(0)
+    }
+
+    pub fn search_pattern(&self) -> String {
+        format!("%{}%", self.search.as_deref().unwrap_or("").to_lowercase())
+    }
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct FinancialCategoryResponse {
+    pub id: i64,
+    pub name: String,
+    pub category_type: String,
+    pub description: Option<String>,
+    pub is_active: bool,
+    pub created_by: Option<i64>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateFinancialCategoryRequest {
+    pub name: String,
+    pub category_type: String,
+    pub description: Option<String>,
+    pub is_active: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateFinancialCategoryRequest {
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub is_active: Option<bool>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct FinancialTransactionResponse {
+    pub id: i64,
+    pub transaction_no: String,
+    pub occurred_at: DateTime<Utc>,
+    pub transaction_type: String,
+    pub financial_category_id: i64,
+    pub financial_category_name: String,
+    pub amount: f64,
+    pub is_cash: bool,
+    pub description: Option<String>,
+    pub status: String,
+    pub cancelled_at: Option<DateTime<Utc>>,
+    pub cancelled_by: Option<i64>,
+    pub cancel_reason: Option<String>,
+    pub recorded_by: i64,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateFinancialTransactionRequest {
+    pub occurred_at: Option<DateTime<Utc>>,
+    pub transaction_type: String,
+    pub financial_category_id: i64,
+    pub amount: f64,
+    pub is_cash: Option<bool>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateFinancialTransactionRequest {
+    pub occurred_at: Option<DateTime<Utc>>,
+    pub financial_category_id: Option<i64>,
+    pub amount: Option<f64>,
+    pub is_cash: Option<bool>,
+    pub description: Option<String>,
 }

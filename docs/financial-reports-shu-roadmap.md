@@ -32,15 +32,35 @@ Gate review: diff `backend/migrations/011_add_finances.sql`.
 
 Tujuan: pengeluaran/pemasukan manual tercatat, dan HPP tiap penjualan terkunci saat transaksi.
 
-- [ ] Modul `backend/src/modules/finances/` (routes/handler/service/repository/model/dto)
-- [ ] CRUD `/financial-categories` + `/financial-transactions` + cancel (desain Bagian 2.2)
-- [ ] Snapshot `unit_cost` dari `product_skus.purchase_price` saat sale dibuat (service sale)
-- [ ] Sale return membalikkan COGS sebesar `unit_cost × qty` yang diretur (desain Bagian 2.4)
-- [ ] `is_cash` memengaruhi apakah transaksi masuk arus kas (non-tunai tidak)
+- [x] Modul `backend/src/modules/finances/` (routes/handler/service/repository/model/dto)
+- [x] CRUD `/financial-categories` + `/financial-transactions` + cancel (desain Bagian 2.2) —
+      permission `finances`; kategori: duplicate (nama,type) → 409, type immutable, delete
+      dipakai → 409; transaksi: validasi type cocok kategori, amount > 0, update/cancel
+      hanya saat `completed` (cancel ganda → 409); filter list: date range, `type`,
+      `financial_category_id`, `status`, search
+- [x] Snapshot `unit_cost` dari `product_skus.purchase_price` saat sale dibuat (service sale
+      POS + konversi order online via JOIN `product_skus`)
+- [x] Sale return membalikkan COGS sebesar `unit_cost × qty` yang diretur (desain Bagian 2.4) —
+      tanpa kolom baru: retur menunjuk `sale_item_id`, net COGS = Σ qty×unit_cost −
+      qty-diretur×unit_cost (dipakai formula Fase 3)
+- [x] `is_cash` memengaruhi apakah transaksi masuk arus kas (non-tunai tidak) —
+      disimpan di create/update; efek ke laporan dihitung di Fase 3
 
-Validasi: `cargo test` + `cargo clippy --all-targets`; `curl` e2e di scratch DB: buat sale
-→ `unit_cost` terisi dari harga beli SKU; retur sebagian → COGS berkurang proporsional;
-expense `is_cash=false` tidak muncul di arus kas (cek di Fase 3).
+Validasi (2026-11-09, scratch Postgres `point_flow_fase2`, 001–011): `cargo test`
+16 passed, 0 failed; `cargo clippy --all-targets` bersih kecuali 2 warning
+pre-existing di `master.rs`; `cargo fmt --check` bersih. `curl` e2e: kategori
+duplicate → 409, type bogus → 422 (body) / 400 (query); transaksi type-mismatch →
+422, amount negatif → 422, kategori tak ada → 404; cancel ganda → 409, update
+cancelled → 409, delete kategori terpakai → 409, tanpa token → 401; penomoran
+`FIN-20261109-000001` berurutan. Sale POS 4× @beli 45000 → `unit_cost: 45000`;
+harga beli diubah 50000 → sale baru snapshot 50000, sale lama tetap 45000;
+order online → complete → sale `channel=online` ikut snapshot. Retur parsial
+1 unit → gross 180000, net 135000 (proporsional). Expense `is_cash=false`
+25000 tidak masuk hitungan kas-keluar-manual (175000 vs 200000).
+Catatan deviasi kecil: filter enum dibandingkan sebagai text
+(`ft.type::text = $4`, pola `status::text` repo) karena Postgres menolak
+operator enum = text untuk bind parameter; filter `type` invalid → 400
+(konsisten `parse_status_filter`), body invalid tetap 422.
 Gate review: daftar endpoint + contoh respons create/cancel transaksi.
 
 ## Fase 3 — Backend laporan keuangan

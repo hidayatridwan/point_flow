@@ -713,12 +713,14 @@ pub async fn insert_online_sale(
             r#"
             INSERT INTO sale_items (
                 sale_id, product_id, product_sku_id,
-                product_name, product_sku, unit, quantity, unit_price
+                product_name, product_sku, unit, quantity, unit_price, unit_cost
             )
-            SELECT $1, product_id, product_sku_id,
-                product_name, product_sku, unit, quantity, unit_price
-            FROM online_order_items
-            WHERE id = $2
+            SELECT $1, oi.product_id, oi.product_sku_id,
+                oi.product_name, oi.product_sku, oi.unit, oi.quantity, oi.unit_price,
+                ps.purchase_price
+            FROM online_order_items oi
+            JOIN product_skus ps ON ps.id = oi.product_sku_id
+            WHERE oi.id = $2
             RETURNING id
             "#,
         )

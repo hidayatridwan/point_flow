@@ -226,6 +226,7 @@ const SALE_ITEM_SELECT: &str = r#"
         unit,
         quantity::float8 AS quantity,
         unit_price::float8 AS unit_price,
+        unit_cost::float8 AS unit_cost,
         line_total::float8 AS line_total,
         created_at
     FROM sale_items
@@ -1362,9 +1363,9 @@ pub async fn create_sale(
         let sale_item_id: i64 = sqlx::query_scalar(
             r#"
             INSERT INTO sale_items (
-                sale_id, product_id, product_sku_id, product_name, product_sku, unit, quantity, unit_price
+                sale_id, product_id, product_sku_id, product_name, product_sku, unit, quantity, unit_price, unit_cost
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7::numeric, $8::numeric)
+            VALUES ($1, $2, $3, $4, $5, $6, $7::numeric, $8::numeric, $9::numeric)
             RETURNING id
             "#,
         )
@@ -1376,6 +1377,7 @@ pub async fn create_sale(
         .bind(product.unit)
         .bind(quantity)
         .bind(product.selling_price)
+        .bind(product.purchase_price)
         .fetch_one(&mut *tx)
         .await?;
 
@@ -1988,6 +1990,7 @@ struct ProductSkuSnapshot {
     unit: String,
     stock: f64,
     selling_price: f64,
+    purchase_price: f64,
 }
 
 async fn load_product_sku_snapshot(
@@ -2005,7 +2008,8 @@ async fn load_product_sku_snapshot(
             ps.sku,
             u.code AS unit,
             ps.stock::float8 AS stock,
-            ps.selling_price::float8 AS selling_price
+            ps.selling_price::float8 AS selling_price,
+            ps.purchase_price::float8 AS purchase_price
         FROM product_skus ps
         JOIN products p ON p.id = ps.product_id
         JOIN units u ON u.id = ps.unit_id
@@ -2032,6 +2036,7 @@ async fn load_product_sku_snapshot(
         unit: row.get("unit"),
         stock: row.get("stock"),
         selling_price: row.get("selling_price"),
+        purchase_price: row.get("purchase_price"),
     })
 }
 
