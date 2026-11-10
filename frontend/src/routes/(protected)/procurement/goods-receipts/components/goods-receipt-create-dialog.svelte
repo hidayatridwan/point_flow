@@ -270,12 +270,16 @@
 				purchase_order_id: Number(result.data.purchase_order_id),
 				received_at: dateToUtcDateTime(result.data.received_date),
 				notes: emptyToNull(result.data.notes),
-				items: result.data.items.map((item) => ({
-					purchase_order_item_id: Number(item.purchase_order_item_id),
-					quantity_received: Number(item.quantity_received),
-					unit_cost: Number(item.unit_cost),
-					margin_percent: item.margin_percent.trim() === '' ? null : Number(item.margin_percent)
-				}))
+				items: result.data.items.map((item) => {
+					// Sama seperti preview: binding number Svelte 5 bisa berupa number/null.
+					const marginInput = normalizeStringInput(item.margin_percent).trim();
+					return {
+						purchase_order_item_id: Number(item.purchase_order_item_id),
+						quantity_received: Number(item.quantity_received),
+						unit_cost: Number(item.unit_cost),
+						margin_percent: marginInput === '' ? null : Number(marginInput)
+					};
+				})
 			});
 			await onCreated?.(createdGoodsReceipt);
 			toast.success(t('procurement.goodsReceipts.createdToast'), {
@@ -325,8 +329,11 @@
 	}
 
 	function getNewSellingPrice(item: GoodsReceiptFormItem) {
-		if (item.margin_percent.trim() === '') return null;
-		const margin = toNumber(item.margin_percent);
+		// bind:value pada <input type="number"> menghasilkan number/null di runtime
+		// (Svelte 5), jadi normalisasi dulu sebelum .trim() agar preview tidak crash.
+		const marginInput = normalizeStringInput(item.margin_percent).trim();
+		if (marginInput === '') return null;
+		const margin = toNumber(marginInput);
 		const unitCost = toNumber(item.unit_cost);
 		if (!Number.isFinite(margin) || !Number.isFinite(unitCost)) return null;
 		return Math.round(unitCost * (1 + margin / 100) * 100) / 100;

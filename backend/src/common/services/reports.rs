@@ -23,6 +23,8 @@ pub async fn dashboard(pool: &PgPool) -> AppResult<DashboardResponse> {
         SELECT
             (SELECT COUNT(*) FROM sales WHERE status = 'completed' AND sold_at::date = CURRENT_DATE) AS transaction_count_today,
             (SELECT COALESCE(SUM(total_amount), 0)::float8 FROM sales WHERE status = 'completed' AND sold_at::date = CURRENT_DATE) AS revenue_today,
+            (SELECT COALESCE(SUM(CASE WHEN payment_method = 'cash' THEN total_amount ELSE 0 END), 0)::float8 FROM sales WHERE status = 'completed' AND sold_at::date = CURRENT_DATE) AS cash_revenue_today,
+            (SELECT COALESCE(SUM(CASE WHEN payment_method <> 'cash' THEN total_amount ELSE 0 END), 0)::float8 FROM sales WHERE status = 'completed' AND sold_at::date = CURRENT_DATE) AS noncash_revenue_today,
             (SELECT COUNT(*) FROM product_skus ps JOIN products p ON p.id = ps.product_id WHERE ps.deleted_at IS NULL AND ps.is_active = TRUE AND ps.stock <= ps.minimum_stock AND p.deleted_at IS NULL AND p.is_active = TRUE) AS low_stock_product_count,
             (SELECT COUNT(*) FROM purchase_orders WHERE status IN ('ordered', 'partially_received')) AS pending_purchase_order_count,
             (SELECT COUNT(*) FROM stock_adjustments WHERE status = 'draft') AS draft_stock_adjustment_count,
@@ -41,7 +43,9 @@ pub async fn daily_sales(pool: &PgPool, query: ListQuery) -> AppResult<Vec<Daily
             sales_date,
             transaction_count,
             subtotal_amount::float8 AS subtotal_amount,
-            total_amount::float8 AS total_amount
+            total_amount::float8 AS total_amount,
+            cash_revenue::float8 AS cash_revenue,
+            noncash_revenue::float8 AS noncash_revenue
         FROM v_daily_sales_report
         WHERE ($1::date IS NULL OR sales_date >= $1)
             AND ($2::date IS NULL OR sales_date <= $2)
@@ -65,7 +69,9 @@ pub async fn monthly_sales(pool: &PgPool, query: ListQuery) -> AppResult<Vec<Mon
             sales_month,
             transaction_count,
             subtotal_amount::float8 AS subtotal_amount,
-            total_amount::float8 AS total_amount
+            total_amount::float8 AS total_amount,
+            cash_revenue::float8 AS cash_revenue,
+            noncash_revenue::float8 AS noncash_revenue
         FROM v_monthly_sales_report
         WHERE ($1::date IS NULL OR sales_month >= date_trunc('month', $1::date)::date)
             AND ($2::date IS NULL OR sales_month <= date_trunc('month', $2::date)::date)

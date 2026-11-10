@@ -53,6 +53,7 @@ pub struct StoreInfoResponse {
     pub qris_image_url: Option<String>,
     pub delivery_fee: f64,
     pub shop_whatsapp: String,
+    pub payment_mode: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -101,6 +102,12 @@ pub struct CheckoutResponse {
     pub total_amount: f64,
     pub items: Vec<CheckoutItemResponse>,
     pub payment_info: Option<CheckoutPaymentInfo>,
+    /// Snap pembayaran online (`payment_method = midtrans`): token + URL
+    /// bayar + `order_id` Midtrans (baris `midtrans_payments`, bukan
+    /// `online_orders`). Bernilai `None` untuk `pay_at_store`/`transfer`.
+    pub snap_token: Option<String>,
+    pub redirect_url: Option<String>,
+    pub midtrans_order_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -151,4 +158,5 @@ pub struct UpdateStoreSettingsRequest {
     pub ewallet_numbers: Option<String>,
     pub delivery_fee: Option<f64>,
     pub shop_whatsapp: Option<String>,
+    pub payment_mode: Option<String>,
 }

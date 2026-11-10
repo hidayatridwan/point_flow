@@ -6,6 +6,7 @@ use sqlx::PgPool;
 
 use crate::{
     common::models::PaginationMeta,
+    config::MidtransSettings,
     infra::{cache::TtlCache, s3::ObjectStorage},
     modules::online_orders::dto::{PublicCategory, PublicProductItem, StoreInfoResponse},
 };
@@ -55,6 +56,7 @@ pub struct AppState {
     pub refresh_token_cookie_same_site: String,
     pub refresh_token_cookie_domain: Option<String>,
     pub s3: Option<Arc<ObjectStorage>>,
+    pub midtrans: Option<MidtransSettings>,
     pub public_cache: Arc<PublicCache>,
 }
 
@@ -71,6 +73,7 @@ impl AppState {
         refresh_token_cookie_same_site: String,
         refresh_token_cookie_domain: Option<String>,
         s3: Option<Arc<ObjectStorage>>,
+        midtrans: Option<MidtransSettings>,
     ) -> Self {
         Self {
             db,
@@ -83,6 +86,7 @@ impl AppState {
             refresh_token_cookie_same_site,
             refresh_token_cookie_domain,
             s3,
+            midtrans,
             public_cache: Arc::new(PublicCache::default()),
         }
     }

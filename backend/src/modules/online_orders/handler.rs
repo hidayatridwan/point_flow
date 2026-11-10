@@ -82,6 +82,7 @@ pub async fn checkout(
         service::checkout(
             &state.db,
             state.s3.as_deref(),
+            state.midtrans.as_ref(),
             payload,
             member.0.map(|member| member.id),
         )

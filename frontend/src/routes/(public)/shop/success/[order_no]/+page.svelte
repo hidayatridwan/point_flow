@@ -6,10 +6,17 @@
 	import { getPublicStoreInfo, type CheckoutResult, type StoreInfo } from '$lib/api/storefront.js';
 	import { formatIdr } from '$lib/formatters.js';
 	import { t } from '$lib/i18n/locale.svelte.js';
+	import { loadMidtransSnap } from '$lib/midtrans-snap.js';
 
 	let receipt = $state<CheckoutResult | null>(null);
 	let storeInfo = $state<StoreInfo | null>(null);
 	let copied = $state(false);
+	let isPaying = $state(false);
+	let snapMessage = $state<string | null>(null);
+	let snapError = $state<string | null>(null);
+
+	const snapToken = $derived(receipt?.snap_token ?? null);
+	const isMidtransOrder = $derived(receipt?.payment_method === 'midtrans');
 
 	const orderNo = $derived(page.params.order_no ?? '');
 
@@ -40,6 +47,36 @@
 			});
 		} catch {
 			// Clipboard tidak tersedia: nomor tetap terlihat untuk disalin manual.
+		}
+	}
+
+	/** Buka Snap untuk token tersimpan (bayar maupun lihat status berjalan). */
+	async function openSnap(statusCheck: boolean) {
+		const token = snapToken;
+		if (!token) return;
+		isPaying = true;
+		snapError = null;
+		if (statusCheck) snapMessage = t('shop.checkingStatus');
+		try {
+			await loadMidtransSnap();
+			window.snap?.pay(token, {
+				onSuccess: () => {
+					snapMessage = t('shop.midtransPaid');
+				},
+				onPending: () => {
+					snapMessage = t('shop.midtransPending');
+				},
+				onError: () => {
+					snapMessage = t('shop.midtransFailed');
+				},
+				onClose: () => {
+					if (!snapMessage) snapMessage = t('shop.midtransClosed');
+				}
+			});
+		} catch {
+			snapError = t('shop.snapUnavailable');
+		} finally {
+			isPaying = false;
 		}
 	}
 
@@ -116,6 +153,40 @@
 				<span>{formatIdr(receipt.total_amount)}</span>
 			</div>
 		</div>
+
+		{#if isMidtransOrder && snapToken}
+			<div class="mt-4 rounded-2xl bg-white p-4 shadow-sm">
+				<h2 class="text-sm font-bold text-[#333333]">{t('shop.payOnline')}</h2>
+				<p class="mt-1 text-xl font-bold text-[#ff6534]">{formatIdr(receipt.total_amount)}</p>
+				<p class="mt-1 text-xs text-neutral-500">{t('shop.payOnlineHint')}</p>
+				{#if snapMessage}
+					<p class="mt-2 rounded-xl bg-neutral-50 p-2.5 text-sm text-[#333333]">{snapMessage}</p>
+				{/if}
+				{#if snapError}
+					<p role="alert" class="mt-2 rounded-xl bg-red-50 p-2.5 text-sm text-red-700">
+						{snapError}
+					</p>
+				{/if}
+				<div class="mt-3 grid gap-2">
+					<button
+						type="button"
+						disabled={isPaying}
+						onclick={() => void openSnap(false)}
+						class="w-full rounded-full bg-[#ff6534] py-3 text-sm font-bold text-white transition-colors hover:bg-[#e5551f] disabled:cursor-not-allowed disabled:opacity-60"
+					>
+						{isPaying ? t('shop.paying') : t('shop.payNow')}
+					</button>
+					<button
+						type="button"
+						disabled={isPaying}
+						onclick={() => void openSnap(true)}
+						class="w-full rounded-full bg-white py-3 text-sm font-bold text-[#333333] shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+					>
+						{isPaying ? t('shop.checkingStatus') : t('shop.checkStatus')}
+					</button>
+				</div>
+			</div>
+		{/if}
 
 		{#if receipt.payment_method === 'transfer' && receipt.payment_info}
 			<div class="mt-4 rounded-2xl bg-white p-4 shadow-sm">

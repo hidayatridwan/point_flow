@@ -75,6 +75,7 @@ export type StoreSettings = {
 	qris_image_url: string | null;
 	delivery_fee: number;
 	shop_whatsapp: string;
+	payment_mode: string;
 };
 
 export type UpdateStoreSettingsPayload = {
@@ -84,6 +85,7 @@ export type UpdateStoreSettingsPayload = {
 	ewallet_numbers?: string;
 	delivery_fee?: number;
 	shop_whatsapp?: string;
+	payment_mode?: string;
 };
 
 export type UploadResponse = {

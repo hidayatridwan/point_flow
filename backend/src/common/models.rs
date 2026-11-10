@@ -894,6 +894,8 @@ pub struct SaleResponse {
     pub total_amount: f64,
     pub paid_amount: f64,
     pub change_amount: f64,
+    pub payment_method: String,
+    pub payment_reference: Option<String>,
     pub status: String,
     pub notes: Option<String>,
     pub cancelled_at: Option<DateTime<Utc>>,
@@ -999,6 +1001,12 @@ pub struct CreateSaleRequest {
     pub cash_register_session_id: Option<i64>,
     pub member_id: Option<i64>,
     pub paid_amount: f64,
+    /// Metode pembayaran kasir: `cash` (default) atau `transfer` (non-tunai
+    /// manual). `midtrans` ditolak di endpoint — sale Midtrans hanya lahir
+    /// dari settlement webhook.
+    pub payment_method: Option<String>,
+    /// Wajib untuk `transfer`: tujuan transfer + no. bukti. Terlarang untuk `cash`.
+    pub payment_reference: Option<String>,
     pub notes: Option<String>,
     pub items: Vec<SaleItemInput>,
 }
@@ -1058,6 +1066,8 @@ pub struct CreatePayrollSlipRequest {
 pub struct DashboardResponse {
     pub transaction_count_today: i64,
     pub revenue_today: f64,
+    pub cash_revenue_today: f64,
+    pub noncash_revenue_today: f64,
     pub low_stock_product_count: i64,
     pub pending_purchase_order_count: i64,
     pub draft_stock_adjustment_count: i64,
@@ -1070,6 +1080,8 @@ pub struct DailySalesReport {
     pub transaction_count: i64,
     pub subtotal_amount: f64,
     pub total_amount: f64,
+    pub cash_revenue: f64,
+    pub noncash_revenue: f64,
 }
 
 #[derive(Debug, Serialize, FromRow)]
@@ -1078,6 +1090,8 @@ pub struct MonthlySalesReport {
     pub transaction_count: i64,
     pub subtotal_amount: f64,
     pub total_amount: f64,
+    pub cash_revenue: f64,
+    pub noncash_revenue: f64,
 }
 
 #[derive(Debug, Serialize, FromRow)]

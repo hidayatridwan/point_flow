@@ -147,6 +147,8 @@ export type CreateSalePayload = {
 	cash_register_session_id: number;
 	member_id?: number | null;
 	paid_amount: number;
+	payment_method?: 'cash' | 'transfer';
+	payment_reference?: string | null;
 	notes?: string | null;
 	items: CreateSaleItemPayload[];
 };

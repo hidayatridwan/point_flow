@@ -3,9 +3,11 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::{
+    config::MidtransSettings,
     error::{AppError, AppResult},
     infra::s3::{self, ObjectStorage},
     models::{ListQuery, MemberResponse, PaginationMeta, UploadResponse},
+    modules::payments::service as payments_service,
     services::{audit, member_auth},
 };
 
@@ -24,14 +26,29 @@ pub const FULFILLMENT_PICKUP: &str = "pickup";
 pub const FULFILLMENT_DELIVERY: &str = "delivery";
 pub const PAYMENT_PAY_AT_STORE: &str = "pay_at_store";
 pub const PAYMENT_TRANSFER: &str = "transfer";
+pub const PAYMENT_MIDTRANS: &str = "midtrans";
+pub const PAYMENT_MODE_MANUAL: &str = "manual";
+pub const PAYMENT_MODE_MIDTRANS: &str = "midtrans";
+
+/// Normalisasi mode pembayaran toko aktif. Hanya `midtrans` yang diakui;
+/// nilai lain (termasuk baris belum ada atau data lama) berarti `manual`
+/// agar toko yang sudah jalan tidak berubah perilaku.
+pub fn normalize_payment_mode(value: Option<&str>) -> String {
+    match value.map(str::trim) {
+        Some(PAYMENT_MODE_MIDTRANS) => PAYMENT_MODE_MIDTRANS.to_string(),
+        _ => PAYMENT_MODE_MANUAL.to_string(),
+    }
+}
 
 const MAX_CHECKOUT_ITEMS: usize = 100;
 
+#[derive(Debug)]
 pub struct ValidatedItem {
     pub product_sku_id: i64,
     pub quantity: f64,
 }
 
+#[derive(Debug)]
 pub struct ValidatedCheckout {
     pub customer_name: String,
     pub customer_phone: String,
@@ -43,7 +60,15 @@ pub struct ValidatedCheckout {
 }
 
 /// Validasi checkout murni (tanpa database) agar bisa diuji unit.
-pub fn validate_checkout(request: &CheckoutRequest) -> Result<ValidatedCheckout, String> {
+/// `payment_mode` adalah mode toko aktif yang sudah dinormalisasi
+/// (`manual` | `midtrans`). Jalur non-tunai bersifat eksklusif mengikuti
+/// mode toko; request lintas-mode ditolak server dengan error yang jelas:
+/// - mode `manual`: terima `pay_at_store`/`transfer`, tolak `midtrans`;
+/// - mode `midtrans`: terima `pay_at_store`/`midtrans`, tolak `transfer`.
+pub fn validate_checkout(
+    request: &CheckoutRequest,
+    payment_mode: &str,
+) -> Result<ValidatedCheckout, String> {
     let customer_name = request.customer_name.trim().to_string();
     if customer_name.is_empty() {
         return Err("customer_name is required".to_string());
@@ -66,8 +91,23 @@ pub fn validate_checkout(request: &CheckoutRequest) -> Result<ValidatedCheckout,
     }
 
     let payment_method = request.payment_method.trim().to_string();
-    if payment_method != PAYMENT_PAY_AT_STORE && payment_method != PAYMENT_TRANSFER {
-        return Err("payment_method must be pay_at_store or transfer".to_string());
+    match payment_mode.trim() {
+        PAYMENT_MODE_MIDTRANS => {
+            if payment_method != PAYMENT_PAY_AT_STORE && payment_method != PAYMENT_MIDTRANS {
+                return Err(
+                    "payment_method must be pay_at_store or midtrans in midtrans payment mode"
+                        .to_string(),
+                );
+            }
+        }
+        _ => {
+            if payment_method != PAYMENT_PAY_AT_STORE && payment_method != PAYMENT_TRANSFER {
+                return Err(
+                    "payment_method must be pay_at_store or transfer in manual payment mode"
+                        .to_string(),
+                );
+            }
+        }
     }
 
     let delivery_address = request
@@ -181,6 +221,12 @@ pub async fn get_store_info(
         .await?
         .map(|v| normalize_whatsapp(&v))
         .unwrap_or_default();
+    // Hanya dua nilai yang sah; nilai lain (mis. data lama) dinormalkan ke manual.
+    let payment_mode = normalize_payment_mode(
+        repository::get_setting(pool, "payment_mode")
+            .await?
+            .as_deref(),
+    );
 
     Ok(StoreInfoResponse {
         store_name,
@@ -190,6 +236,7 @@ pub async fn get_store_info(
         qris_image_url,
         delivery_fee,
         shop_whatsapp,
+        payment_mode,
     })
 }
 
@@ -237,6 +284,7 @@ pub fn resolve_checkout_identity(
 pub async fn checkout(
     pool: &PgPool,
     s3: Option<&ObjectStorage>,
+    midtrans: Option<&MidtransSettings>,
     request: CheckoutRequest,
     member_id: Option<i64>,
 ) -> AppResult<CheckoutResponse> {
@@ -246,6 +294,13 @@ pub async fn checkout(
         None => None,
     };
     let identity = resolve_checkout_identity(&request, member.as_ref());
+    // Flag mode pembayaran dibaca di awal agar penolakan lintas-mode
+    // terjadi server-side, bukan hanya disembunyikan di UI.
+    let payment_mode = normalize_payment_mode(
+        repository::get_setting(pool, "payment_mode")
+            .await?
+            .as_deref(),
+    );
     // Validasi berjalan di atas identitas efektif agar aturan alamat/nama
     // tetap sama untuk member maupun guest.
     let effective = CheckoutRequest {
@@ -257,7 +312,7 @@ pub async fn checkout(
         notes: request.notes,
         items: request.items,
     };
-    let order = validate_checkout(&effective).map_err(AppError::Validation)?;
+    let order = validate_checkout(&effective, &payment_mode).map_err(AppError::Validation)?;
 
     let sku_ids: Vec<i64> = order.items.iter().map(|i| i.product_sku_id).collect();
     let sku_rows = repository::load_checkout_skus(pool, &sku_ids).await?;
@@ -336,17 +391,69 @@ pub async fn checkout(
     )
     .await?;
 
-    let payment_info = if order.payment_method == PAYMENT_TRANSFER {
-        let info = get_store_info(pool, s3).await?;
-        Some(CheckoutPaymentInfo {
-            bank_accounts: info.bank_accounts,
-            ewallet_numbers: info.ewallet_numbers,
-            qris_image_url: info.qris_image_url,
+    // Metode midtrans: buat charge Snap publik (tanpa sesi kasir), tautan
+    // balik disimpan di sisi payments (`midtrans_payments.online_order_id`).
+    // Respons mengembalikan snap_token/redirect_url, bukan payment_info.
+    if order.payment_method == PAYMENT_MIDTRANS {
+        let settings =
+            midtrans.ok_or_else(|| AppError::Internal("midtrans is not configured".to_string()))?;
+        let mut charge_items = Vec::with_capacity(order.items.len());
+        for item in &order.items {
+            let sku = sku_rows
+                .iter()
+                .find(|row| row.product_sku_id == item.product_sku_id)
+                .ok_or_else(|| {
+                    AppError::Validation(format!(
+                        "product SKU {} is not available",
+                        item.product_sku_id
+                    ))
+                })?;
+            charge_items.push(payments_service::OnlineChargeItem {
+                product_sku_id: item.product_sku_id,
+                quantity: item.quantity,
+                unit_price: sku.selling_price,
+                sku: sku.product_sku.clone(),
+                name: sku.product_name.clone(),
+            });
+        }
+        let charge = payments_service::create_online_charge(
+            pool,
+            settings,
+            saved.id,
+            identity.member_id,
+            order.notes.as_deref(),
+            &charge_items,
+            delivery_fee,
+        )
+        .await?;
+        return Ok(CheckoutResponse {
+            order_id: saved.id,
+            order_no: saved.order_no,
+            fulfillment_method: order.fulfillment_method,
+            payment_method: order.payment_method,
             total_amount: total,
-        })
-    } else {
-        None
-    };
+            items: response_items,
+            payment_info: None,
+            snap_token: charge.snap_token,
+            redirect_url: charge.redirect_url,
+            midtrans_order_id: Some(charge.order_id),
+        });
+    }
+
+    // Info pembayaran manual (rekening/e-wallet/QRIS) hanya dikembalikan
+    // saat mode manual + metode transfer.
+    let payment_info =
+        if order.payment_method == PAYMENT_TRANSFER && payment_mode == PAYMENT_MODE_MANUAL {
+            let info = get_store_info(pool, s3).await?;
+            Some(CheckoutPaymentInfo {
+                bank_accounts: info.bank_accounts,
+                ewallet_numbers: info.ewallet_numbers,
+                qris_image_url: info.qris_image_url,
+                total_amount: total,
+            })
+        } else {
+            None
+        };
 
     Ok(CheckoutResponse {
         order_id: saved.id,
@@ -356,6 +463,9 @@ pub async fn checkout(
         total_amount: total,
         items: response_items,
         payment_info,
+        snap_token: None,
+        redirect_url: None,
+        midtrans_order_id: None,
     })
 }
 
@@ -395,6 +505,7 @@ pub struct ValidatedStoreSettings {
     pub ewallet_numbers: Option<String>,
     pub delivery_fee: Option<f64>,
     pub shop_whatsapp: Option<String>,
+    pub payment_mode: Option<String>,
 }
 
 fn check_text_len(value: &str, field: &str, max: usize) -> Result<String, String> {
@@ -459,6 +570,15 @@ pub fn validate_store_settings(
             Ok(trimmed)
         })
         .transpose()?;
+    let payment_mode = request
+        .payment_mode
+        .as_deref()
+        .map(|v| match v.trim() {
+            PAYMENT_MODE_MANUAL => Ok(PAYMENT_MODE_MANUAL.to_string()),
+            PAYMENT_MODE_MIDTRANS => Ok(PAYMENT_MODE_MIDTRANS.to_string()),
+            _ => Err("payment_mode must be manual or midtrans".to_string()),
+        })
+        .transpose()?;
 
     Ok(ValidatedStoreSettings {
         store_name,
@@ -467,6 +587,7 @@ pub fn validate_store_settings(
         ewallet_numbers,
         delivery_fee,
         shop_whatsapp,
+        payment_mode,
     })
 }
 
@@ -504,6 +625,9 @@ pub async fn update_store_settings(
     }
     if let Some(value) = settings.shop_whatsapp {
         repository::set_setting(pool, "shop_whatsapp", &value, Some(updated_by)).await?;
+    }
+    if let Some(value) = settings.payment_mode {
+        repository::set_setting(pool, "payment_mode", &value, Some(updated_by)).await?;
     }
 
     get_store_info(pool, s3).await
@@ -953,12 +1077,13 @@ mod tests {
             items: request.items,
         };
 
-        assert!(validate_checkout(&effective).is_ok());
+        assert!(validate_checkout(&effective, PAYMENT_MODE_MANUAL).is_ok());
     }
 
     #[test]
     fn validate_checkout_accepts_pickup_order() {
-        let order = validate_checkout(&checkout_request()).expect("valid order");
+        let order =
+            validate_checkout(&checkout_request(), PAYMENT_MODE_MANUAL).expect("valid order");
         assert_eq!(order.customer_name, "Budi");
         assert_eq!(order.items.len(), 1);
         assert!(order.delivery_address.is_none());
@@ -968,40 +1093,114 @@ mod tests {
     fn validate_checkout_rejects_missing_identity() {
         let mut request = checkout_request();
         request.customer_name = "   ".to_string();
-        assert!(validate_checkout(&request).is_err());
+        assert!(validate_checkout(&request, PAYMENT_MODE_MANUAL).is_err());
 
         let mut request = checkout_request();
         request.customer_phone = String::new();
-        assert!(validate_checkout(&request).is_err());
+        assert!(validate_checkout(&request, PAYMENT_MODE_MANUAL).is_err());
     }
 
     #[test]
     fn validate_checkout_requires_address_for_delivery() {
         let mut request = checkout_request();
         request.fulfillment_method = FULFILLMENT_DELIVERY.to_string();
-        assert!(validate_checkout(&request).is_err());
+        assert!(validate_checkout(&request, PAYMENT_MODE_MANUAL).is_err());
 
         request.delivery_address = Some("Jl. Mawar 1".to_string());
-        assert!(validate_checkout(&request).is_ok());
+        assert!(validate_checkout(&request, PAYMENT_MODE_MANUAL).is_ok());
     }
 
     #[test]
     fn validate_checkout_rejects_bad_enums_and_items() {
         let mut request = checkout_request();
         request.fulfillment_method = "drone".to_string();
-        assert!(validate_checkout(&request).is_err());
+        assert!(validate_checkout(&request, PAYMENT_MODE_MANUAL).is_err());
 
         let mut request = checkout_request();
         request.payment_method = "crypto".to_string();
-        assert!(validate_checkout(&request).is_err());
+        assert!(validate_checkout(&request, PAYMENT_MODE_MANUAL).is_err());
+        assert!(validate_checkout(&request, PAYMENT_MODE_MIDTRANS).is_err());
 
         let mut request = checkout_request();
         request.items.clear();
-        assert!(validate_checkout(&request).is_err());
+        assert!(validate_checkout(&request, PAYMENT_MODE_MANUAL).is_err());
 
         let mut request = checkout_request();
         request.items[0].quantity = 0.0;
-        assert!(validate_checkout(&request).is_err());
+        assert!(validate_checkout(&request, PAYMENT_MODE_MANUAL).is_err());
+    }
+
+    #[test]
+    fn normalize_payment_mode_defaults_to_manual() {
+        assert_eq!(normalize_payment_mode(None), PAYMENT_MODE_MANUAL);
+        assert_eq!(normalize_payment_mode(Some("")), PAYMENT_MODE_MANUAL);
+        assert_eq!(
+            normalize_payment_mode(Some("transfer")),
+            PAYMENT_MODE_MANUAL
+        );
+        assert_eq!(
+            normalize_payment_mode(Some(" manual ")),
+            PAYMENT_MODE_MANUAL
+        );
+        assert_eq!(
+            normalize_payment_mode(Some("midtrans")),
+            PAYMENT_MODE_MIDTRANS
+        );
+        assert_eq!(
+            normalize_payment_mode(Some("  midtrans  ")),
+            PAYMENT_MODE_MIDTRANS
+        );
+    }
+
+    #[test]
+    fn validate_checkout_manual_mode_accepts_cash_and_transfer() {
+        let mut request = checkout_request();
+        request.payment_method = PAYMENT_PAY_AT_STORE.to_string();
+        assert!(validate_checkout(&request, PAYMENT_MODE_MANUAL).is_ok());
+
+        let mut request = checkout_request();
+        request.payment_method = PAYMENT_TRANSFER.to_string();
+        let order = validate_checkout(&request, PAYMENT_MODE_MANUAL).expect("transfer valid");
+        assert_eq!(order.payment_method, PAYMENT_TRANSFER);
+    }
+
+    #[test]
+    fn validate_checkout_manual_mode_rejects_midtrans() {
+        let mut request = checkout_request();
+        request.payment_method = PAYMENT_MIDTRANS.to_string();
+        let error = validate_checkout(&request, PAYMENT_MODE_MANUAL).expect_err("must reject");
+        assert!(error.contains("manual payment mode"), "{error}");
+    }
+
+    #[test]
+    fn validate_checkout_midtrans_mode_accepts_cash_and_midtrans() {
+        let mut request = checkout_request();
+        request.payment_method = PAYMENT_PAY_AT_STORE.to_string();
+        assert!(validate_checkout(&request, PAYMENT_MODE_MIDTRANS).is_ok());
+
+        let mut request = checkout_request();
+        request.payment_method = PAYMENT_MIDTRANS.to_string();
+        let order = validate_checkout(&request, PAYMENT_MODE_MIDTRANS).expect("midtrans valid");
+        assert_eq!(order.payment_method, PAYMENT_MIDTRANS);
+    }
+
+    #[test]
+    fn validate_checkout_midtrans_mode_rejects_transfer() {
+        let mut request = checkout_request();
+        request.payment_method = PAYMENT_TRANSFER.to_string();
+        let error = validate_checkout(&request, PAYMENT_MODE_MIDTRANS).expect_err("must reject");
+        assert!(error.contains("midtrans payment mode"), "{error}");
+    }
+
+    #[test]
+    fn validate_checkout_unknown_mode_behaves_like_manual() {
+        let mut request = checkout_request();
+        request.payment_method = PAYMENT_TRANSFER.to_string();
+        assert!(validate_checkout(&request, "unknown").is_ok());
+
+        let mut request = checkout_request();
+        request.payment_method = PAYMENT_MIDTRANS.to_string();
+        assert!(validate_checkout(&request, "unknown").is_err());
     }
 
     #[test]
@@ -1161,6 +1360,7 @@ mod tests {
             ewallet_numbers: None,
             delivery_fee: Some(5000.0),
             shop_whatsapp: Some("0812-3456-789".to_string()),
+            payment_mode: Some("midtrans".to_string()),
         };
         let settings = validate_store_settings(&request).expect("valid settings");
         assert_eq!(settings.store_name.as_deref(), Some("Toko Maju"));
@@ -1168,6 +1368,7 @@ mod tests {
         assert_eq!(settings.bank_accounts.as_deref(), Some(""));
         assert_eq!(settings.delivery_fee, Some(5000.0));
         assert_eq!(settings.shop_whatsapp.as_deref(), Some("0812-3456-789"));
+        assert_eq!(settings.payment_mode.as_deref(), Some("midtrans"));
     }
 
     #[test]
@@ -1180,6 +1381,7 @@ mod tests {
             ewallet_numbers: None,
             delivery_fee: None,
             shop_whatsapp: None,
+            payment_mode: None,
         };
 
         let mut request = base();
@@ -1201,6 +1403,22 @@ mod tests {
         let mut request = base();
         request.shop_whatsapp = Some("08123456789".to_string());
         assert!(validate_store_settings(&request).is_ok());
+
+        let mut request = base();
+        request.payment_mode = Some("manual".to_string());
+        assert!(validate_store_settings(&request).is_ok());
+
+        let mut request = base();
+        request.payment_mode = Some("midtrans".to_string());
+        assert!(validate_store_settings(&request).is_ok());
+
+        let mut request = base();
+        request.payment_mode = Some("transfer".to_string());
+        assert!(validate_store_settings(&request).is_err());
+
+        let mut request = base();
+        request.payment_mode = Some("  ".to_string());
+        assert!(validate_store_settings(&request).is_err());
     }
 
     #[test]

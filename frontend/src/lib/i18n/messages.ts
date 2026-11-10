@@ -279,6 +279,18 @@ export const messages = {
 			payAtStoreHint: 'Bayar tunai saat barang diterima.',
 			transfer: 'Transfer',
 			transferHint: 'Transfer manual lalu konfirmasi via WhatsApp.',
+			payOnline: 'Bayar online',
+			payOnlineHint: 'QRIS, VA bank, atau e-wallet via Midtrans.',
+			payNow: 'Bayar sekarang',
+			paying: 'Membuka pembayaran...',
+			checkStatus: 'Cek status',
+			checkingStatus: 'Memeriksa status...',
+			snapUnavailable: 'Gagal memuat Midtrans Snap. Coba lagi.',
+			midtransPaid: 'Pembayaran diterima. Pesananmu sedang disiapkan.',
+			midtransPending: 'Menunggu pembayaran di Midtrans.',
+			midtransFailed: 'Pembayaran gagal atau kedaluwarsa.',
+			midtransClosed:
+				'Jendela pembayaran ditutup. Lanjutkan dengan Bayar sekarang bila belum bayar.',
 			address: 'Alamat pengantaran',
 			addressPlaceholder: 'Jalan/nomor, patokan bila perlu',
 			notes: 'Catatan (opsional)',
@@ -339,6 +351,8 @@ export const messages = {
 			errorLoad: 'Gagal memuat ringkasan dashboard.',
 			revenueToday: 'Pendapatan Hari Ini',
 			revenueDesc: 'Total penjualan lunas tercatat hari ini.',
+			cashRevenue: 'Tunai',
+			noncashRevenue: 'Non-tunai',
 			transactions: 'Transaksi Hari Ini',
 			transactionsDesc: 'Transaksi penjualan yang selesai.',
 			lowStock: 'Produk Stok Rendah',
@@ -1446,7 +1460,30 @@ export const messages = {
 				memberSearchPlaceholder: 'Cari nomor/telepon...',
 				memberSearchAriaLabel: 'Cari anggota',
 				memberEmpty: 'Tidak ada anggota yang sesuai.',
-				memberLoadFailed: 'Gagal memuat anggota.'
+				memberLoadFailed: 'Gagal memuat anggota.',
+				paymentCash: 'Tunai',
+				paymentNonCash: 'Non-tunai',
+				transferTitle: 'Transfer manual',
+				transferDesc: 'Kasir memverifikasi bukti transfer; penjualan langsung lunas.',
+				transferDestination: 'Tujuan transfer',
+				transferDestinationPlaceholder: 'cth. BCA 1234567890 a.n. Toko',
+				receiptNo: 'No. bukti transfer',
+				receiptNoPlaceholder: 'cth. bukti-JAN-001',
+				validTransferIncomplete: 'Isi tujuan transfer dan nomor bukti.',
+				completeTransferBtn: 'Selesaikan (Transfer)',
+				midtransTitle: 'Midtrans Snap',
+				midtransDesc: 'QRIS/VA/e-wallet via Midtrans; stok berkurang setelah pembayaran lunas.',
+				midtransPayBtn: 'Buat pembayaran Midtrans',
+				midtransPaying: 'Membuat pembayaran...',
+				midtransPending: 'Menunggu pembayaran pelanggan...',
+				midtransSuccess: 'Pembayaran Midtrans lunas. Penjualan tercatat.',
+				midtransFailed: 'Pembayaran Midtrans gagal atau kedaluwarsa.',
+				snapLoadFailed: 'Gagal memuat Midtrans Snap.',
+				checkStatus: 'Cek status',
+				stopPolling: 'Berhenti memantau',
+				pollingTimeout: 'Masih menunggu. Penjualan tercatat otomatis setelah pembayaran lunas.',
+				errorCharge: 'Gagal membuat pembayaran Midtrans.',
+				errorStatus: 'Gagal memeriksa status pembayaran.'
 			},
 			saleReturns: {
 				title: 'Retur Penjualan',
@@ -1869,7 +1906,9 @@ export const messages = {
 				colSalesDate: 'Tanggal Penjualan',
 				colTransactions: 'Transaksi',
 				colSubtotal: 'Subtotal',
-				colTotalSales: 'Total Penjualan'
+				colTotalSales: 'Total Penjualan',
+				colCashSales: 'Tunai',
+				colNoncashSales: 'Non-tunai'
 			},
 			monthlySales: {
 				title: 'Penjualan Bulanan',
@@ -1880,7 +1919,9 @@ export const messages = {
 				colSalesMonth: 'Bulan Penjualan',
 				colTransactions: 'Transaksi',
 				colSubtotal: 'Subtotal',
-				colTotalSales: 'Total Penjualan'
+				colTotalSales: 'Total Penjualan',
+				colCashSales: 'Tunai',
+				colNoncashSales: 'Non-tunai'
 			},
 			purchaseOrders: {
 				title: 'Laporan Purchase Order',
@@ -2115,7 +2156,13 @@ export const messages = {
 				uploading: 'Mengunggah...',
 				imageTooLarge: 'Ukuran gambar maksimal 2 MB.',
 				qrisUploadedToast: 'Gambar QRIS diunggah.',
-				errorUpload: 'Gagal mengunggah gambar QRIS.'
+				errorUpload: 'Gagal mengunggah gambar QRIS.',
+				paymentModeLabel: 'Mode pembayaran',
+				paymentModeManual: 'Manual',
+				paymentModeManualDesc: 'Non-tunai kasir dicatat manual; checkout transfer.',
+				paymentModeMidtrans: 'Midtrans Snap',
+				paymentModeMidtransDesc: 'Non-tunai via QRIS/VA/e-wallet Midtrans.',
+				manualUnusedHint: 'Tidak dipakai pada mode Midtrans.'
 			}
 		},
 		helpDesk: {
@@ -2475,6 +2522,17 @@ export const messages = {
 			payAtStoreHint: 'Pay in cash when items are received.',
 			transfer: 'Transfer',
 			transferHint: 'Manual transfer, then confirm via WhatsApp.',
+			payOnline: 'Pay online',
+			payOnlineHint: 'QRIS, bank VA, or e-wallet via Midtrans.',
+			payNow: 'Pay now',
+			paying: 'Opening payment...',
+			checkStatus: 'Check status',
+			checkingStatus: 'Checking status...',
+			snapUnavailable: 'Failed to load Midtrans Snap. Please try again.',
+			midtransPaid: 'Payment received. Your order is being prepared.',
+			midtransPending: 'Waiting for payment in Midtrans.',
+			midtransFailed: 'Payment failed or expired.',
+			midtransClosed: 'Payment window closed. Continue with Pay now if unpaid.',
 			address: 'Delivery address',
 			addressPlaceholder: 'Street/number, landmark if needed',
 			notes: 'Notes (optional)',
@@ -2535,6 +2593,8 @@ export const messages = {
 			errorLoad: 'Failed to load dashboard summary.',
 			revenueToday: 'Revenue Today',
 			revenueDesc: 'Total paid sales recorded today.',
+			cashRevenue: 'Cash',
+			noncashRevenue: 'Non-cash',
 			transactions: 'Transactions Today',
 			transactionsDesc: 'Completed sales transactions.',
 			lowStock: 'Low Stock Products',
@@ -3635,7 +3695,30 @@ export const messages = {
 				memberSearchPlaceholder: 'Search number/phone...',
 				memberSearchAriaLabel: 'Search members',
 				memberEmpty: 'No members match your search.',
-				memberLoadFailed: 'Failed to load members.'
+				memberLoadFailed: 'Failed to load members.',
+				paymentCash: 'Cash',
+				paymentNonCash: 'Non-cash',
+				transferTitle: 'Manual transfer',
+				transferDesc: 'Cashier verifies the transfer receipt; the sale is paid in full.',
+				transferDestination: 'Transfer destination',
+				transferDestinationPlaceholder: 'e.g. BCA 1234567890 under Store',
+				receiptNo: 'Transfer receipt no.',
+				receiptNoPlaceholder: 'e.g. receipt-JAN-001',
+				validTransferIncomplete: 'Fill in the transfer destination and receipt number.',
+				completeTransferBtn: 'Complete (Transfer)',
+				midtransTitle: 'Midtrans Snap',
+				midtransDesc: 'QRIS/VA/e-wallet via Midtrans; stock decreases after payment settles.',
+				midtransPayBtn: 'Create Midtrans payment',
+				midtransPaying: 'Creating payment...',
+				midtransPending: 'Waiting for customer payment...',
+				midtransSuccess: 'Midtrans payment settled. Sale recorded.',
+				midtransFailed: 'Midtrans payment failed or expired.',
+				snapLoadFailed: 'Failed to load Midtrans Snap.',
+				checkStatus: 'Check status',
+				stopPolling: 'Stop watching',
+				pollingTimeout: 'Still waiting. The sale is recorded automatically once payment settles.',
+				errorCharge: 'Failed to create Midtrans payment.',
+				errorStatus: 'Failed to check payment status.'
 			},
 			saleReturns: {
 				title: 'Sale Returns',
@@ -4056,7 +4139,9 @@ export const messages = {
 				colSalesDate: 'Sales Date',
 				colTransactions: 'Transactions',
 				colSubtotal: 'Subtotal',
-				colTotalSales: 'Total Sales'
+				colTotalSales: 'Total Sales',
+				colCashSales: 'Cash',
+				colNoncashSales: 'Non-cash'
 			},
 			monthlySales: {
 				title: 'Monthly Sales',
@@ -4067,7 +4152,9 @@ export const messages = {
 				colSalesMonth: 'Sales Month',
 				colTransactions: 'Transactions',
 				colSubtotal: 'Subtotal',
-				colTotalSales: 'Total Sales'
+				colTotalSales: 'Total Sales',
+				colCashSales: 'Cash',
+				colNoncashSales: 'Non-cash'
 			},
 			purchaseOrders: {
 				title: 'Purchase Orders Report',
@@ -4302,7 +4389,13 @@ export const messages = {
 				uploading: 'Uploading...',
 				imageTooLarge: 'Image must be at most 2 MB.',
 				qrisUploadedToast: 'QRIS image uploaded.',
-				errorUpload: 'Failed to upload QRIS image.'
+				errorUpload: 'Failed to upload QRIS image.',
+				paymentModeLabel: 'Payment mode',
+				paymentModeManual: 'Manual',
+				paymentModeManualDesc: 'Cashier non-cash is recorded manually; transfer checkout.',
+				paymentModeMidtrans: 'Midtrans Snap',
+				paymentModeMidtransDesc: 'Non-cash via Midtrans QRIS/VA/e-wallet.',
+				manualUnusedHint: 'Not used in Midtrans mode.'
 			}
 		},
 		helpDesk: {

@@ -204,6 +204,8 @@ const SALE_SELECT: &str = r#"
         s.total_amount::float8 AS total_amount,
         s.paid_amount::float8 AS paid_amount,
         s.change_amount::float8 AS change_amount,
+        s.payment_method,
+        s.payment_reference,
         s.status::text AS status,
         s.notes,
         s.cancelled_at,
@@ -1318,6 +1320,100 @@ pub async fn find_sale(pool: &PgPool, user: &AuthUser, id: i64) -> AppResult<Sal
     Ok(SaleDetailResponse { sale, items })
 }
 
+/// Validasi member kasir: `None` berarti guest, id yang tidak aktif ditolak,
+/// id yang tidak ada mengembalikan `NotFound`. Dipakai ulang oleh modul
+/// `payments` saat charge dan settlement Midtrans.
+pub async fn validate_active_member(
+    pool: &PgPool,
+    member_id: Option<i64>,
+) -> AppResult<Option<i64>> {
+    match member_id {
+        Some(member_id) => {
+            let is_active: Option<bool> =
+                sqlx::query_scalar::<_, bool>("SELECT is_active FROM members WHERE id = $1")
+                    .bind(member_id)
+                    .fetch_optional(pool)
+                    .await?;
+            match is_active {
+                Some(true) => Ok(Some(member_id)),
+                Some(false) => Err(AppError::Validation("member is not active".to_string())),
+                None => Err(AppError::NotFound),
+            }
+        }
+        None => Ok(None),
+    }
+}
+
+/// Metode pembayaran sale kasir: `cash` (tunai, default), `transfer`
+/// (non-tunai manual — kasir verifikasi bukti transfer), `midtrans`
+/// (non-tunai Snap — hanya via settlement webhook, bukan endpoint).
+pub const SALE_PAYMENT_CASH: &str = "cash";
+pub const SALE_PAYMENT_TRANSFER: &str = "transfer";
+pub const SALE_PAYMENT_MIDTRANS: &str = "midtrans";
+
+/// Mode pembayaran toko aktif (`manual` | `midtrans`). Nilai tak dikenal
+/// dinormalkan ke `manual` agar toko yang sudah jalan tidak berubah perilaku.
+pub async fn get_payment_mode(pool: &PgPool) -> AppResult<String> {
+    let mode: Option<String> =
+        sqlx::query_scalar("SELECT value FROM store_settings WHERE key = 'payment_mode'")
+            .fetch_optional(pool)
+            .await?;
+    Ok(match mode.as_deref().map(str::trim) {
+        Some("midtrans") => SALE_PAYMENT_MIDTRANS.to_string(),
+        _ => "manual".to_string(),
+    })
+}
+
+pub fn normalize_sale_payment_method(value: Option<&str>) -> AppResult<String> {
+    let method = value.map(str::trim).unwrap_or("");
+    match method {
+        "" => Ok(SALE_PAYMENT_CASH.to_string()),
+        SALE_PAYMENT_CASH | SALE_PAYMENT_TRANSFER | SALE_PAYMENT_MIDTRANS => Ok(method.to_string()),
+        other => Err(AppError::Validation(format!(
+            "payment_method must be 'cash', 'transfer', or 'midtrans', got '{other}'"
+        ))),
+    }
+}
+
+/// Validasi pembayaran sale kasir terhadap mode toko aktif. `transfer` hanya
+/// sah saat mode `manual` dan wajib membawa `payment_reference` (tujuan
+/// transfer + no. bukti); `midtrans` selalu ditolak di endpoint karena sale
+/// Midtrans hanya lahir dari settlement webhook. Mengembalikan pasangan
+/// ternormalisasi untuk disimpan.
+pub fn validate_sale_payment(
+    payment_method: Option<&str>,
+    payment_reference: Option<&str>,
+    payment_mode: &str,
+) -> AppResult<(String, Option<String>)> {
+    let method = normalize_sale_payment_method(payment_method)?;
+    if method == SALE_PAYMENT_MIDTRANS {
+        return Err(AppError::Validation(
+            "midtrans sales are created by settlement, not directly".to_string(),
+        ));
+    }
+    let reference = payment_reference
+        .map(str::trim)
+        .filter(|reference| !reference.is_empty())
+        .map(str::to_string);
+    if method == SALE_PAYMENT_TRANSFER {
+        if payment_mode.trim() != "manual" {
+            return Err(AppError::Validation(
+                "transfer payments are not available in midtrans payment mode".to_string(),
+            ));
+        }
+        let reference = reference.ok_or_else(|| {
+            AppError::Validation("payment_reference is required for transfer payments".to_string())
+        })?;
+        return Ok((method, Some(reference)));
+    }
+    if reference.is_some() {
+        return Err(AppError::Validation(
+            "payment_reference is only valid for transfer payments".to_string(),
+        ));
+    }
+    Ok((method, None))
+}
+
 pub async fn create_sale(
     pool: &PgPool,
     user: &AuthUser,
@@ -1330,34 +1426,77 @@ pub async fn create_sale(
     let cash_register_session_id = request
         .cash_register_session_id
         .ok_or_else(|| AppError::Validation("cash_register_session_id is required".to_string()))?;
+    // Gerbang lintas-mode kasir: non-tunai manual hanya sah saat mode `manual`.
+    let (payment_method, payment_reference) = validate_sale_payment(
+        request.payment_method.as_deref(),
+        request.payment_reference.as_deref(),
+        &get_payment_mode(pool).await?,
+    )?;
 
-    let member_id = match request.member_id {
-        Some(member_id) => {
-            let is_active: Option<bool> =
-                sqlx::query_scalar::<_, bool>("SELECT is_active FROM members WHERE id = $1")
-                    .bind(member_id)
-                    .fetch_optional(pool)
-                    .await?;
-            match is_active {
-                Some(true) => Some(member_id),
-                Some(false) => {
-                    return Err(AppError::Validation("member is not active".to_string()));
-                }
-                None => return Err(AppError::NotFound),
-            }
-        }
-        None => None,
-    };
+    let member_id = validate_active_member(pool, request.member_id).await?;
 
     let mut tx = pool.begin().await?;
-    cash_registers::ensure_open_cash_register_session(&mut tx, cash_register_session_id).await?;
+    let (sale_id, subtotal) = create_sale_tx(
+        &mut tx,
+        user.id,
+        cash_register_session_id,
+        member_id,
+        request.sold_at,
+        Some(request.paid_amount),
+        request.notes,
+        request.items,
+        &payment_method,
+        payment_reference,
+    )
+    .await?;
+    tx.commit().await?;
+    audit::record_audit_log_best_effort(
+        pool,
+        audit::AuditLogRecord::success(Some(user.id), "sale.create", "sale", Some(sale_id))
+            .with_metadata(json!({
+                "cash_register_session_id": cash_register_session_id,
+                "subtotal_amount": subtotal,
+                "total_amount": subtotal,
+                "paid_amount": request.paid_amount,
+                "payment_method": payment_method
+            })),
+    )
+    .await;
+
+    find_sale(pool, user, sale_id).await
+}
+
+/// Inti pembuatan sale di dalam transaksi yang sudah dibuka: memastikan sesi
+/// register terbuka, memvalidasi + mengunci stok, menulis `sales`,
+/// `sale_items`, mengurangi `product_skus`, dan mencatat `stock_movements`.
+/// Dipakai `create_sale` (tunai) dan settlement Midtrans (`payments`) agar
+/// keduanya memakai satu logika pengurangan stok. `paid_amount = None`
+/// berarti lunas pas (dibayar penuh, kembalian nol) untuk settlement non-tunai.
+/// Mengembalikan `(sale_id, subtotal)`.
+#[allow(clippy::too_many_arguments)]
+pub async fn create_sale_tx(
+    tx: &mut Transaction<'_, Postgres>,
+    cashier_id: i64,
+    cash_register_session_id: i64,
+    member_id: Option<i64>,
+    sold_at: Option<chrono::DateTime<chrono::Utc>>,
+    paid_amount: Option<f64>,
+    notes: Option<String>,
+    items: Vec<crate::models::SaleItemInput>,
+    payment_method: &str,
+    payment_reference: Option<String>,
+) -> AppResult<(i64, f64)> {
+    if items.is_empty() {
+        return Err(AppError::Validation("items must not be empty".to_string()));
+    }
+    cash_registers::ensure_open_cash_register_session(tx, cash_register_session_id).await?;
 
     let mut subtotal = 0.0;
     let mut prepared_items = Vec::new();
 
-    for item in request.items {
+    for item in items {
         validate_positive(item.quantity, "quantity")?;
-        let product = load_product_sku_snapshot(&mut tx, item.product_sku_id, true).await?;
+        let product = load_product_sku_snapshot(tx, item.product_sku_id, true).await?;
         if product.stock < item.quantity {
             return Err(AppError::Conflict(format!(
                 "insufficient stock for product SKU {}",
@@ -1368,33 +1507,45 @@ pub async fn create_sale(
         prepared_items.push((item.quantity, product));
     }
 
-    if request.paid_amount < subtotal {
-        return Err(AppError::Validation(
-            "paid_amount must be greater than or equal to total_amount".to_string(),
-        ));
-    }
+    // Settlement non-tunai (`None`) selalu lunas pas; tunai (`Some`) wajib
+    // menutup subtotal seperti sebelumnya.
+    let paid = match paid_amount {
+        Some(paid) => {
+            validate_non_negative(paid, "paid_amount")?;
+            if paid < subtotal {
+                return Err(AppError::Validation(
+                    "paid_amount must be greater than or equal to total_amount".to_string(),
+                ));
+            }
+            paid
+        }
+        None => subtotal,
+    };
 
     let sale_id: i64 = sqlx::query_scalar(
         r#"
         INSERT INTO sales (
             sold_at, cashier_id, cash_register_session_id, member_id, subtotal_amount,
-            total_amount, paid_amount, change_amount, notes
+            total_amount, paid_amount, change_amount, notes, payment_method,
+            payment_reference
         )
         VALUES (
             COALESCE($1, now()), $2, $3, $4, $5::numeric, $5::numeric, $6::numeric,
-            ($6::numeric - $5::numeric), $7
+            ($6::numeric - $5::numeric), $7, $8, $9
         )
         RETURNING id
         "#,
     )
-    .bind(request.sold_at)
-    .bind(user.id)
+    .bind(sold_at)
+    .bind(cashier_id)
     .bind(cash_register_session_id)
     .bind(member_id)
     .bind(subtotal)
-    .bind(request.paid_amount)
-    .bind(request.notes)
-    .fetch_one(&mut *tx)
+    .bind(paid)
+    .bind(notes)
+    .bind(payment_method)
+    .bind(payment_reference)
+    .fetch_one(&mut **tx)
     .await?;
 
     for (quantity, product) in prepared_items {
@@ -1416,7 +1567,7 @@ pub async fn create_sale(
         .bind(quantity)
         .bind(product.selling_price)
         .bind(product.purchase_price)
-        .fetch_one(&mut *tx)
+        .fetch_one(&mut **tx)
         .await?;
 
         let stock_before = product.stock;
@@ -1424,10 +1575,10 @@ pub async fn create_sale(
         sqlx::query("UPDATE product_skus SET stock = $2::numeric WHERE id = $1")
             .bind(product.id)
             .bind(stock_after)
-            .execute(&mut *tx)
+            .execute(&mut **tx)
             .await?;
         insert_stock_movement(
-            &mut tx,
+            tx,
             product.product_id,
             product.id,
             "sale",
@@ -1435,7 +1586,7 @@ pub async fn create_sale(
             stock_before,
             stock_after,
             Some("Sale completed"),
-            Some(user.id),
+            Some(cashier_id),
             Some(sale_id),
             Some(sale_item_id),
             None,
@@ -1448,20 +1599,7 @@ pub async fn create_sale(
         .await?;
     }
 
-    tx.commit().await?;
-    audit::record_audit_log_best_effort(
-        pool,
-        audit::AuditLogRecord::success(Some(user.id), "sale.create", "sale", Some(sale_id))
-            .with_metadata(json!({
-                "cash_register_session_id": cash_register_session_id,
-                "subtotal_amount": subtotal,
-                "total_amount": subtotal,
-                "paid_amount": request.paid_amount
-            })),
-    )
-    .await;
-
-    find_sale(pool, user, sale_id).await
+    Ok((sale_id, subtotal))
 }
 
 pub async fn cancel_sale(
@@ -2020,18 +2158,18 @@ pub async fn create_payroll_slip(
 }
 
 #[derive(Debug, Clone)]
-struct ProductSkuSnapshot {
-    id: i64,
-    product_id: i64,
-    product_name: String,
-    sku: String,
-    unit: String,
-    stock: f64,
-    selling_price: f64,
-    purchase_price: f64,
+pub(crate) struct ProductSkuSnapshot {
+    pub(crate) id: i64,
+    pub(crate) product_id: i64,
+    pub(crate) product_name: String,
+    pub(crate) sku: String,
+    pub(crate) unit: String,
+    pub(crate) stock: f64,
+    pub(crate) selling_price: f64,
+    pub(crate) purchase_price: f64,
 }
 
-async fn load_product_sku_snapshot(
+pub(crate) async fn load_product_sku_snapshot(
     tx: &mut Transaction<'_, Postgres>,
     id: i64,
     for_update: bool,
@@ -2302,4 +2440,57 @@ fn normalize_optional_string(value: Option<String>) -> Option<String> {
         let value = value.trim().to_string();
         if value.is_empty() { None } else { Some(value) }
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sale_payment_defaults_to_cash_without_reference() {
+        let (method, reference) = validate_sale_payment(None, None, "manual").unwrap();
+        assert_eq!(method, SALE_PAYMENT_CASH);
+        assert_eq!(reference, None);
+
+        let (method, reference) = validate_sale_payment(Some(""), Some("  "), "manual").unwrap();
+        assert_eq!(method, SALE_PAYMENT_CASH);
+        assert_eq!(reference, None);
+    }
+
+    #[test]
+    fn sale_payment_accepts_transfer_with_reference_in_manual_mode() {
+        let (method, reference) =
+            validate_sale_payment(Some("transfer"), Some("BCA 123 - bukti #42"), "manual").unwrap();
+        assert_eq!(method, SALE_PAYMENT_TRANSFER);
+        assert_eq!(reference.as_deref(), Some("BCA 123 - bukti #42"));
+    }
+
+    #[test]
+    fn sale_payment_rejects_transfer_without_reference() {
+        assert!(validate_sale_payment(Some("transfer"), None, "manual").is_err());
+        assert!(validate_sale_payment(Some("transfer"), Some("   "), "manual").is_err());
+    }
+
+    #[test]
+    fn sale_payment_rejects_cross_mode_requests() {
+        // Transfer manual tidak tersedia saat toko dalam mode Midtrans.
+        assert!(validate_sale_payment(Some("transfer"), Some("BCA 123"), "midtrans").is_err());
+        // Tunai selalu tersedia di kedua mode.
+        assert!(validate_sale_payment(None, None, "midtrans").is_ok());
+        assert!(validate_sale_payment(None, None, "manual").is_ok());
+    }
+
+    #[test]
+    fn sale_payment_rejects_midtrans_and_unknown_methods_at_endpoint() {
+        // Sale Midtrans hanya lahir dari settlement webhook.
+        assert!(validate_sale_payment(Some("midtrans"), None, "midtrans").is_err());
+        assert!(validate_sale_payment(Some("midtrans"), None, "manual").is_err());
+        assert!(validate_sale_payment(Some("qris"), None, "midtrans").is_err());
+    }
+
+    #[test]
+    fn sale_payment_rejects_reference_for_cash() {
+        assert!(validate_sale_payment(None, Some("BCA 123"), "manual").is_err());
+        assert!(validate_sale_payment(Some("cash"), Some("BCA 123"), "midtrans").is_err());
+    }
 }

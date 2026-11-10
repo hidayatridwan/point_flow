@@ -36,6 +36,14 @@
 		columnHelper.accessor('total_amount', {
 			header: () => t('reports.dailySales.colTotalSales'),
 			cell: (info) => formatIdr(info.getValue())
+		}),
+		columnHelper.accessor('cash_revenue', {
+			header: () => t('reports.dailySales.colCashSales'),
+			cell: (info) => formatIdr(info.getValue())
+		}),
+		columnHelper.accessor('noncash_revenue', {
+			header: () => t('reports.dailySales.colNoncashSales'),
+			cell: (info) => formatIdr(info.getValue())
 		})
 	];
 
@@ -48,7 +56,7 @@
 	});
 
 	function getSkeletonClass(columnIndex: number) {
-		const widths = ['h-5 w-28', 'h-5 w-24', 'h-5 w-32', 'h-5 w-32'];
+		const widths = ['h-5 w-28', 'h-5 w-24', 'h-5 w-32', 'h-5 w-32', 'h-5 w-32', 'h-5 w-32'];
 		return widths[columnIndex] ?? 'h-5 w-full';
 	}
 </script>

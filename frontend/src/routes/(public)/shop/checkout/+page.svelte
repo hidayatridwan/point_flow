@@ -10,7 +10,7 @@
 	import { t } from '$lib/i18n/locale.svelte.js';
 
 	type Fulfillment = 'pickup' | 'delivery';
-	type Payment = 'pay_at_store' | 'transfer';
+	type Payment = 'pay_at_store' | 'transfer' | 'midtrans';
 
 	let storeInfo = $state<StoreInfo | null>(null);
 	let customerName = $state('');
@@ -23,6 +23,7 @@
 	let errorMessage = $state<string | null>(null);
 	let addressPrefilledFor: number | null = null;
 
+	const paymentMode = $derived(storeInfo?.payment_mode === 'midtrans' ? 'midtrans' : 'manual');
 	const deliveryFee = $derived(fulfillment === 'delivery' ? (storeInfo?.delivery_fee ?? 0) : 0);
 	const total = $derived(cartEstimate() + deliveryFee);
 
@@ -63,6 +64,9 @@
 			return t('shop.checkoutFailed');
 		}
 		if (fulfillment === 'delivery' && !deliveryAddress.trim()) return t('shop.checkoutFailed');
+		// Jalur non-tunai eksklusif mengikuti mode toko (server menolak lintas-mode).
+		if (paymentMode === 'midtrans' && payment === 'transfer') return t('shop.checkoutFailed');
+		if (paymentMode === 'manual' && payment === 'midtrans') return t('shop.checkoutFailed');
 		return null;
 	}
 
@@ -241,17 +245,31 @@
 					<p class="text-sm font-bold text-[#333333]">{t('shop.payAtStore')}</p>
 					<p class="mt-0.5 text-[11px] text-neutral-500">{t('shop.payAtStoreHint')}</p>
 				</button>
-				<button
-					type="button"
-					onclick={() => (payment = 'transfer')}
-					aria-pressed={payment === 'transfer'}
-					class="rounded-2xl border-2 p-3 text-left transition-colors {optionCard(
-						payment === 'transfer'
-					)}"
-				>
-					<p class="text-sm font-bold text-[#333333]">{t('shop.transfer')}</p>
-					<p class="mt-0.5 text-[11px] text-neutral-500">{t('shop.transferHint')}</p>
-				</button>
+				{#if paymentMode === 'midtrans'}
+					<button
+						type="button"
+						onclick={() => (payment = 'midtrans')}
+						aria-pressed={payment === 'midtrans'}
+						class="rounded-2xl border-2 p-3 text-left transition-colors {optionCard(
+							payment === 'midtrans'
+						)}"
+					>
+						<p class="text-sm font-bold text-[#333333]">{t('shop.payOnline')}</p>
+						<p class="mt-0.5 text-[11px] text-neutral-500">{t('shop.payOnlineHint')}</p>
+					</button>
+				{:else}
+					<button
+						type="button"
+						onclick={() => (payment = 'transfer')}
+						aria-pressed={payment === 'transfer'}
+						class="rounded-2xl border-2 p-3 text-left transition-colors {optionCard(
+							payment === 'transfer'
+						)}"
+					>
+						<p class="text-sm font-bold text-[#333333]">{t('shop.transfer')}</p>
+						<p class="mt-0.5 text-[11px] text-neutral-500">{t('shop.transferHint')}</p>
+					</button>
+				{/if}
 			</div>
 			{#if payment === 'transfer' && storeInfo}
 				<div class="mt-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3">

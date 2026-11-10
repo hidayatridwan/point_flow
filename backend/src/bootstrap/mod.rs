@@ -51,6 +51,7 @@ pub async fn run() -> anyhow::Result<()> {
         config.refresh_token_cookie_same_site,
         config.refresh_token_cookie_domain,
         s3,
+        config.midtrans,
     );
     let addr = SocketAddr::from((config.host, config.port));
     let app = app(state);

@@ -28,7 +28,7 @@
 					{
 						label: t('dashboard.revenueToday'),
 						value: formatIdr(summary.revenueToday),
-						description: t('dashboard.revenueDesc'),
+						description: `${t('dashboard.revenueDesc')} ${t('dashboard.cashRevenue')}: ${formatIdr(summary.cashRevenueToday)} • ${t('dashboard.noncashRevenue')}: ${formatIdr(summary.noncashRevenueToday)}`,
 						icon: BanknoteIcon
 					},
 					{

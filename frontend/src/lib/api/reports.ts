@@ -35,6 +35,8 @@ export type DailySalesReport = {
 	transaction_count: number;
 	subtotal_amount: number;
 	total_amount: number;
+	cash_revenue: number;
+	noncash_revenue: number;
 };
 
 export type MonthlySalesReport = {
@@ -42,6 +44,8 @@ export type MonthlySalesReport = {
 	transaction_count: number;
 	subtotal_amount: number;
 	total_amount: number;
+	cash_revenue: number;
+	noncash_revenue: number;
 };
 
 export type PurchaseOrderReport = {

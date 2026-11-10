@@ -13,6 +13,16 @@ pub struct S3Settings {
     pub force_path_style: bool,
 }
 
+#[derive(Debug, Clone)]
+pub struct MidtransSettings {
+    pub server_key: String,
+    pub client_key: String,
+    pub is_production: bool,
+    pub snap_base_url: String,
+    pub notification_url: String,
+    pub payment_expiry_minutes: u64,
+}
+
 pub struct AppConfig {
     pub host: IpAddr,
     pub port: u16,
@@ -26,6 +36,7 @@ pub struct AppConfig {
     pub refresh_token_cookie_same_site: String,
     pub refresh_token_cookie_domain: Option<String>,
     pub s3: Option<S3Settings>,
+    pub midtrans: Option<MidtransSettings>,
 }
 
 impl AppConfig {
@@ -65,6 +76,7 @@ impl AppConfig {
             normalize_cookie_domain(env::var("REFRESH_TOKEN_COOKIE_DOMAIN").ok())?;
 
         let s3 = load_s3_settings()?;
+        let midtrans = load_midtrans_settings()?;
 
         if jwt_ttl_seconds <= 0 {
             bail!("JWT_TTL_SECONDS must be greater than zero");
@@ -92,6 +104,7 @@ impl AppConfig {
             refresh_token_cookie_same_site,
             refresh_token_cookie_domain,
             s3,
+            midtrans,
         })
     }
 }
@@ -130,6 +143,47 @@ fn load_s3_settings() -> Result<Option<S3Settings>> {
         secret_access_key,
         public_url,
         force_path_style,
+    }))
+}
+
+fn load_midtrans_settings() -> Result<Option<MidtransSettings>> {
+    let server_key = env::var("MIDTRANS_SERVER_KEY").unwrap_or_default();
+    if server_key.trim().is_empty() {
+        return Ok(None);
+    }
+
+    let client_key = env::var("MIDTRANS_CLIENT_KEY").unwrap_or_default();
+    let is_production: bool = env::var("MIDTRANS_IS_PRODUCTION")
+        .unwrap_or_else(|_| "false".to_string())
+        .parse()
+        .context("MIDTRANS_IS_PRODUCTION must be a boolean")?;
+    let default_snap_base_url = if is_production {
+        "https://app.midtrans.com/snap/v1"
+    } else {
+        "https://app.sandbox.midtrans.com/snap/v1"
+    };
+    let snap_base_url = env::var("MIDTRANS_SNAP_BASE_URL").unwrap_or_default();
+    let snap_base_url = if snap_base_url.trim().is_empty() {
+        default_snap_base_url.to_string()
+    } else {
+        snap_base_url
+    };
+    let notification_url = env::var("MIDTRANS_NOTIFICATION_URL").unwrap_or_default();
+    let payment_expiry_minutes: u64 = env::var("MIDTRANS_PAYMENT_EXPIRY_MINUTES")
+        .unwrap_or_else(|_| "60".to_string())
+        .parse()
+        .context("MIDTRANS_PAYMENT_EXPIRY_MINUTES must be an integer")?;
+    if payment_expiry_minutes == 0 {
+        bail!("MIDTRANS_PAYMENT_EXPIRY_MINUTES must be greater than zero");
+    }
+
+    Ok(Some(MidtransSettings {
+        server_key,
+        client_key,
+        is_production,
+        snap_base_url,
+        notification_url,
+        payment_expiry_minutes,
     }))
 }
 

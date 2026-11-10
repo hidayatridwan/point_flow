@@ -16,8 +16,16 @@
 		type CashRegisterSession
 	} from '$lib/api/cash-registers.js';
 	import { type Member } from '$lib/api/members.js';
+	import {
+		createMidtransCharge,
+		getMidtransPayment,
+		isMidtransSettled,
+		isMidtransTerminal
+	} from '$lib/api/payments.js';
 	import { listProductSkus, type ProductSku } from '$lib/api/product-skus.js';
-	import { createSale, type SaleDetail } from '$lib/api/sales.js';
+	import { createSale, getSale, type SaleDetail } from '$lib/api/sales.js';
+	import { getPublicStoreInfo } from '$lib/api/storefront.js';
+	import { loadMidtransSnap } from '$lib/midtrans-snap.js';
 	import MemberPickerDialog from '../components/member-picker-dialog.svelte';
 	import { ApiError } from '$lib/api/types.js';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
@@ -28,7 +36,7 @@
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { formatIdr, formatNumber } from '$lib/formatters.js';
 	import { cn } from '$lib/utils.js';
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import SaleReceiptDialog from '../components/sale-receipt-dialog.svelte';
 	import { t } from '$lib/i18n/locale.svelte.js';
@@ -67,6 +75,21 @@
 	let latestOptionsRequestId = 0;
 	let latestSessionRequestId = 0;
 
+	type PaymentTab = 'cash' | 'noncash';
+	let paymentTab = $state<PaymentTab>('cash');
+	let paymentMode = $state('manual');
+	const isMidtransMode = $derived(paymentMode === 'midtrans');
+	let transferDestination = $state('');
+	let receiptNo = $state('');
+	let midtransOrderId = $state<string | null>(null);
+	let isCreatingCharge = $state(false);
+	let isPolling = $state(false);
+	let midtransInfo = $state<string | null>(null);
+	let pollTimer: ReturnType<typeof setTimeout> | undefined;
+	let pollAttempts = 0;
+	const maxPollAttempts = 60;
+	const pollIntervalMs = 5000;
+
 	const filteredProductSkus = $derived(
 		productSkus.filter((productSku) => matchesProductSkuSearch(productSku, skuSearch)).slice(0, 40)
 	);
@@ -79,7 +102,21 @@
 	onMount(() => {
 		void loadActiveSession();
 		void loadProductSkus();
+		void loadPaymentMode();
 	});
+
+	onDestroy(() => {
+		stopPolling();
+	});
+
+	async function loadPaymentMode() {
+		try {
+			const info = await getPublicStoreInfo();
+			paymentMode = info.payment_mode === 'midtrans' ? 'midtrans' : 'manual';
+		} catch {
+			paymentMode = 'manual';
+		}
+	}
 
 	async function loadActiveSession() {
 		const requestId = ++latestSessionRequestId;
@@ -165,6 +202,217 @@
 		}
 	}
 
+	async function handleTransferSubmit() {
+		if (isSubmitting || isCreatingCharge) return;
+		if (!cartItems.length) {
+			errorMessage = t('point_flow.newSale.validCartEmpty');
+			return;
+		}
+		if (!activeSession) {
+			errorMessage = t('point_flow.newSale.validNoRegister');
+			return;
+		}
+		for (const item of cartItems) {
+			const itemError = getCartItemQuantityError(item);
+			if (itemError) {
+				errorMessage = `${item.product_sku}: ${itemError}`;
+				return;
+			}
+		}
+		if (!transferDestination.trim() || !receiptNo.trim()) {
+			errorMessage = t('point_flow.newSale.validTransferIncomplete');
+			return;
+		}
+
+		isSubmitting = true;
+		errorMessage = null;
+		try {
+			const sale = await createSale({
+				cash_register_session_id: activeSession?.id ?? 0,
+				member_id: selectedMember?.id ?? null,
+				paid_amount: subtotalAmount,
+				payment_method: 'transfer',
+				payment_reference: `${transferDestination.trim()} / ${receiptNo.trim()}`,
+				notes: emptyToNull(notes),
+				items: cartItems.map((item) => ({
+					product_sku_id: item.product_sku_id,
+					quantity: getCartItemQuantity(item)
+				}))
+			});
+			toast.success(t('point_flow.newSale.saleCompletedToast'), {
+				description: `${sale.transaction_no} total ${formatIdr(sale.total_amount)}.`
+			});
+			completedSale = sale;
+			isReceiptOpen = true;
+			transferDestination = '';
+			receiptNo = '';
+			resetSale();
+			await loadProductSkus();
+		} catch (error) {
+			errorMessage = getErrorMessage(error, t('point_flow.newSale.errorCreate'));
+		} finally {
+			isSubmitting = false;
+		}
+	}
+
+	async function handleMidtransCharge() {
+		if (isSubmitting || isCreatingCharge) return;
+		if (!cartItems.length) {
+			errorMessage = t('point_flow.newSale.validCartEmpty');
+			return;
+		}
+		if (!activeSession) {
+			errorMessage = t('point_flow.newSale.validNoRegister');
+			return;
+		}
+		for (const item of cartItems) {
+			const itemError = getCartItemQuantityError(item);
+			if (itemError) {
+				errorMessage = `${item.product_sku}: ${itemError}`;
+				return;
+			}
+		}
+
+		isCreatingCharge = true;
+		errorMessage = null;
+		midtransInfo = null;
+		try {
+			const charge = await createMidtransCharge({
+				cash_register_session_id: activeSession?.id ?? 0,
+				member_id: selectedMember?.id ?? null,
+				notes: emptyToNull(notes),
+				items: cartItems.map((item) => ({
+					product_sku_id: item.product_sku_id,
+					quantity: getCartItemQuantity(item)
+				}))
+			});
+			if (!charge.snap_token) {
+				errorMessage = t('point_flow.newSale.errorCharge');
+				return;
+			}
+			midtransOrderId = charge.order_id;
+			await loadMidtransSnap();
+			window.snap?.pay(charge.snap_token, {
+				onSuccess: () => void checkMidtransOnce(),
+				onPending: () => {
+					midtransInfo = t('point_flow.newSale.midtransPending');
+					startPolling();
+				},
+				onError: () => {
+					stopPolling();
+					errorMessage = t('point_flow.newSale.midtransFailed');
+				},
+				onClose: () => {
+					if (!isPolling && midtransOrderId) {
+						midtransInfo = t('point_flow.newSale.midtransPending');
+						startPolling();
+					}
+				}
+			});
+		} catch (error) {
+			errorMessage = getErrorMessage(error, t('point_flow.newSale.errorCharge'));
+			if (errorMessage === t('point_flow.newSale.errorCharge') && !getMidtransClientKeyReady()) {
+				errorMessage = t('point_flow.newSale.snapLoadFailed');
+			}
+		} finally {
+			isCreatingCharge = false;
+		}
+	}
+
+	function getMidtransClientKeyReady() {
+		return typeof document !== 'undefined' && Boolean(window.snap);
+	}
+
+	function startPolling() {
+		if (isPolling || !midtransOrderId) return;
+		isPolling = true;
+		pollAttempts = 0;
+		midtransInfo = t('point_flow.newSale.midtransPending');
+		void pollMidtrans();
+	}
+
+	function stopPolling() {
+		isPolling = false;
+		if (pollTimer) {
+			clearTimeout(pollTimer);
+			pollTimer = undefined;
+		}
+	}
+
+	async function checkMidtransOnce() {
+		if (!midtransOrderId) return;
+		try {
+			const status = await getMidtransPayment(midtransOrderId, true);
+			await handleMidtransStatus(status.transaction_status, status.fraud_status, status.sale_id);
+		} catch (error) {
+			errorMessage = getErrorMessage(error, t('point_flow.newSale.errorStatus'));
+		}
+	}
+
+	async function pollMidtrans() {
+		if (!isPolling || !midtransOrderId) return;
+		if (pollAttempts >= maxPollAttempts) {
+			stopPolling();
+			midtransInfo = t('point_flow.newSale.pollingTimeout');
+			return;
+		}
+		pollAttempts += 1;
+		try {
+			const status = await getMidtransPayment(midtransOrderId, true);
+			const settled = await handleMidtransStatus(
+				status.transaction_status,
+				status.fraud_status,
+				status.sale_id
+			);
+			if (settled) return;
+		} catch (error) {
+			errorMessage = getErrorMessage(error, t('point_flow.newSale.errorStatus'));
+			stopPolling();
+			return;
+		}
+		if (!isPolling) return;
+		pollTimer = setTimeout(() => void pollMidtrans(), pollIntervalMs);
+	}
+
+	/** Terapkan status Midtrans; true bila polling selesai (lunas/gagal). */
+	async function handleMidtransStatus(
+		transactionStatus: string,
+		fraudStatus: string | null,
+		saleId: number | null
+	): Promise<boolean> {
+		if (isMidtransSettled(transactionStatus, fraudStatus)) {
+			stopPolling();
+			midtransOrderId = null;
+			if (saleId) {
+				try {
+					const sale = await getSale(saleId);
+					toast.success(t('point_flow.newSale.midtransSuccess'), {
+						description: `${sale.transaction_no} total ${formatIdr(sale.total_amount)}.`
+					});
+					completedSale = sale;
+					isReceiptOpen = true;
+					resetSale();
+					await loadProductSkus();
+				} catch (error) {
+					midtransInfo = t('point_flow.newSale.midtransSuccess');
+					errorMessage = getErrorMessage(error, t('point_flow.newSale.errorCreate'));
+				}
+			} else {
+				midtransInfo = t('point_flow.newSale.midtransSuccess');
+			}
+			return true;
+		}
+		if (isMidtransTerminal(transactionStatus, fraudStatus)) {
+			stopPolling();
+			midtransOrderId = null;
+			errorMessage = t('point_flow.newSale.midtransFailed');
+			midtransInfo = null;
+			return true;
+		}
+		midtransInfo = t('point_flow.newSale.midtransPending');
+		return false;
+	}
+
 	function addProductSku(productSku: ProductSku) {
 		if (!canTransact || isSubmitting || productSku.stock <= 0) return;
 
@@ -204,6 +452,8 @@
 	function clearCart() {
 		cartItems = [];
 		paidAmount = '';
+		transferDestination = '';
+		receiptNo = '';
 		notes = '';
 		errorMessage = null;
 	}
@@ -653,40 +903,163 @@
 					{/if}
 				</div>
 
-				<div class="space-y-2">
-					<Label for="sale-paid-amount" class="whitespace-nowrap"
-						>{t('point_flow.newSale.paidAmount')}</Label
+				<div
+					class="grid grid-cols-2 gap-1 rounded-2xl border border-slate-100 bg-white p-1 dark:border-slate-800 dark:bg-slate-950"
+					role="tablist"
+					aria-label={t('point_flow.newSale.paymentNonCash')}
+				>
+					<Button
+						type="button"
+						role="tab"
+						aria-selected={paymentTab === 'cash'}
+						variant={paymentTab === 'cash' ? 'default' : 'ghost'}
+						class="h-9 rounded-xl"
+						onclick={() => (paymentTab = 'cash')}
 					>
-					<Input
-						id="sale-paid-amount"
-						type="number"
-						min="0"
-						step="1"
-						placeholder="0"
-						class="h-10 rounded-xl bg-white dark:bg-slate-950"
-						disabled={isSubmitting || !canTransact}
-						bind:value={paidAmount}
-					/>
+						{t('point_flow.newSale.paymentCash')}
+					</Button>
+					<Button
+						type="button"
+						role="tab"
+						aria-selected={paymentTab === 'noncash'}
+						variant={paymentTab === 'noncash' ? 'default' : 'ghost'}
+						class="h-9 rounded-xl"
+						onclick={() => (paymentTab = 'noncash')}
+					>
+						{t('point_flow.newSale.paymentNonCash')}
+					</Button>
 				</div>
 
-				<div
-					class="flex items-center justify-between gap-3 rounded-2xl bg-white p-3 dark:bg-slate-950"
-				>
-					<div class="flex items-center gap-2 text-sm text-muted-foreground">
-						<BanknoteIcon class="size-4" />
-						{t('point_flow.newSale.change')}
+				{#if paymentTab === 'cash'}
+					<div class="space-y-2">
+						<Label for="sale-paid-amount" class="whitespace-nowrap"
+							>{t('point_flow.newSale.paidAmount')}</Label
+						>
+						<Input
+							id="sale-paid-amount"
+							type="number"
+							min="0"
+							step="1"
+							placeholder="0"
+							class="h-10 rounded-xl bg-white dark:bg-slate-950"
+							disabled={isSubmitting || !canTransact}
+							bind:value={paidAmount}
+						/>
 					</div>
-					<p
-						class={cn(
-							'text-lg font-semibold',
-							changeAmount < 0 && cartItems.length > 0
-								? 'text-destructive'
-								: 'text-emerald-600 dark:text-emerald-400'
-						)}
+
+					<div
+						class="flex items-center justify-between gap-3 rounded-2xl bg-white p-3 dark:bg-slate-950"
 					>
-						{formatIdr(Math.max(0, changeAmount))}
-					</p>
-				</div>
+						<div class="flex items-center gap-2 text-sm text-muted-foreground">
+							<BanknoteIcon class="size-4" />
+							{t('point_flow.newSale.change')}
+						</div>
+						<p
+							class={cn(
+								'text-lg font-semibold',
+								changeAmount < 0 && cartItems.length > 0
+									? 'text-destructive'
+									: 'text-emerald-600 dark:text-emerald-400'
+							)}
+						>
+							{formatIdr(Math.max(0, changeAmount))}
+						</p>
+					</div>
+				{:else if isMidtransMode}
+					<div class="grid gap-2 rounded-2xl bg-white p-3 dark:bg-slate-950">
+						<p class="text-sm font-semibold">{t('point_flow.newSale.midtransTitle')}</p>
+						<p class="text-xs text-muted-foreground">{t('point_flow.newSale.midtransDesc')}</p>
+						{#if midtransInfo}
+							<p class="text-sm text-muted-foreground">{midtransInfo}</p>
+						{/if}
+						<div class="flex flex-col gap-2">
+							<Button
+								type="button"
+								size="lg"
+								class="rounded-2xl"
+								disabled={isSubmitting ||
+									isCreatingCharge ||
+									isPolling ||
+									!canTransact ||
+									cartItems.length === 0}
+								onclick={() => void handleMidtransCharge()}
+							>
+								{#if isCreatingCharge}
+									<Spinner />
+								{:else}
+									<ShoppingCartIcon />
+								{/if}
+								{isCreatingCharge
+									? t('point_flow.newSale.midtransPaying')
+									: t('point_flow.newSale.midtransPayBtn')}
+							</Button>
+							{#if isPolling && midtransOrderId}
+								<div class="flex flex-col gap-2 sm:flex-row">
+									<Button
+										type="button"
+										variant="outline"
+										class="rounded-2xl"
+										onclick={() => void checkMidtransOnce()}
+									>
+										{t('point_flow.newSale.checkStatus')}
+									</Button>
+									<Button type="button" variant="ghost" class="rounded-2xl" onclick={stopPolling}>
+										{t('point_flow.newSale.stopPolling')}
+									</Button>
+								</div>
+							{/if}
+						</div>
+					</div>
+				{:else}
+					<div class="grid gap-2 rounded-2xl bg-white p-3 dark:bg-slate-950">
+						<p class="text-sm font-semibold">{t('point_flow.newSale.transferTitle')}</p>
+						<p class="text-xs text-muted-foreground">{t('point_flow.newSale.transferDesc')}</p>
+						<div class="space-y-2">
+							<Label for="sale-transfer-destination" class="whitespace-nowrap"
+								>{t('point_flow.newSale.transferDestination')}</Label
+							>
+							<Input
+								id="sale-transfer-destination"
+								placeholder={t('point_flow.newSale.transferDestinationPlaceholder')}
+								class="h-10 rounded-xl bg-white dark:bg-slate-950"
+								disabled={isSubmitting || !canTransact}
+								bind:value={transferDestination}
+							/>
+						</div>
+						<div class="space-y-2">
+							<Label for="sale-receipt-no" class="whitespace-nowrap"
+								>{t('point_flow.newSale.receiptNo')}</Label
+							>
+							<Input
+								id="sale-receipt-no"
+								placeholder={t('point_flow.newSale.receiptNoPlaceholder')}
+								class="h-10 rounded-xl bg-white dark:bg-slate-950"
+								disabled={isSubmitting || !canTransact}
+								bind:value={receiptNo}
+							/>
+						</div>
+						<Button
+							type="button"
+							size="lg"
+							class="rounded-2xl"
+							disabled={isSubmitting ||
+								!canTransact ||
+								cartItems.length === 0 ||
+								!transferDestination.trim() ||
+								!receiptNo.trim()}
+							onclick={() => void handleTransferSubmit()}
+						>
+							{#if isSubmitting}
+								<Spinner />
+							{:else}
+								<ShoppingCartIcon />
+							{/if}
+							{isSubmitting
+								? t('point_flow.newSale.completing')
+								: t('point_flow.newSale.completeTransferBtn')}
+						</Button>
+					</div>
+				{/if}
 
 				<div class="space-y-2">
 					<Label for="sale-notes" class="whitespace-nowrap">{t('common.notes')}</Label>
@@ -703,19 +1076,23 @@
 					<ErrorAlert title={t('point_flow.newSale.saleFailed')} message={errorMessage} />
 				{/if}
 
-				<Button
-					type="submit"
-					size="lg"
-					class="rounded-2xl"
-					disabled={isSubmitting || !isPaymentEnough || !canTransact}
-				>
-					{#if isSubmitting}
-						<Spinner />
-					{:else}
-						<ShoppingCartIcon />
-					{/if}
-					{isSubmitting ? t('point_flow.newSale.completing') : t('point_flow.newSale.completeBtn')}
-				</Button>
+				{#if paymentTab === 'cash'}
+					<Button
+						type="submit"
+						size="lg"
+						class="rounded-2xl"
+						disabled={isSubmitting || !isPaymentEnough || !canTransact}
+					>
+						{#if isSubmitting}
+							<Spinner />
+						{:else}
+							<ShoppingCartIcon />
+						{/if}
+						{isSubmitting
+							? t('point_flow.newSale.completing')
+							: t('point_flow.newSale.completeBtn')}
+					</Button>
+				{/if}
 			</div>
 		</section>
 	</div>

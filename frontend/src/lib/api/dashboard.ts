@@ -3,6 +3,8 @@ import { apiGet } from './client.js';
 type DashboardResponse = {
 	transaction_count_today: number;
 	revenue_today: number;
+	cash_revenue_today: number;
+	noncash_revenue_today: number;
 	low_stock_product_count: number;
 	pending_purchase_order_count: number;
 	draft_stock_adjustment_count: number;
@@ -12,6 +14,8 @@ type DashboardResponse = {
 export type DashboardSummary = {
 	transactionCountToday: number;
 	revenueToday: number;
+	cashRevenueToday: number;
+	noncashRevenueToday: number;
 	lowStockProductCount: number;
 	pendingPurchaseOrderCount: number;
 	draftStockAdjustmentCount: number;
@@ -24,6 +28,8 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
 	return {
 		transactionCountToday: summary.transaction_count_today,
 		revenueToday: summary.revenue_today,
+		cashRevenueToday: summary.cash_revenue_today,
+		noncashRevenueToday: summary.noncash_revenue_today,
 		lowStockProductCount: summary.low_stock_product_count,
 		pendingPurchaseOrderCount: summary.pending_purchase_order_count,
 		draftStockAdjustmentCount: summary.draft_stock_adjustment_count,

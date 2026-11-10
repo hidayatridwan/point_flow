@@ -33,7 +33,10 @@
 	let ewalletNumbers = $state('');
 	let deliveryFee = $state('0');
 	let shopWhatsapp = $state('');
+	let paymentMode = $state('manual');
 	let qrisImageUrl = $state<string | null>(null);
+
+	const isMidtransMode = $derived(paymentMode === 'midtrans');
 	let qrisInput = $state<HTMLInputElement | null>(null);
 
 	onMount(() => {
@@ -61,6 +64,7 @@
 		ewalletNumbers = settings.ewallet_numbers;
 		deliveryFee = String(settings.delivery_fee);
 		shopWhatsapp = settings.shop_whatsapp;
+		paymentMode = settings.payment_mode === 'midtrans' ? 'midtrans' : 'manual';
 		qrisImageUrl = settings.qris_image_url;
 	}
 
@@ -84,7 +88,8 @@
 				bank_accounts: bankAccounts.trim(),
 				ewallet_numbers: ewalletNumbers.trim(),
 				delivery_fee: fee,
-				shop_whatsapp: shopWhatsapp.trim()
+				shop_whatsapp: shopWhatsapp.trim(),
+				payment_mode: paymentMode
 			});
 			applySettings(settings);
 			toast.success(t('config.storeSettings.savedToast'));
@@ -176,6 +181,51 @@
 						/>
 					</div>
 
+					<div class="grid gap-2">
+						<Label id="payment-mode-label">{t('config.storeSettings.paymentModeLabel')}</Label>
+						<div
+							role="radiogroup"
+							aria-labelledby="payment-mode-label"
+							class="grid gap-2 sm:grid-cols-2"
+						>
+							<button
+								type="button"
+								role="radio"
+								aria-checked={paymentMode === 'manual'}
+								disabled={isSaving}
+								onclick={() => (paymentMode = 'manual')}
+								class="rounded-xl border-2 p-3 text-left transition-colors {paymentMode === 'manual'
+									? 'border-primary bg-primary/5'
+									: 'border-muted bg-background'}"
+							>
+								<p class="text-sm font-semibold">
+									{t('config.storeSettings.paymentModeManual')}
+								</p>
+								<p class="mt-0.5 text-xs text-muted-foreground">
+									{t('config.storeSettings.paymentModeManualDesc')}
+								</p>
+							</button>
+							<button
+								type="button"
+								role="radio"
+								aria-checked={paymentMode === 'midtrans'}
+								disabled={isSaving}
+								onclick={() => (paymentMode = 'midtrans')}
+								class="rounded-xl border-2 p-3 text-left transition-colors {paymentMode ===
+								'midtrans'
+									? 'border-primary bg-primary/5'
+									: 'border-muted bg-background'}"
+							>
+								<p class="text-sm font-semibold">
+									{t('config.storeSettings.paymentModeMidtrans')}
+								</p>
+								<p class="mt-0.5 text-xs text-muted-foreground">
+									{t('config.storeSettings.paymentModeMidtransDesc')}
+								</p>
+							</button>
+						</div>
+					</div>
+
 					<div class="grid gap-2 sm:grid-cols-2">
 						<div class="grid gap-2">
 							<Label for="bank-accounts">{t('config.storeSettings.bankAccounts')}</Label>
@@ -183,9 +233,14 @@
 								id="bank-accounts"
 								bind:value={bankAccounts}
 								placeholder={t('config.storeSettings.bankAccountsPlaceholder')}
-								disabled={isSaving}
+								disabled={isSaving || isMidtransMode}
 								rows={3}
 							/>
+							{#if isMidtransMode}
+								<p class="text-xs text-muted-foreground">
+									{t('config.storeSettings.manualUnusedHint')}
+								</p>
+							{/if}
 						</div>
 						<div class="grid gap-2">
 							<Label for="ewallet-numbers">{t('config.storeSettings.ewalletNumbers')}</Label>
@@ -193,9 +248,14 @@
 								id="ewallet-numbers"
 								bind:value={ewalletNumbers}
 								placeholder={t('config.storeSettings.ewalletNumbersPlaceholder')}
-								disabled={isSaving}
+								disabled={isSaving || isMidtransMode}
 								rows={3}
 							/>
+							{#if isMidtransMode}
+								<p class="text-xs text-muted-foreground">
+									{t('config.storeSettings.manualUnusedHint')}
+								</p>
+							{/if}
 						</div>
 					</div>
 
@@ -262,6 +322,12 @@
 				<p class="text-sm text-muted-foreground">{t('config.storeSettings.qrisEmpty')}</p>
 			{/if}
 
+			{#if isMidtransMode}
+				<p class="text-sm text-muted-foreground">
+					{t('config.storeSettings.manualUnusedHint')}
+				</p>
+			{/if}
+
 			{#if uploadError}
 				<ErrorAlert title={t('config.storeSettings.errorUpload')} message={uploadError} />
 			{/if}
@@ -278,7 +344,7 @@
 			<Button
 				type="button"
 				variant="outline"
-				disabled={isLoading || isUploading}
+				disabled={isLoading || isUploading || isMidtransMode}
 				onclick={() => qrisInput?.click()}
 			>
 				{#if isUploading}

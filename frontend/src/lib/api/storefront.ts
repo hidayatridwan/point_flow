@@ -27,6 +27,7 @@ export type StoreInfo = {
 	qris_image_url: string | null;
 	delivery_fee: number;
 	shop_whatsapp: string;
+	payment_mode: string;
 };
 
 export type CheckoutItemInput = {
@@ -39,7 +40,7 @@ export type CheckoutInput = {
 	customer_phone: string;
 	fulfillment_method: 'pickup' | 'delivery';
 	delivery_address?: string;
-	payment_method: 'pay_at_store' | 'transfer';
+	payment_method: 'pay_at_store' | 'transfer' | 'midtrans';
 	notes?: string;
 	items: CheckoutItemInput[];
 };
@@ -63,10 +64,13 @@ export type CheckoutResult = {
 	order_id: number;
 	order_no: string;
 	fulfillment_method: 'pickup' | 'delivery';
-	payment_method: 'pay_at_store' | 'transfer';
+	payment_method: 'pay_at_store' | 'transfer' | 'midtrans';
 	total_amount: number;
 	items: CheckoutItemResult[];
 	payment_info: CheckoutPaymentInfo | null;
+	snap_token: string | null;
+	redirect_url: string | null;
+	midtrans_order_id: string | null;
 };
 
 export type PublicProductList = {
