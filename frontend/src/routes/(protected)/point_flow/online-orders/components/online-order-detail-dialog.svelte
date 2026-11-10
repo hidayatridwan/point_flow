@@ -154,7 +154,9 @@
 	function paymentLabel(value: string) {
 		return value === 'transfer'
 			? t('point_flow.onlineOrders.paymentTransfer')
-			: t('point_flow.onlineOrders.paymentPayAtStore');
+			: value === 'midtrans'
+				? t('point_flow.onlineOrders.paymentMidtrans')
+				: t('point_flow.onlineOrders.paymentPayAtStore');
 	}
 
 	function getErrorMessage(error: unknown) {

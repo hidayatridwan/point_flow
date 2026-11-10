@@ -976,7 +976,7 @@ pub async fn mark_order_paid(
         &order.payment_status,
     )
     .map_err(AppError::Validation)?;
-    repository::set_order_paid(&mut tx, id, user_id).await?;
+    repository::set_order_paid(&mut tx, id, Some(user_id)).await?;
     tx.commit().await?;
 
     find_order(pool, id).await

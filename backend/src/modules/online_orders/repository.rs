@@ -636,7 +636,7 @@ pub async fn set_order_cancelled(
 pub async fn set_order_paid(
     tx: &mut Transaction<'_, Postgres>,
     id: i64,
-    processed_by: i64,
+    processed_by: Option<i64>,
 ) -> AppResult<()> {
     let affected = sqlx::query(
         r#"

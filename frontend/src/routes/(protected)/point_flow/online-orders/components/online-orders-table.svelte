@@ -50,7 +50,9 @@
 				const method =
 					info.getValue() === 'transfer'
 						? t('point_flow.onlineOrders.paymentTransfer')
-						: t('point_flow.onlineOrders.paymentPayAtStore');
+						: info.getValue() === 'midtrans'
+							? t('point_flow.onlineOrders.paymentMidtrans')
+							: t('point_flow.onlineOrders.paymentPayAtStore');
 				const paid =
 					info.row.original.payment_status === 'paid'
 						? t('point_flow.onlineOrders.paymentPaid')

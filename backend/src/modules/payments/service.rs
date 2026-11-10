@@ -671,9 +671,9 @@ async fn settle_payment(
     payment: &MidtransPayment,
     update: &StatusUpdate,
 ) -> AppResult<SettlementSummary> {
-    let cashier_id = payment.created_by.ok_or_else(|| {
-        AppError::Internal("midtrans charge misses the cashier who created it".to_string())
-    })?;
+    // Charge online dibuat dari checkout publik tanpa kasir, jadi created_by
+    // boleh None (processed_by NULL = dilunasi otomatis oleh sistem).
+    // Charge POS selalu dibuat kasir terautentikasi sehingga Some.
     if payment.source_type == SOURCE_ONLINE {
         if let Some(online_order_id) = payment.online_order_id {
             let order = crate::modules::online_orders::repository::lock_order(tx, online_order_id)
@@ -683,7 +683,7 @@ async fn settle_payment(
                 crate::modules::online_orders::repository::set_order_paid(
                     tx,
                     online_order_id,
-                    cashier_id,
+                    payment.created_by,
                 )
                 .await?;
             }
@@ -691,6 +691,10 @@ async fn settle_payment(
         // Stok online dipotong jalur fulfilment (pack) yang sudah ada,
         // bukan di sini — konsisten dengan pesanan manual.
     } else {
+        // Charge POS selalu dibuat kasir terautentikasi: created_by wajib ada.
+        let cashier_id = payment.created_by.ok_or_else(|| {
+            AppError::Internal("midtrans charge misses the cashier who created it".to_string())
+        })?;
         // Keputusan terkunci: settlement memakai sesi yang SEDANG TERBUKA,
         // bukan sesi asal charge. Tanpa sesi terbuka, batalkan transaksi
         // (Midtrans akan retry) agar sale tidak yatim.
