@@ -29,6 +29,39 @@
 				}
 			})();
 		</script>
+		<script>
+			// Netlify menyisipkan badge "Powered by Netlify" lewat script
+			// /.netlify/scripts/hud yang merender <div class="nl-wrap"> di dalam
+			// iframe #nl-badge-frame. Div itu terisolasi di frame-nya sehingga tidak
+			// bisa dijangkau JS halaman, jadi yang dibuang adalah frame-nya —
+			// setelah seluruh HTML, CSS, dan JS halaman selesai dimuat (event
+			// `load`), lalu buang juga bila frame disisipkan ulang belakangan.
+			(() => {
+				const removeNetlifyBadge = () => {
+					document
+						.querySelectorAll('#nl-badge-frame, .nl-wrap')
+						.forEach((el) => el.remove());
+				};
+
+				window.addEventListener('load', removeNetlifyBadge, { once: true });
+
+				new MutationObserver((mutations) => {
+					for (const mutation of mutations) {
+						for (const node of mutation.addedNodes) {
+							if (
+								node.nodeType === Node.ELEMENT_NODE &&
+								(node.id === 'nl-badge-frame' ||
+									node.classList?.contains('nl-wrap') ||
+									node.querySelector?.('#nl-badge-frame, .nl-wrap'))
+							) {
+								removeNetlifyBadge();
+								return;
+							}
+						}
+					}
+				}).observe(document.documentElement, { childList: true, subtree: true });
+			})();
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
