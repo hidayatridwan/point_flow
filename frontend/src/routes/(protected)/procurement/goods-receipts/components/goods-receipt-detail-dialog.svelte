@@ -119,6 +119,7 @@
 									<Table.Head>{t('procurement.goodsReceipts.detail.colUnit')}</Table.Head>
 									<Table.Head>{t('procurement.goodsReceipts.detail.colReceived')}</Table.Head>
 									<Table.Head>{t('procurement.goodsReceipts.detail.colUnitCost')}</Table.Head>
+									<Table.Head>{t('procurement.goodsReceipts.detail.colMargin')}</Table.Head>
 									<Table.Head>{t('procurement.goodsReceipts.detail.colLineTotal')}</Table.Head>
 								</Table.Row>
 							</Table.Header>
@@ -130,6 +131,16 @@
 										<Table.Cell>{item.unit}</Table.Cell>
 										<Table.Cell>{formatNumber(item.quantity_received)}</Table.Cell>
 										<Table.Cell>{formatIdr(item.unit_cost)}</Table.Cell>
+										<Table.Cell>
+											{#if item.margin_percent === null}
+												<span class="text-muted-foreground">-</span>
+											{:else}
+												{formatNumber(item.margin_percent)}%
+												<span class="block text-xs text-muted-foreground">
+													{formatIdr(item.unit_cost * (1 + item.margin_percent / 100))}
+												</span>
+											{/if}
+										</Table.Cell>
 										<Table.Cell>{formatIdr(item.line_total)}</Table.Cell>
 									</Table.Row>
 								{/each}

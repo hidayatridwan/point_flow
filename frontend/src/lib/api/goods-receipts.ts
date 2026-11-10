@@ -34,6 +34,7 @@ export type GoodsReceiptItem = {
 	unit: string;
 	quantity_received: number;
 	unit_cost: number;
+	margin_percent: number | null;
 	line_total: number;
 	created_at: string;
 	updated_at: string;
@@ -63,6 +64,7 @@ export type CreateGoodsReceiptItemPayload = {
 	purchase_order_item_id: number;
 	quantity_received: number;
 	unit_cost?: number | null;
+	margin_percent?: number | null;
 };
 
 export type CreateGoodsReceiptPayload = {

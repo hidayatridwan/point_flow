@@ -902,6 +902,9 @@ export const messages = {
 					'Sesuaikan kuantitas untuk penerimaan parsial atau hapus item yang belum diterima.',
 				receiveQty: 'Qty Terima',
 				unitCost: 'Biaya Satuan',
+				marginLabel: 'Margin Laba (%)',
+				marginPlaceholder: 'mis. 15',
+				newSellingPrice: 'Harga jual baru',
 				poNo: 'No. PO',
 				expectedDate: 'Tanggal Ekspektasi',
 				ordered: 'Dipesan',
@@ -966,6 +969,7 @@ export const messages = {
 					colUnit: 'Satuan',
 					colReceived: 'Diterima',
 					colUnitCost: 'Biaya Satuan',
+					colMargin: 'Margin',
 					colLineTotal: 'Total Baris',
 					loadFailed: 'Gagal memuat detail penerimaan barang.'
 				}
@@ -3091,6 +3095,9 @@ export const messages = {
 					'Adjust quantities for partial receipt or remove items not received yet.',
 				receiveQty: 'Receive Qty',
 				unitCost: 'Unit Cost',
+				marginLabel: 'Profit Margin (%)',
+				marginPlaceholder: 'e.g. 15',
+				newSellingPrice: 'New selling price',
 				poNo: 'PO No',
 				expectedDate: 'Expected Date',
 				ordered: 'Ordered',
@@ -3155,6 +3162,7 @@ export const messages = {
 					colUnit: 'Unit',
 					colReceived: 'Received',
 					colUnitCost: 'Unit Cost',
+					colMargin: 'Margin',
 					colLineTotal: 'Line Total',
 					loadFailed: 'Failed to load goods receipt details.'
 				}

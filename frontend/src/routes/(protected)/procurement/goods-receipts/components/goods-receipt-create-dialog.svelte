@@ -43,6 +43,7 @@
 		remaining_quantity: number;
 		quantity_received: string;
 		unit_cost: string;
+		margin_percent: string;
 	};
 
 	type GoodsReceiptForm = {
@@ -94,6 +95,24 @@
 				})
 		);
 
+	// Opsional: kosong = biarkan selling price SKU tidak berubah saat posting.
+	const optionalMarginSchema = (label: string) =>
+		z.preprocess(
+			normalizeStringInput,
+			z
+				.string()
+				.trim()
+				.refine((value) => value === '' || Number.isFinite(Number(value)), {
+					message: `${label} must be a valid number.`
+				})
+				.refine((value) => value === '' || Number(value) >= 0, {
+					message: `${label} must be zero or greater.`
+				})
+				.refine((value) => value === '' || /^\d+(\.\d{1,2})?$/.test(value), {
+					message: `${label} must have at most 2 decimal places.`
+				})
+		);
+
 	const goodsReceiptItemSchema = z.object({
 		client_id: z.string(),
 		purchase_order_item_id: requiredIdSchema('Purchase order item'),
@@ -104,7 +123,8 @@
 		quantity_received_to_date: z.number(),
 		remaining_quantity: z.number(),
 		quantity_received: positiveNumberSchema('Received quantity'),
-		unit_cost: nonNegativeNumberSchema('Unit cost')
+		unit_cost: nonNegativeNumberSchema('Unit cost'),
+		margin_percent: optionalMarginSchema('Profit margin')
 	});
 
 	const createGoodsReceiptSchema = z
@@ -253,7 +273,8 @@
 				items: result.data.items.map((item) => ({
 					purchase_order_item_id: Number(item.purchase_order_item_id),
 					quantity_received: Number(item.quantity_received),
-					unit_cost: Number(item.unit_cost)
+					unit_cost: Number(item.unit_cost),
+					margin_percent: item.margin_percent.trim() === '' ? null : Number(item.margin_percent)
 				}))
 			});
 			await onCreated?.(createdGoodsReceipt);
@@ -286,7 +307,8 @@
 			quantity_received_to_date: item.quantity_received,
 			remaining_quantity: remainingQuantity,
 			quantity_received: String(remainingQuantity),
-			unit_cost: String(item.unit_cost)
+			unit_cost: String(item.unit_cost),
+			margin_percent: ''
 		};
 	}
 
@@ -300,6 +322,14 @@
 
 	function getLineTotal(item: GoodsReceiptFormItem) {
 		return toNumber(item.quantity_received) * toNumber(item.unit_cost);
+	}
+
+	function getNewSellingPrice(item: GoodsReceiptFormItem) {
+		if (item.margin_percent.trim() === '') return null;
+		const margin = toNumber(item.margin_percent);
+		const unitCost = toNumber(item.unit_cost);
+		if (!Number.isFinite(margin) || !Number.isFinite(unitCost)) return null;
+		return Math.round(unitCost * (1 + margin / 100) * 100) / 100;
 	}
 
 	function toNumber(value: string) {
@@ -539,7 +569,7 @@
 											</Button>
 										</div>
 
-										<div class="grid grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2 lg:grid-cols-4">
+										<div class="grid grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2 lg:grid-cols-5">
 											<div class="space-y-1 rounded-md bg-background p-3">
 												<p class="text-xs text-muted-foreground">
 													{t('procurement.goodsReceipts.ordered')}
@@ -602,6 +632,34 @@
 												{#if getFieldError(`items.${index}.unit_cost`)}
 													<p class="text-sm text-destructive">
 														{getFieldError(`items.${index}.unit_cost`)}
+													</p>
+												{/if}
+											</div>
+											<div class="space-y-2">
+												<Label
+													for={`goods-receipt-item-margin-${item.client_id}`}
+													class="whitespace-nowrap"
+												>
+													{t('procurement.goodsReceipts.marginLabel')}
+												</Label>
+												<Input
+													id={`goods-receipt-item-margin-${item.client_id}`}
+													type="number"
+													min="0"
+													step="0.01"
+													placeholder={t('procurement.goodsReceipts.marginPlaceholder')}
+													disabled={isSubmitting}
+													bind:value={item.margin_percent}
+												/>
+												{#if getNewSellingPrice(item) !== null}
+													<p class="text-xs text-muted-foreground">
+														{t('procurement.goodsReceipts.newSellingPrice')}:
+														{formatIdr(getNewSellingPrice(item) ?? 0)}
+													</p>
+												{/if}
+												{#if getFieldError(`items.${index}.margin_percent`)}
+													<p class="text-sm text-destructive">
+														{getFieldError(`items.${index}.margin_percent`)}
 													</p>
 												{/if}
 											</div>

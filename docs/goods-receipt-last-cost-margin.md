@@ -188,12 +188,16 @@ Gate review: diff `backend/src/common/services/documents.rs`.
 
 ### Fase 3 — Frontend form, detail, i18n
 
-- [ ] `goods-receipts.ts`: tipe payload + response (4.4)
-- [ ] Form penerimaan: kolom margin + preview harga jual (4.5)
-- [ ] Detail dialog: tampil margin (4.6)
-- [ ] `messages.ts`: key ID + EN (4.7)
-- [ ] Build frontend hijau (`bun run build` / `npm run build`)
+- [x] `goods-receipts.ts`: tipe payload + response (4.4)
+- [x] Form penerimaan: kolom margin + preview harga jual (4.5)
+- [x] Detail dialog: tampil margin (4.6)
+- [x] `messages.ts`: key ID + EN (4.7)
+- [x] Build frontend hijau (`bun run build` / `npm run build`)
 
+Validasi: ✅ `svelte-check` 0 error/0 warning, `prettier --check` bersih,
+`npm run build` sukses (adapter-static, site ter-tulis). Kolom margin hanya
+tampil di form penerimaan & detail GR; preview "Harga jual baru" muncul live
+saat margin terisi dan mengikuti perubahan unit cost.
 Gate review: diff `goods-receipt-create-dialog.svelte`.
 
 ## 6. Rencana pengujian manual (setelah semua fase)
