@@ -150,11 +150,19 @@ Kerjakan berurutan; satu fase selesai → build/test → lanjut.
 
 ### Fase 1 — Migrasi `014_add_goods_receipt_margin.sql`
 
-- [ ] Buat migrasi sesuai 4.1 (kolom + CHECK non-negative)
-- [ ] Uji di scratch Postgres: migrasi naik bersih 001–014; INSERT margin
+- [x] Buat migrasi sesuai 4.1 (kolom + CHECK non-negative)
+- [x] Uji di scratch Postgres: migrasi naik bersih 001–014; INSERT margin
       negatif ditolak; NULL lolos
-- [ ] `cargo test` hijau
+- [x] `cargo test` hijau
 
+Validasi: ✅ migrasi naik bersih di scratch Postgres (2026-11-10, container
+`postgres:16-alpine`: 001–014 berurutan, `ON_ERROR_STOP` tanpa error) + 3 uji:
+kolom `margin_percent NUMERIC(5,2)` nullable terdaftar, constraint
+`goods_receipt_items_margin_percent_non_negative` sesuai definisi, semantik
+CHECK (bentuk identik): NULL/0/12.5/999.99 diterima, −0.01 ditolak
+(`check_violation`). `cargo test` hijau (28 passed, 0 failed).
+Catatan deviasi kecil: migrasi dibungkus `BEGIN; ... COMMIT;` — tidak ada di
+snippet Bagian 4.1, tapi konsisten dengan gaya seluruh migrasi repo (001–013).
 Gate review: diff `backend/migrations/014_add_goods_receipt_margin.sql`.
 
 ### Fase 2 — Backend service & model
