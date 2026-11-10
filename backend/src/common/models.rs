@@ -727,6 +727,7 @@ pub struct GoodsReceiptItemResponse {
     pub unit: String,
     pub quantity_received: f64,
     pub unit_cost: f64,
+    pub margin_percent: Option<f64>,
     pub line_total: f64,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -752,6 +753,7 @@ pub struct GoodsReceiptItemInput {
     pub purchase_order_item_id: i64,
     pub quantity_received: f64,
     pub unit_cost: Option<f64>,
+    pub margin_percent: Option<f64>,
 }
 
 #[derive(Debug, Serialize, FromRow)]

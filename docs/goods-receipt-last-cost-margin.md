@@ -167,14 +167,23 @@ Gate review: diff `backend/migrations/014_add_goods_receipt_margin.sql`.
 
 ### Fase 2 — Backend service & model
 
-- [ ] `models.rs`: field input + response (4.2)
-- [ ] `documents.rs`: simpan margin saat create; update stok+harga saat
+- [x] `models.rs`: field input + response (4.2)
+- [x] `documents.rs`: simpan margin saat create; update stok+harga saat
       post (4.3); SELECT item menyertakan `margin_percent`
-- [ ] Uji alur: PO → GR (dengan margin & tanpa margin) → post → cek
+- [x] Uji alur: PO → GR (dengan margin & tanpa margin) → post → cek
       `product_skus.purchase_price` = unit_cost dan `selling_price`
       sesuai rumus; GR tanpa margin → `selling_price` tetap
-- [ ] `cargo build` + `cargo test` hijau
+- [x] `cargo build` + `cargo test` hijau
 
+Validasi: ✅ E2E di scratch DB (2026-11-10, server 8090 + Postgres 16,
+migrasi 001–014): (1) GR unit_cost 10.000 + margin 15% → post →
+`purchase_price` 10.000, `selling_price` 11.500, stok 0→10; (2) GR berikutnya
+unit_cost 11.000 TANPA field `margin_percent` (backward compatible, response
+`margin_percent: null`) → post → `purchase_price` 11.000, `selling_price` tetap
+11.500, stok 15; (3) margin −5 ditolak API: "margin_percent must be greater
+than or equal to 0"; (4) `margin_percent` ikut di response detail GR.
+`cargo test` 28 passed, 0 failed. Catatan: `cancel_goods_receipt` hanya
+menerima draft (`WHERE status = 'draft'`) sehingga D2 otomatis berlaku.
 Gate review: diff `backend/src/common/services/documents.rs`.
 
 ### Fase 3 — Frontend form, detail, i18n

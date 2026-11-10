@@ -100,6 +100,7 @@ const GOODS_RECEIPT_ITEM_SELECT: &str = r#"
         unit,
         quantity_received::float8 AS quantity_received,
         unit_cost::float8 AS unit_cost,
+        margin_percent::float8 AS margin_percent,
         line_total::float8 AS line_total,
         created_at,
         updated_at
@@ -548,6 +549,9 @@ pub async fn create_goods_receipt(
         if let Some(unit_cost) = item.unit_cost {
             validate_non_negative(unit_cost, "unit_cost")?;
         }
+        if let Some(margin_percent) = item.margin_percent {
+            validate_non_negative(margin_percent, "margin_percent")?;
+        }
     }
 
     let mut tx = pool.begin().await?;
@@ -596,9 +600,9 @@ pub async fn create_goods_receipt(
             r#"
             INSERT INTO goods_receipt_items (
                 goods_receipt_id, purchase_order_item_id, product_id, product_sku_id, product_name,
-                product_sku, unit, quantity_received, unit_cost
+                product_sku, unit, quantity_received, unit_cost, margin_percent
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8::numeric, $9::numeric)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8::numeric, $9::numeric, $10::numeric)
             "#,
         )
         .bind(gr_id)
@@ -610,6 +614,7 @@ pub async fn create_goods_receipt(
         .bind(po_item.unit)
         .bind(item.quantity_received)
         .bind(unit_cost)
+        .bind(item.margin_percent)
         .execute(&mut *tx)
         .await?;
     }
@@ -660,11 +665,24 @@ pub async fn post_goods_receipt(
         let stock_before = product.stock;
         let stock_after = stock_before + item.quantity_received;
 
-        sqlx::query("UPDATE product_skus SET stock = $2::numeric WHERE id = $1")
-            .bind(item.product_sku_id)
-            .bind(stock_after)
-            .execute(&mut *tx)
-            .await?;
+        sqlx::query(
+            r#"
+            UPDATE product_skus
+            SET stock = $2::numeric,
+                purchase_price = $3::numeric,
+                selling_price = COALESCE(
+                    ROUND($3::numeric * (1 + $4::numeric / 100), 2),
+                    selling_price
+                )
+            WHERE id = $1
+            "#,
+        )
+        .bind(item.product_sku_id)
+        .bind(stock_after)
+        .bind(item.unit_cost)
+        .bind(item.margin_percent)
+        .execute(&mut *tx)
+        .await?;
         sqlx::query(
             "UPDATE purchase_order_items SET quantity_received = quantity_received + $2::numeric WHERE id = $1",
         )
