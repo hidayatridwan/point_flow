@@ -20,6 +20,8 @@ build/
 
 notes.txt
 PROPOSAL_PENAWARAN_HARGA.md
+temp
+user-guide.txt
 
 # state lokal Supabase CLI (bukan secret, tapi tidak perlu di-track)
 supabase/.temp/
