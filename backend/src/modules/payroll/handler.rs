@@ -7,7 +7,7 @@ use crate::{
     app::AppState,
     auth::AuthUser,
     error::AppResult,
-    models::{ApiResponse, CreatePayrollSlipRequest, ListQuery, PayrollSlipResponse},
+    models::{ApiResponse, CancelRequest, CreatePayrollSlipRequest, ListQuery, PayrollSlipResponse},
 };
 
 use super::service;
@@ -42,5 +42,17 @@ pub async fn create_payroll_slip(
     user.require_permission(&state.db, "payroll").await?;
     Ok(Json(ApiResponse::success(
         service::create_payroll_slip(&state.db, &user, payload).await?,
+    )))
+}
+
+pub async fn cancel_payroll_slip(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<i64>,
+    Json(payload): Json<CancelRequest>,
+) -> AppResult<Json<ApiResponse<PayrollSlipResponse>>> {
+    user.require_permission(&state.db, "payroll").await?;
+    Ok(Json(ApiResponse::success(
+        service::cancel_payroll_slip(&state.db, &user, id, payload).await?,
     )))
 }

@@ -290,6 +290,7 @@
 				<PayrollSlipsTable
 					{payrollSlips}
 					{isLoading}
+					onPayrollSlipChanged={refreshPayrollSlipsFromFirstPage}
 					emptyMessage={query.search || query.from || query.to
 						? t('payroll.slips.emptySearch')
 						: t('payroll.slips.emptyDefault')}

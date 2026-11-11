@@ -11,15 +11,18 @@
 	import { createColumnHelper, getCoreRowModel } from '@tanstack/table-core';
 	import { t } from '$lib/i18n/locale.svelte.js';
 	import PayrollSlipActions from './payroll-slip-actions.svelte';
+	import PayrollSlipStatusBadge from './payroll-slip-status-badge.svelte';
 
 	let {
 		payrollSlips,
 		emptyMessage = 'No payroll slips.',
-		isLoading = false
+		isLoading = false,
+		onPayrollSlipChanged
 	}: {
 		payrollSlips: PayrollSlip[];
 		emptyMessage?: string;
 		isLoading?: boolean;
+		onPayrollSlipChanged?: (payrollSlip: PayrollSlip) => void | Promise<void>;
 	} = $props();
 
 	const skeletonRows = [...Array(10).keys()];
@@ -50,6 +53,10 @@
 			header: () => t('payroll.slips.netSalary'),
 			cell: (info) => formatIdr(info.getValue())
 		}),
+		columnHelper.accessor('status', {
+			header: () => t('payroll.slips.colStatus'),
+			cell: (info) => renderComponent(PayrollSlipStatusBadge, { status: info.getValue() })
+		}),
 		columnHelper.accessor('updated_at', {
 			header: () => t('common.updatedAt'),
 			cell: (info) => formatDateTime(info.getValue())
@@ -59,7 +66,8 @@
 			header: () => t('common.action'),
 			cell: (info) =>
 				renderComponent(PayrollSlipActions, {
-					payrollSlip: info.row.original
+					payrollSlip: info.row.original,
+					onChanged: onPayrollSlipChanged
 				})
 		})
 	];
@@ -80,6 +88,7 @@
 			'h-5 w-28',
 			'h-5 w-28',
 			'h-5 w-32',
+			'h-5 w-20',
 			'h-5 w-36'
 		];
 		return widths[columnIndex] ?? 'h-5 w-full';

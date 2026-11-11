@@ -1,4 +1,4 @@
-use axum::{Router, routing::get};
+use axum::{Router, routing::{get, post}};
 
 use crate::app::AppState;
 
@@ -11,4 +11,5 @@ pub fn routes() -> Router<AppState> {
             get(handler::list_payroll_slips).post(handler::create_payroll_slip),
         )
         .route("/payroll-slips/{id}", get(handler::get_payroll_slip))
+        .route("/payroll-slips/{id}/cancel", post(handler::cancel_payroll_slip))
 }

@@ -13,6 +13,10 @@ export type PayrollSlip = {
 	bonus: number;
 	deduction: number;
 	net_salary: number;
+	status: string;
+	cancelled_at: string | null;
+	cancelled_by: number | null;
+	cancel_reason: string | null;
 	created_by: number | null;
 	created_at: string;
 	updated_at: string;
@@ -109,6 +113,14 @@ export function getPayrollSlip(id: number) {
 
 export function createPayrollSlip(payload: CreatePayrollSlipPayload) {
 	return apiPost<PayrollSlip, CreatePayrollSlipPayload>('/payroll-slips', payload);
+}
+
+export type CancelPayrollSlipPayload = {
+	reason?: string | null;
+};
+
+export function cancelPayrollSlip(id: number, payload: CancelPayrollSlipPayload = {}) {
+	return apiPost<PayrollSlip, CancelPayrollSlipPayload>(`/payroll-slips/${id}/cancel`, payload);
 }
 
 export async function listPayrollReport(

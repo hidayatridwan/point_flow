@@ -298,6 +298,10 @@ const PAYROLL_SELECT: &str = r#"
         bonus::float8 AS bonus,
         deduction::float8 AS deduction,
         net_salary::float8 AS net_salary,
+        status::text AS status,
+        cancelled_at,
+        cancelled_by,
+        cancel_reason,
         created_by,
         created_at,
         updated_at
@@ -2153,6 +2157,47 @@ pub async fn create_payroll_slip(
     .bind(user.id)
     .fetch_one(pool)
     .await?;
+
+    find_payroll_slip(pool, id).await
+}
+
+/// Pembatalan slip payroll (temuan panduan pengguna): slip yang salah buat
+/// ditandai `cancelled` dengan alasan, lalu keluar dari Laporan Payroll
+/// (v_payroll_report) dan beban gaji di Laba Rugi/Posisi Keuangan. Slip tidak
+/// bisa diedit, jadi koreksi berarti buat ulang slip yang benar.
+pub async fn cancel_payroll_slip(
+    pool: &PgPool,
+    user: &AuthUser,
+    id: i64,
+    request: CancelRequest,
+) -> AppResult<PayrollSlipResponse> {
+    let CancelRequest { reason } = request;
+
+    let result = sqlx::query(
+        r#"
+        UPDATE payroll_slips
+        SET status = 'cancelled', cancelled_at = now(), cancelled_by = $2, cancel_reason = $3
+        WHERE id = $1 AND status = 'completed'
+        "#,
+    )
+    .bind(id)
+    .bind(user.id)
+    .bind(reason.as_deref())
+    .execute(pool)
+    .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::Conflict(
+            "only completed payroll slips can be cancelled".to_string(),
+        ));
+    }
+
+    audit::record_audit_log_best_effort(
+        pool,
+        audit::AuditLogRecord::success(Some(user.id), "payroll_slip.cancel", "payroll_slip", Some(id))
+            .with_metadata(json!({ "reason": reason })),
+    )
+    .await;
 
     find_payroll_slip(pool, id).await
 }

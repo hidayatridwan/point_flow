@@ -7,6 +7,7 @@
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { formatDate, formatDateTime, formatIdr } from '$lib/formatters.js';
 	import { t } from '$lib/i18n/locale.svelte.js';
+	import PayrollSlipStatusBadge from './payroll-slip-status-badge.svelte';
 
 	let {
 		payrollSlipId,
@@ -111,12 +112,29 @@
 				</div>
 
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+					<div class="space-y-1.5">
+						<p class="text-sm text-muted-foreground">{t('payroll.slips.colStatus')}</p>
+						<PayrollSlipStatusBadge status={payrollSlip.status} />
+					</div>
 					<DetailField label={t('common.createdBy')} value={payrollSlip.created_by ?? '-'} />
 					<DetailField
 						label={t('common.updatedAt')}
 						value={formatDateTime(payrollSlip.updated_at)}
 					/>
 				</div>
+
+				{#if payrollSlip.status === 'cancelled'}
+					<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+						<DetailField
+							label={t('payroll.slips.cancel.cancelledAt')}
+							value={payrollSlip.cancelled_at ? formatDateTime(payrollSlip.cancelled_at) : '-'}
+						/>
+						<DetailField
+							label={t('payroll.slips.cancel.cancelReason')}
+							value={payrollSlip.cancel_reason ?? '-'}
+						/>
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</Dialog.Content>

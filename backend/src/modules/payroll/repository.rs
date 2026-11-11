@@ -3,7 +3,7 @@ use sqlx::PgPool;
 use crate::{
     auth::AuthUser,
     error::AppResult,
-    models::{CreatePayrollSlipRequest, ListQuery, PayrollSlipResponse},
+    models::{CancelRequest, CreatePayrollSlipRequest, ListQuery, PayrollSlipResponse},
     services::documents,
 };
 
@@ -24,4 +24,13 @@ pub async fn create_payroll_slip(
     request: CreatePayrollSlipRequest,
 ) -> AppResult<PayrollSlipResponse> {
     documents::create_payroll_slip(pool, user, request).await
+}
+
+pub async fn cancel_payroll_slip(
+    pool: &PgPool,
+    user: &AuthUser,
+    id: i64,
+    request: CancelRequest,
+) -> AppResult<PayrollSlipResponse> {
+    documents::cancel_payroll_slip(pool, user, id, request).await
 }
