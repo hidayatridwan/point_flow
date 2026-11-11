@@ -644,7 +644,8 @@ pub async fn income_statement(
                      AND ($2::date IS NULL OR sr.returned_at::date <= $2)) AS cogs_returned,
                 (SELECT COALESCE(SUM(net_salary), 0)
                  FROM payroll_slips
-                 WHERE ($1::date IS NULL OR period_start >= $1)
+                 WHERE status = 'completed'
+                     AND ($1::date IS NULL OR period_start >= $1)
                      AND ($2::date IS NULL OR period_end <= $2)) AS payroll_expense,
                 (SELECT COALESCE(SUM(amount), 0)
                  FROM financial_transactions
@@ -672,8 +673,10 @@ pub async fn income_statement(
     .map_err(Into::into)
 }
 
-/// Arus kas derivatif (desain Bagian 2.2). Hanya transaksi tunai
-/// (`is_cash = TRUE`) yang dihitung; pergerakan drawer `cash_in` bukan kas keluar.
+/// Arus kas derivatif (desain Bagian 2.2). Hanya uang tunai yang dihitung:
+/// transaksi keuangan dengan `is_cash = TRUE` dan penjualan ber-payment_method
+/// `'cash'` (uang transfer/Midtrans tidak lewat laci fisik); pergerakan drawer
+/// `cash_in` bukan kas keluar.
 pub async fn cash_flow(
     pool: &PgPool,
     from: Option<NaiveDate>,
@@ -686,6 +689,7 @@ pub async fn cash_flow(
                 (SELECT COALESCE(SUM(total_amount), 0)
                  FROM sales
                  WHERE status = 'completed'
+                     AND payment_method = 'cash'
                      AND ($1::date IS NULL OR sold_at::date >= $1)
                      AND ($2::date IS NULL OR sold_at::date <= $2)) AS cash_in_sales,
                 (SELECT COALESCE(SUM(amount), 0)
@@ -742,6 +746,7 @@ pub async fn financial_position(
                 (SELECT COALESCE(SUM(total_amount), 0)
                  FROM sales
                  WHERE status = 'completed'
+                     AND payment_method = 'cash'
                      AND sold_at::date <= COALESCE($1, CURRENT_DATE)) AS cash_in_sales,
                 (SELECT COALESCE(SUM(amount), 0)
                  FROM financial_transactions
@@ -785,7 +790,8 @@ pub async fn financial_position(
                      AND sr.returned_at::date <= COALESCE($1, CURRENT_DATE)) AS cogs_returned,
                 (SELECT COALESCE(SUM(net_salary), 0)
                  FROM payroll_slips
-                 WHERE period_end <= COALESCE($1, CURRENT_DATE)) AS payroll_expense,
+                 WHERE status = 'completed'
+                     AND period_end <= COALESCE($1, CURRENT_DATE)) AS payroll_expense,
                 (SELECT COALESCE(SUM(amount), 0)
                  FROM financial_transactions
                  WHERE type = 'expense'

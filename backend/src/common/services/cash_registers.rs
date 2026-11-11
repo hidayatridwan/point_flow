@@ -375,6 +375,9 @@ pub async fn close_cash_register_session(
         ));
     }
 
+    // Uang seharusnya di laci hanya menghitung penjualan tunai: uang
+    // transfer/Midtrans tidak pernah lewat laci fisik. Penjualan online
+    // "bayar di toko" tercatat ber-payment_method 'cash' sehingga tetap masuk.
     let expected_cash: f64 = sqlx::query_scalar(
         r#"
         SELECT (
@@ -384,6 +387,7 @@ pub async fn close_cash_register_session(
                 FROM sales s
                 WHERE s.cash_register_session_id = crs.id
                     AND s.status = 'completed'
+                    AND s.payment_method = 'cash'
             ), 0)
             - COALESCE((
                 SELECT SUM(sr.refund_amount)

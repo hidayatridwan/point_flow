@@ -696,9 +696,25 @@ pub async fn insert_online_sale(
         r#"
         INSERT INTO sales (
             cashier_id, cash_register_session_id, subtotal_amount, total_amount,
-            paid_amount, change_amount, channel, online_order_id, notes, member_id
+            paid_amount, change_amount, channel, online_order_id, notes, member_id,
+            payment_method
         )
-        VALUES ($1, $2, $3::numeric, $4::numeric, $4::numeric, 0, 'online', $5, $6, $7)
+        VALUES ($1, $2, $3::numeric, $4::numeric, $4::numeric, 0, 'online', $5, $6, $7,
+            -- Bayar di toko = uang tunai masuk laci; selain itu non-tunai
+            -- (transfer manual, atau Midtrans bila pesanan dilunasi via Snap).
+            CASE
+                WHEN $8 = 'pay_at_store' THEN 'cash'
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM midtrans_payments mp
+                    WHERE mp.online_order_id = $5
+                        AND (mp.transaction_status = 'settlement'
+                            OR (mp.transaction_status = 'capture'
+                                AND mp.fraud_status = 'accept'))
+                ) THEN 'midtrans'
+                ELSE 'transfer'
+            END
+        )
         RETURNING id
         "#,
     )
@@ -709,6 +725,7 @@ pub async fn insert_online_sale(
     .bind(order.id)
     .bind(format!("Online order {}", order.order_no))
     .bind(order.member_id)
+    .bind(&order.payment_method)
     .fetch_one(&mut **tx)
     .await?;
 
