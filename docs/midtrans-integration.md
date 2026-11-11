@@ -53,7 +53,7 @@ Aturan server-side: `validate_checkout` (online) dan validasi kasir membaca `pay
 ## Steps
 
 1. Konfigurasi + migrasi DB.
-   - Tambah env di repo root (`.env.example`): `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_IS_PRODUCTION=false`, `MIDTRANS_SNAP_BASE_URL`, `MIDTRANS_NOTIFICATION_URL`, `MIDTRANS_PAYMENT_EXPIRY_MINUTES`. Backend baca via `backend/src/config/mod.rs` seperti env lain.
+   - Tambah env di repo root (`.env.example`): `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_SIGNATURE_KEY`, `MIDTRANS_IS_PRODUCTION=false`, `MIDTRANS_SNAP_BASE_URL`, `MIDTRANS_NOTIFICATION_URL`, `MIDTRANS_PAYMENT_EXPIRY_MINUTES`. Backend baca via `backend/src/config/mod.rs` seperti env lain. `MIDTRANS_SIGNATURE_KEY` = Signature Secret Key dashboard — wajib untuk verifikasi webhook karena sejak 28 Okt 2026 Midtrans menandatangani notifikasi dengan kunci ini, bukan Server Key (kosong = fallback ke Server Key/skema lama).
    - Migrasi `015_add_midtrans_payments.sql` (014 sudah dipakai `014_add_goods_receipt_margin.sql`): (a) `INSERT INTO store_settings (key, value) VALUES ('payment_mode', 'manual') ON CONFLICT DO NOTHING`; (b) tabel `midtrans_payments` (`order_id UNIQUE`, `source_type pos|online`, `gross_amount INTEGER`, `snap_token`, `redirect_url`, `transaction_status`, `fraud_status`, `payment_type`, `va_info JSONB`, `raw_notification JSONB`, `sale_id NULL FK`, `online_order_id NULL FK`, `expires_at`, `settled_at`, `created_by`), index di `order_id` + `transaction_status`. Tanpa mengubah skema `sales`; relasi dari sisi payments saja.
    - `order_id` format `PF-{POS|ONL}-{uuid8}` hanya berisi `[A-Za-z0-9-_.~]`, maks 50 char.
 2. Modul backend `payments` (baru).

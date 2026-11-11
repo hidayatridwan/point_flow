@@ -17,10 +17,27 @@ pub struct S3Settings {
 pub struct MidtransSettings {
     pub server_key: String,
     pub client_key: String,
+    /// Kunci penanda tangan webhook (dashboard: Signature Secret Key).
+    /// Sejak 28 Okt 2026 Midtrans memakai kunci ini — bukan Server Key —
+    /// untuk `signature_key` notifikasi. Kosong = fallback ke Server Key
+    /// (skema lama).
+    pub signature_key: String,
     pub is_production: bool,
     pub snap_base_url: String,
     pub notification_url: String,
     pub payment_expiry_minutes: u64,
+}
+
+impl MidtransSettings {
+    /// Kunci yang dipakai memverifikasi `signature_key` webhook:
+    /// Signature Secret Key bila diisi, Server Key bila kosong.
+    pub fn webhook_signing_key(&self) -> &str {
+        if self.signature_key.trim().is_empty() {
+            &self.server_key
+        } else {
+            &self.signature_key
+        }
+    }
 }
 
 pub struct AppConfig {
@@ -147,12 +164,25 @@ fn load_s3_settings() -> Result<Option<S3Settings>> {
 }
 
 fn load_midtrans_settings() -> Result<Option<MidtransSettings>> {
-    let server_key = env::var("MIDTRANS_SERVER_KEY").unwrap_or_default();
-    if server_key.trim().is_empty() {
+    let server_key = env::var("MIDTRANS_SERVER_KEY")
+        .unwrap_or_default()
+        .trim()
+        .to_string();
+    if server_key.is_empty() {
         return Ok(None);
     }
 
-    let client_key = env::var("MIDTRANS_CLIENT_KEY").unwrap_or_default();
+    let client_key = env::var("MIDTRANS_CLIENT_KEY")
+        .unwrap_or_default()
+        .trim()
+        .to_string();
+    // Dashboard: Signature Secret Key (skema signature baru sejak 28 Okt
+    // 2026). Sengaja di-trim: spasi/newline tempelan merusak Basic Auth
+    // maupun verifikasi signature.
+    let signature_key = env::var("MIDTRANS_SIGNATURE_KEY")
+        .unwrap_or_default()
+        .trim()
+        .to_string();
     let is_production: bool = env::var("MIDTRANS_IS_PRODUCTION")
         .unwrap_or_else(|_| "false".to_string())
         .parse()
@@ -180,6 +210,7 @@ fn load_midtrans_settings() -> Result<Option<MidtransSettings>> {
     Ok(Some(MidtransSettings {
         server_key,
         client_key,
+        signature_key,
         is_production,
         snap_base_url,
         notification_url,

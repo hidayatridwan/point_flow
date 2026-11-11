@@ -826,7 +826,7 @@ pub async fn apply_notification(
         &payload.order_id,
         &payload.status_code,
         &payload.gross_amount,
-        &settings.server_key,
+        settings.webhook_signing_key(),
         &payload.signature_key,
     ) {
         return Err(AppError::Unauthorized);
