@@ -2,6 +2,16 @@
 # Shell 200.html dihasilkan @sveltejs/adapter-static (fallback di svelte.config.js):
 # semua path yang bukan file/folder asli (mis. /dashboard di-hard-refresh)
 # disajikan shell supaya client-side router yang merender.
+#
+# DirectoryIndex: file bawaan Hostinger (default.php "Segera hadir") bisa
+# menang atas 200.html — paksa index direktori memakai shell SPA.
+DirectoryIndex 200.html
+
+# Blokir akses web ke file dotfile (.htaccess, .ftp-deploy-sync-state.json).
+<FilesMatch "^\.">
+	Require all denied
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
 	RewriteEngine On
 	RewriteBase /

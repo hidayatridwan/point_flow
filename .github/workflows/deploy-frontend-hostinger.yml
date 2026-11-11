@@ -69,6 +69,10 @@ jobs:
           # jadi folder situs pointflow relatif dari root FTP = /pointflow/
           server-dir: /pointflow/
           local-dir: frontend/build/
+          # Bersihkan isi folder sebelum upload: menghapus file bawaan Hostinger
+          # (default.php "Segera hadir") dan aset hash bekas versi lama, supaya
+          # folder selalu persis sama dengan build terbaru.
+          dangerous-clean-slate: true
           exclude: |
             **/.git*
             **/.git*/**
