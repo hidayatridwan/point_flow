@@ -1,0 +1,65 @@
+name: Deploy Frontend (Hostinger FTP)
+
+# Build frontend statis (SvelteKit adapter-static) lalu upload via FTPS ke
+# shared hosting Hostinger — folder subdomain dash-pointflow.adityaramadc.com
+# (dan pointflow.adityaramadc.com, keduanya menunjuk folder yang sama).
+#
+# Secrets yang wajib dibuat di GitHub Settings → Secrets and variables → Actions:
+#   FTP_HOST                — hostname dari hPanel → File → Akun FTP
+#                             (biasanya nama domain atau IP server, tanpa scheme)
+#   FTP_USERNAME            — mis. u178308632
+#   FTP_PASSWORD            — password akun FTP
+#   PUBLIC_API_BASE_URL     — mis. https://point-flow.fly.dev/api/v1
+#   PUBLIC_MIDTRANS_CLIENT_KEY — (opsional) client key dashboard Midtrans
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+
+jobs:
+  deploy:
+    name: Build & upload via FTPS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        working-directory: frontend
+        env:
+          PUBLIC_API_BASE_URL: ${{ secrets.PUBLIC_API_BASE_URL }}
+          PUBLIC_MIDTRANS_CLIENT_KEY: ${{ secrets.PUBLIC_MIDTRANS_CLIENT_KEY }}
+          PUBLIC_MIDTRANS_IS_PRODUCTION: 'false'
+        run: bun run build
+
+      # adapter-static menyalin isi frontend/static/ (termasuk .htaccess SPA
+      # fallback) ke frontend/build/, jadi cukup upload satu folder ini.
+      - name: Upload ke Hostinger via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.3
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          port: 21
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          # PENTING: tergantung folder jail akun FTP-nya.
+          # - Akun FTP mendarat di home root → pakai path di bawah ini.
+          # - Akun FTP mendarat langsung di folder web pointflow → ganti jadi "/"
+          server-dir: /domains/adityaramadc.com/public_html/pointflow/
+          local-dir: frontend/build/
+          # File lama yang tak ada lagi di build (aset hash bekas versi lama)
+          # ikut dihapus biar folder tidak menumpuk.
+          dangerous-clean-svn: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**

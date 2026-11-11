@@ -1,0 +1,24 @@
+# SPA fallback untuk shared hosting (Apache/LiteSpeed, Hostinger).
+# Shell 200.html dihasilkan @sveltejs/adapter-static (fallback di svelte.config.js):
+# semua path yang bukan file/folder asli (mis. /dashboard di-hard-refresh)
+# disajikan shell supaya client-side router yang merender.
+<IfModule mod_rewrite.c>
+	RewriteEngine On
+	RewriteBase /
+
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteRule . /200.html [L]
+</IfModule>
+
+# Aset build SvelteKit (_app/immutable/*) ber-hash, aman di-cache permanen.
+<IfModule mod_headers.c>
+	<FilesMatch "\.(js|css|woff2?)$">
+		Header set Cache-Control "public, max-age=31536000, immutable"
+	</FilesMatch>
+
+	# Jangan cache shell & data API: update app harus langsung terlihat.
+	<FilesMatch "(^200\.html$|^index\.html$|^\.htaccess$)">
+		Header set Cache-Control "no-cache"
+	</FilesMatch>
+</IfModule>
