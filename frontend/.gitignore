@@ -17,6 +17,8 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.test
+# .env di-commit: hanya berisi default PUBLIC_* (publik, bukan secret)
+!.env
 
 # Vite
 vite.config.js.timestamp-*

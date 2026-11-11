@@ -1,4 +1,4 @@
-import { env } from '$env/dynamic/public';
+import { PUBLIC_MIDTRANS_CLIENT_KEY, PUBLIC_MIDTRANS_IS_PRODUCTION } from '$env/static/public';
 
 declare global {
 	interface Window {
@@ -20,11 +20,11 @@ const SANDBOX_SNAP_URL = 'https://app.sandbox.midtrans.com/snap/snap.js';
 const PRODUCTION_SNAP_URL = 'https://app.midtrans.com/snap/snap.js';
 
 export function getMidtransClientKey(): string {
-	return env.PUBLIC_MIDTRANS_CLIENT_KEY ?? '';
+	return PUBLIC_MIDTRANS_CLIENT_KEY ?? '';
 }
 
 export function isMidtransProduction(): boolean {
-	return (env.PUBLIC_MIDTRANS_IS_PRODUCTION ?? 'false').toLowerCase() === 'true';
+	return (PUBLIC_MIDTRANS_IS_PRODUCTION ?? 'false').toLowerCase() === 'true';
 }
 
 function snapScriptUrl(): string {

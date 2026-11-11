@@ -1,9 +1,9 @@
-import { env } from '$env/dynamic/public';
+import { PUBLIC_API_BASE_URL } from '$env/static/public';
 import { clearAccessToken, getAccessToken, setAccessToken } from './auth.svelte.js';
 import { ApiError, type ApiEnvelope, type ApiErrorPayload } from './types.js';
 
 const DEFAULT_API_BASE_URL = 'http://localhost:8080/api/v1';
-const API_BASE_URL = (env.PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/$/, '');
+const API_BASE_URL = (PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/$/, '');
 
 type ApiQueryParamPrimitive = string | number | boolean;
 type ApiQueryParamValue = ApiQueryParamPrimitive | null | undefined | ApiQueryParamPrimitive[];
