@@ -1,53 +1,56 @@
-name: Deploy Frontend
-
-on:
-  workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'frontend/**'
-      - 'netlify.toml'
-
-jobs:
-  deploy:
-    name: Deploy to Netlify
-    runs-on: ubuntu-latest
-    env:
-      NETLIFY_SITE_ID_KASIR: ${{ secrets.NETLIFY_SITE_ID_KASIR }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        working-directory: frontend
-        run: bun install
-
-      - name: Build
-        working-directory: frontend
-        env:
-          PUBLIC_API_BASE_URL: ${{ secrets.PUBLIC_API_BASE_URL }}
-        run: bun run build
-
-      - name: Deploy storefront ke Netlify
-        uses: netlify/actions/cli@master
-        with:
-          args: deploy --dir=frontend/build --prod
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-
-      # Situs kasir (deploy kedua dengan build yang sama). Step ini ter-skip
-      # sampai secret NETLIFY_SITE_ID_KASIR dibuat — hanya perlu kalau situs
-      # kasir di-deploy via Actions, bukan import GitHub. Lihat README
-      # bagian "Dua situs Netlify: storefront & kasir".
-      - name: Deploy dashboard kasir ke Netlify
-        if: env.NETLIFY_SITE_ID_KASIR != ''
-        uses: netlify/actions/cli@master
-        with:
-          args: deploy --dir=frontend/build --prod
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID_KASIR }}
+# DINONAKTIFKAN SEMENTARA (2026-11-11): deploy ke Netlify dimatikan.
+# Yang aktif hanya deploy ke Hostinger via FTP (.github/workflows/deploy-frontend-hostinger.yml).
+# Untuk mengaktifkan lagi, uncomment seluruh isi file ini.
+#name: Deploy Frontend
+#
+#on:
+#  workflow_dispatch:
+#  push:
+#    branches: [main]
+#    paths:
+#      - 'frontend/**'
+#      - 'netlify.toml'
+#
+#jobs:
+#  deploy:
+#    name: Deploy to Netlify
+#    runs-on: ubuntu-latest
+#    env:
+#      NETLIFY_SITE_ID_KASIR: ${{ secrets.NETLIFY_SITE_ID_KASIR }}
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - uses: oven-sh/setup-bun@v2
+#        with:
+#          bun-version: latest
+#
+#      - name: Install dependencies
+#        working-directory: frontend
+#        run: bun install
+#
+#      - name: Build
+#        working-directory: frontend
+#        env:
+#          PUBLIC_API_BASE_URL: ${{ secrets.PUBLIC_API_BASE_URL }}
+#        run: bun run build
+#
+#      - name: Deploy storefront ke Netlify
+#        uses: netlify/actions/cli@master
+#        with:
+#          args: deploy --dir=frontend/build --prod
+#        env:
+#          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+#          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+#
+#      # Situs kasir (deploy kedua dengan build yang sama). Step ini ter-skip
+#      # sampai secret NETLIFY_SITE_ID_KASIR dibuat — hanya perlu kalau situs
+#      # kasir di-deploy via Actions, bukan import GitHub. Lihat README
+#      # bagian "Dua situs Netlify: storefront & kasir".
+#      - name: Deploy dashboard kasir ke Netlify
+#        if: env.NETLIFY_SITE_ID_KASIR != ''
+#        uses: netlify/actions/cli@master
+#        with:
+#          args: deploy --dir=frontend/build --prod
+#        env:
+#          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+#          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID_KASIR }}
