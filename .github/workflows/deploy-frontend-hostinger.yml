@@ -43,10 +43,24 @@ jobs:
 
       # adapter-static menyalin isi frontend/static/ (termasuk .htaccess SPA
       # fallback) ke frontend/build/, jadi cukup upload satu folder ini.
+
+      # Bersihkan nilai FTP_HOST dari format panjang ala hPanel:
+      # "ftp://156.67.222.114" atau "ftps://host/path" → "156.67.222.114".
+      - name: Normalize FTP host
+        id: ftp-host
+        run: |
+          host="${FTP_HOST#ftp://}"
+          host="${host#ftps://}"
+          host="${host%%/*}"
+          host="$(echo "$host" | xargs)" # buang spasi/newline tempelan
+          echo "host=$host" >> "$GITHUB_OUTPUT"
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+
       - name: Upload ke Hostinger via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.3
         with:
-          server: ${{ secrets.FTP_HOST }}
+          server: ${{ steps.ftp-host.outputs.host }}
           port: 21
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
@@ -56,9 +70,6 @@ jobs:
           # - Akun FTP mendarat langsung di folder web pointflow → ganti jadi "/"
           server-dir: /domains/adityaramadc.com/public_html/pointflow/
           local-dir: frontend/build/
-          # File lama yang tak ada lagi di build (aset hash bekas versi lama)
-          # ikut dihapus biar folder tidak menumpuk.
-          dangerous-clean-svn: false
           exclude: |
             **/.git*
             **/.git*/**
