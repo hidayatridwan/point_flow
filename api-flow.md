@@ -420,6 +420,8 @@ Contoh response:
 
 Relasi: session memakai `cash_register_id`, `opened_by`, dan `closed_by`. Satu register hanya boleh punya satu session `open`. Endpoint session membutuhkan permission `point_flow`.
 
+Rumus `expected_cash` saat close (migration 018): `opening_cash + penjualan selesai ber-payment_method 'cash' − refund retur selesai + drawer in − drawer out`. Penjualan transfer/Midtrans tidak dihitung karena uangnya tidak lewat laci fisik; penjualan online *pay_at_store* tercatat `'cash'` sehingga tetap masuk.
+
 Contoh open request:
 
 ```json
@@ -1711,8 +1713,9 @@ Payroll slip dibuat berdasarkan employee. Backend mengambil snapshot nama, posis
 | `Payroll Slips > List Payroll Slips` | `GET {{base_url}}/payroll-slips?search=&from=&to=&limit=50&offset=0` |
 | `Payroll Slips > Create Payroll Slip` | `POST {{base_url}}/payroll-slips` |
 | `Payroll Slips > Get Payroll Slip` | `GET {{base_url}}/payroll-slips/{{payroll_slip_id}}` |
+| `Payroll Slips > Cancel Payroll Slip` | `POST {{base_url}}/payroll-slips/{{payroll_slip_id}}/cancel` |
 
-Relasi: `payroll_slips.employee_id` mengarah ke `employees.id`. `net_salary` dihitung dari `base_salary + bonus - deduction`.
+Relasi: `payroll_slips.employee_id` mengarah ke `employees.id`. `net_salary` dihitung dari `base_salary + bonus - deduction`. Slip baru lahir dengan `status = 'completed'` (migration 018); cancel memakai body `{"reason": "..."}` hanya sah untuk slip `completed` dan menandai `cancelled` + `cancelled_at/by/reason`. Slip batal dikeluarkan dari `v_payroll_report` sehingga Laporan Payroll serta baris beban gaji di income statement / financial position tidak menghitungnya. Slip tidak punya update; koreksi berarti buat ulang slip yang benar.
 
 Contoh create request:
 
@@ -1741,6 +1744,10 @@ Contoh response:
   "bonus": 250000,
   "deduction": 50000,
   "net_salary": 3200000,
+  "status": "completed",
+  "cancelled_at": null,
+  "cancelled_by": null,
+  "cancel_reason": null,
   "created_by": 1,
   "created_at": "2026-05-18T11:15:00Z",
   "updated_at": "2026-05-18T11:15:00Z"
@@ -2144,6 +2151,8 @@ Keuangan mencatat kategori dan transaksi manual (`income`/`expense`) di luar Poi
 | `Finances > Financial Position` | `GET {{base_url}}/reports/financial-position?as_of=` |
 
 Relasi: `category_type` dan `transaction_type` hanya menerima `income` atau `expense`. Kategori yang sudah dipakai transaksi tidak bisa dihapus. Transaksi `is_cash = false` bersifat non-tunai dan tidak masuk arus kas. Cancel transaksi memakai body `{"reason": "..."}` dan mengubah status menjadi `cancelled`. Update transaksi tidak bisa mengubah `transaction_type`.
+
+Rumus arus kas (migration 018): `cash_in_sales` hanya menghitung penjualan selesai ber-payment_method `'cash'` (termasuk pesanan online *pay_at_store*); penjualan transfer/Midtrans tidak masuk arus kas tunai. Income statement dan financial position menghitung beban gaji hanya dari slip ber-`status = 'completed'`.
 
 Contoh create category request:
 
