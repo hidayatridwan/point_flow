@@ -16,6 +16,12 @@ DirectoryIndex 200.html
 	RewriteEngine On
 	RewriteBase /
 
+	# Subdomain online shop: root diarahkan ke /shop (meniru redirect
+	# situs storefront di Netlify). Host-conditional, jadi subdomain
+	# dashboard (dash-pointflow.*) tidak terpengaruh.
+	RewriteCond %{HTTP_HOST} ^pointflow\.adityaramadc\.com$ [NC]
+	RewriteRule ^/?$ /shop [R=301,L]
+
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
 	RewriteRule . /200.html [L]
