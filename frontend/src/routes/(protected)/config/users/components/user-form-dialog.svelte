@@ -41,6 +41,16 @@
 	const isEditing = $derived(Boolean(user));
 	const isAdminUser = $derived(user?.role_code === 'admin');
 	const selectableRoles = $derived(getSelectableRoles(roles, user));
+
+	// Label source untuk Select.Root: tanpa ini, trigger menampilkan ID mentah /
+	// "true"/"false" sampai dropdown dibuka pertama kali (bits-ui lazy items).
+	const roleItems = $derived(
+		selectableRoles.map((role) => ({ value: String(role.id), label: role.name }))
+	);
+	const statusItems = $derived([
+		{ value: 'true', label: t('status.active') },
+		{ value: 'false', label: t('status.inactive') }
+	]);
 	const dialogTitle = $derived(
 		isEditing ? t('config.users.editTitle') : t('config.users.addTitle')
 	);
@@ -208,6 +218,7 @@
 						<Select.Root
 							allowDeselect={false}
 							type="single"
+							items={roleItems}
 							value={formData.role_id}
 							disabled={isSubmitting || isAdminUser}
 							onValueChange={(value) => {
@@ -231,6 +242,7 @@
 					<Select.Root
 						allowDeselect={false}
 						type="single"
+						items={statusItems}
 						value={formData.is_active}
 						disabled={isSubmitting}
 						onValueChange={(value) => {

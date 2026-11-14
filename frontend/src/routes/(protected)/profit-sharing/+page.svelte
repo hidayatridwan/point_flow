@@ -21,6 +21,16 @@
 	import PeriodsTable from './components/periods-table.svelte';
 	import { t } from '$lib/i18n/locale.svelte.js';
 
+	// Label source untuk Select.Root: tanpa ini, trigger menampilkan nilai mentah
+	// ("all") alih-alih label terlokalisasi ("Semua") sampai dropdown dibuka.
+	const statusItems = $derived([
+		{ value: 'all', label: t('finances.profitSharing.statusAll') },
+		{ value: 'draft', label: t('finances.profitSharing.statusDraft') },
+		{ value: 'calculated', label: t('finances.profitSharing.statusCalculated') },
+		{ value: 'finalized', label: t('finances.profitSharing.statusFinalized') },
+		{ value: 'cancelled', label: t('finances.profitSharing.statusCancelled') }
+	]);
+
 	const defaultQuery = {
 		page: 1,
 		limit: 20,
@@ -200,6 +210,7 @@
 				/>
 				<Select.Root
 					type="single"
+					items={statusItems}
 					value={statusFilter}
 					disabled={isLoading}
 					onValueChange={(value) => {

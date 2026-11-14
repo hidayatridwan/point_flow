@@ -10,6 +10,8 @@
 	import { getCashFlow, type CashFlow, type FinancialPeriodParams } from '$lib/api/reports.js';
 	import { ApiError } from '$lib/api/types.js';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
+	import ReportAmount from '$lib/components/report-amount.svelte';
+	import ReportDirectionBadge from '$lib/components/report-direction-badge.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
@@ -32,43 +34,52 @@
 	let isDateRangeOpen = $state(false);
 	let latestRequestId = 0;
 
+	// add (+) = uang masuk, deduct (−) = uang keluar, none = hasil hitung.
+	type RowEffect = 'add' | 'deduct' | 'none';
 	const rows = $derived(
 		cashFlow
 			? [
 					{
 						label: t('reports.cashFlow.cashInSales'),
 						value: cashFlow.cash_in_sales,
-						strong: false
+						effect: 'add' as RowEffect,
+						subtotal: false
 					},
 					{
 						label: t('reports.cashFlow.cashInManual'),
 						value: cashFlow.cash_in_manual,
-						strong: false
+						effect: 'add' as RowEffect,
+						subtotal: false
 					},
 					{
 						label: t('reports.cashFlow.totalCashIn'),
 						value: cashFlow.total_cash_in,
-						strong: true
+						effect: 'add' as RowEffect,
+						subtotal: true
 					},
 					{
 						label: t('reports.cashFlow.cashOutDrawer'),
 						value: cashFlow.cash_out_drawer,
-						strong: false
+						effect: 'deduct' as RowEffect,
+						subtotal: false
 					},
 					{
 						label: t('reports.cashFlow.cashOutManual'),
 						value: cashFlow.cash_out_manual,
-						strong: false
+						effect: 'deduct' as RowEffect,
+						subtotal: false
 					},
 					{
 						label: t('reports.cashFlow.totalCashOut'),
 						value: cashFlow.total_cash_out,
-						strong: true
+						effect: 'deduct' as RowEffect,
+						subtotal: true
 					},
 					{
 						label: t('reports.cashFlow.netCashFlow'),
 						value: cashFlow.net_cash_flow,
-						strong: true
+						effect: 'none' as RowEffect,
+						subtotal: true
 					}
 				]
 			: []
@@ -251,12 +262,15 @@
 						</Table.Header>
 						<Table.Body>
 							{#each rows as row (row.label)}
-								<Table.Row>
-									<Table.Cell class={row.strong ? 'font-semibold' : undefined}>
-										{row.label}
+								<Table.Row class={row.subtotal ? 'bg-muted/40' : undefined}>
+									<Table.Cell class={row.subtotal ? 'font-semibold' : undefined}>
+										<span class="inline-flex items-center gap-2">
+											<ReportDirectionBadge effect={row.effect} />
+											{row.label}
+										</span>
 									</Table.Cell>
-									<Table.Cell class={cn('text-right tabular-nums', row.strong && 'font-semibold')}>
-										{formatIdr(row.value)}
+									<Table.Cell class={cn('text-right', row.subtotal && 'font-semibold')}>
+										<ReportAmount value={row.value} effect={row.effect} />
 									</Table.Cell>
 								</Table.Row>
 							{/each}

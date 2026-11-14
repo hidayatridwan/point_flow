@@ -33,6 +33,7 @@
 		name: z.string().trim().min(1, 'Name is required.').max(100, 'Name is too long.'),
 		category_type: z.enum(['income', 'expense']),
 		description: z.string().max(500, 'Description is too long.'),
+		affects_profit: z.enum(['true', 'false']),
 		is_active: z.enum(['true', 'false'])
 	});
 
@@ -103,6 +104,7 @@
 			name: category.name,
 			category_type: category.category_type,
 			description: category.description ?? '',
+			affects_profit: category.affects_profit ? 'true' : 'false',
 			is_active: category.is_active ? 'true' : 'false'
 		};
 	}
@@ -126,6 +128,7 @@
 					name: result.data.name,
 					category_type: result.data.category_type as FinancialTransactionType,
 					description: emptyToNull(result.data.description),
+					affects_profit: result.data.affects_profit === 'true',
 					is_active: result.data.is_active === 'true'
 				});
 				toast.success(t('finances.categories.createdToast'), {
@@ -135,6 +138,7 @@
 				const updated = await updateFinancialCategory(editingId, {
 					name: result.data.name,
 					description: emptyToNull(result.data.description),
+					affects_profit: result.data.affects_profit === 'true',
 					is_active: result.data.is_active === 'true'
 				});
 				toast.success(t('finances.categories.updatedToast'), {
@@ -181,7 +185,13 @@
 	}
 
 	function getDefaultFormData(): CategoryForm {
-		return { name: '', category_type: 'expense', description: '', is_active: 'true' };
+		return {
+			name: '',
+			category_type: 'expense',
+			description: '',
+			affects_profit: 'true',
+			is_active: 'true'
+		};
 	}
 
 	function emptyToNull(value: string) {
@@ -203,6 +213,23 @@
 			? t('finances.transactions.typeIncome')
 			: t('finances.transactions.typeExpense');
 	}
+
+	// Label source untuk Select.Root: tanpa ini, trigger menampilkan nilai mentah
+	// ("expense"/"true") sampai dropdown dibuka pertama kali (bits-ui lazy items).
+	const typeItems = $derived(
+		financialTransactionTypes.map((transactionType) => ({
+			value: transactionType,
+			label: getTypeLabel(transactionType)
+		}))
+	);
+	const statusItems = $derived([
+		{ value: 'true', label: t('status.active') },
+		{ value: 'false', label: t('status.inactive') }
+	]);
+	const profitItems = $derived([
+		{ value: 'true', label: t('finances.categories.profitYes') },
+		{ value: 'false', label: t('finances.categories.profitNo') }
+	]);
 
 	function getErrorMessage(error: unknown, fallback: string) {
 		if (error instanceof ApiError) return error.message;
@@ -236,6 +263,9 @@
 										{getTypeLabel(category.category_type)}
 									</Badge>
 									<StatusBadge active={category.is_active} />
+									{#if !category.affects_profit}
+										<Badge variant="outline">{t('finances.categories.nonProfitBadge')}</Badge>
+									{/if}
 								</div>
 							</div>
 							<Button
@@ -298,6 +328,7 @@
 						<Select.Root
 							allowDeselect={false}
 							type="single"
+							items={typeItems}
 							value={formData.category_type}
 							disabled={isSubmitting || isEditing}
 							onValueChange={(value) => {
@@ -333,12 +364,40 @@
 					/>
 				</div>
 
+				<div class="space-y-2">
+					<Label for="financial-category-profit">{t('finances.categories.profitLabel')}</Label>
+					<Select.Root
+						allowDeselect={false}
+						type="single"
+						items={profitItems}
+						value={formData.affects_profit}
+						disabled={isSubmitting}
+						onValueChange={(value) => {
+							if (value === 'true' || value === 'false') formData.affects_profit = value;
+						}}
+					>
+						<Select.Trigger id="financial-category-profit" class="w-40">
+							<Select.Value placeholder={t('finances.categories.profitLabel')} />
+						</Select.Trigger>
+						<Select.Content>
+							<Select.Item value="true" label={t('finances.categories.profitYes')}>
+								{t('finances.categories.profitYes')}
+							</Select.Item>
+							<Select.Item value="false" label={t('finances.categories.profitNo')}>
+								{t('finances.categories.profitNo')}
+							</Select.Item>
+						</Select.Content>
+					</Select.Root>
+					<p class="text-sm text-muted-foreground">{t('finances.categories.profitHint')}</p>
+				</div>
+
 				<div class="flex items-center justify-between gap-4">
 					<div class="space-y-2">
 						<Label for="financial-category-active">{t('common.status')}</Label>
 						<Select.Root
 							allowDeselect={false}
 							type="single"
+							items={statusItems}
 							value={formData.is_active}
 							disabled={isSubmitting}
 							onValueChange={(value) => {

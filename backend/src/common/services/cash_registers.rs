@@ -48,6 +48,41 @@ const CASH_REGISTER_SESSION_SELECT: &str = r#"
         closed_by_user.name AS closed_by_name,
         crs.closing_cash_counted::float8 AS closing_cash_counted,
         crs.expected_cash::float8 AS expected_cash,
+        -- Estimasi live uang seharusnya untuk sesi terbuka. Rumus ini harus tetap
+        -- sama dengan perhitungan saat tutup sesi (close_cash_register_session)
+        -- agar preview dan hasil akhir tidak pernah berbeda.
+        CASE
+            WHEN crs.status = 'open' THEN (
+                crs.opening_cash
+                + COALESCE((
+                    SELECT SUM(s.total_amount)
+                    FROM sales s
+                    WHERE s.cash_register_session_id = crs.id
+                        AND s.status = 'completed'
+                        AND s.payment_method = 'cash'
+                ), 0)
+                - COALESCE((
+                    SELECT SUM(sr.refund_amount)
+                    FROM sale_returns sr
+                    WHERE sr.cash_register_session_id = crs.id
+                        AND sr.status = 'completed'
+                ), 0)
+                + COALESCE((
+                    SELECT SUM(cdm.amount)
+                    FROM cash_drawer_movements cdm
+                    WHERE cdm.cash_register_session_id = crs.id
+                        AND cdm.status = 'completed'
+                        AND cdm.direction = 'in'
+                ), 0)
+                - COALESCE((
+                    SELECT SUM(cdm.amount)
+                    FROM cash_drawer_movements cdm
+                    WHERE cdm.cash_register_session_id = crs.id
+                        AND cdm.status = 'completed'
+                        AND cdm.direction = 'out'
+                ), 0)
+            )::float8
+        END AS expected_cash_preview,
         crs.cash_difference::float8 AS cash_difference,
         crs.closing_notes,
         crs.status::text AS status,

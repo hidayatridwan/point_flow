@@ -151,3 +151,16 @@
 		@apply font-sans;
 	}
 }
+
+/*
+ * Dialog full-bleed (konten `p-0`): base Dialog.Footer membawa `-mx-4 -mb-4`
+ * yang dirancang untuk "memakan" padding bawah konten default `p-4`. Pada
+ * konten tanpa padding, margin negatif itu membuat footer meluber 1rem
+ * melewati tepi bawah modal sehingga tombol tampak menempel ke tepi.
+ * Netralkan di sini — footer tetap full-width karena kontennya memang p-0,
+ * dan `py-4` miliknya kembali memberi ruang di bawah tombol.
+ */
+[data-slot='dialog-content'].p-0 [data-slot='dialog-footer'] {
+	margin-inline: 0;
+	margin-bottom: 0;
+}

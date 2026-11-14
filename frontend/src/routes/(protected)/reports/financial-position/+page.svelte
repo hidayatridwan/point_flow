@@ -13,6 +13,8 @@
 	} from '$lib/api/reports.js';
 	import { ApiError } from '$lib/api/types.js';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
+	import ReportAmount from '$lib/components/report-amount.svelte';
+	import ReportDirectionBadge from '$lib/components/report-direction-badge.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
@@ -32,28 +34,39 @@
 	let isAsOfOpen = $state(false);
 	let latestRequestId = 0;
 
+	// Kas dan persediaan adalah komponen aset (+). Laba kumulatif ditampilkan
+	// terpisah karena dihitung dari laba rugi, bukan penjumlahan baris di atas.
+	type RowEffect = 'add' | 'deduct' | 'none';
 	const rows = $derived(
 		position
 			? [
 					{
 						label: t('reports.financialPosition.cash'),
 						value: position.cash,
-						strong: false
+						effect: 'add' as RowEffect,
+						subtotal: false,
+						emphasis: false
 					},
 					{
 						label: t('reports.financialPosition.inventoryValue'),
 						value: position.inventory_value,
-						strong: false
+						effect: 'add' as RowEffect,
+						subtotal: false,
+						emphasis: false
 					},
 					{
 						label: t('reports.financialPosition.totalAssets'),
 						value: position.total_assets,
-						strong: true
+						effect: 'none' as RowEffect,
+						subtotal: true,
+						emphasis: false
 					},
 					{
 						label: t('reports.financialPosition.cumulativeNetProfit'),
 						value: position.cumulative_net_profit,
-						strong: true
+						effect: 'none' as RowEffect,
+						subtotal: false,
+						emphasis: true
 					}
 				]
 			: []
@@ -238,18 +251,33 @@
 						</Table.Header>
 						<Table.Body>
 							<Table.Row>
-								<Table.Cell>{t('reports.financialPosition.asOf')}</Table.Cell>
+								<Table.Cell>
+									<span class="inline-flex items-center gap-2">
+										<ReportDirectionBadge effect="none" />
+										{t('reports.financialPosition.asOf')}
+									</span>
+								</Table.Cell>
 								<Table.Cell class="text-right tabular-nums">
 									{formatDate(position.as_of)}
 								</Table.Cell>
 							</Table.Row>
 							{#each rows as row (row.label)}
-								<Table.Row>
-									<Table.Cell class={row.strong ? 'font-semibold' : undefined}>
-										{row.label}
+								<Table.Row
+									class={cn(
+										row.subtotal && 'bg-muted/40',
+										row.emphasis && 'border-t-2 border-t-border'
+									)}
+								>
+									<Table.Cell class={row.subtotal || row.emphasis ? 'font-semibold' : undefined}>
+										<span class="inline-flex items-center gap-2">
+											<ReportDirectionBadge effect={row.effect} />
+											{row.label}
+										</span>
 									</Table.Cell>
-									<Table.Cell class={cn('text-right tabular-nums', row.strong && 'font-semibold')}>
-										{formatIdr(row.value)}
+									<Table.Cell
+										class={cn('text-right', (row.subtotal || row.emphasis) && 'font-semibold')}
+									>
+										<ReportAmount value={row.value} effect={row.effect} />
 									</Table.Cell>
 								</Table.Row>
 							{/each}

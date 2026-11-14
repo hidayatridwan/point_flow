@@ -17,6 +17,14 @@
 
 	type StatusFilter = 'all' | 'active' | 'inactive';
 
+	// Label source untuk Select.Root: tanpa ini, trigger menampilkan nilai mentah
+	// ("all") alih-alih label terlokalisasi ("Semua") sampai dropdown dibuka.
+	const statusItems = $derived([
+		{ value: 'all', label: t('master.members.statusAll') },
+		{ value: 'active', label: t('status.active') },
+		{ value: 'inactive', label: t('status.inactive') }
+	]);
+
 	let members = $state<Member[]>([]);
 	let isLoading = $state(true);
 	let errorMessage = $state<string | null>(null);
@@ -150,6 +158,7 @@
 				/>
 				<Select.Root
 					type="single"
+					items={statusItems}
 					value={query.status}
 					disabled={isLoading}
 					onValueChange={(value) => {

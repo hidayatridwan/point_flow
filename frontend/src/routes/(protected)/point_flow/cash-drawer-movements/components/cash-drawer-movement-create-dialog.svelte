@@ -190,6 +190,7 @@
 					<Select.Root
 						allowDeselect={false}
 						type="single"
+						items={movementTypeOptions}
 						value={movementType}
 						disabled={isSubmitting}
 						onValueChange={handleMovementTypeChange}
@@ -269,7 +270,9 @@
 					{:else}
 						<BanknoteIcon />
 					{/if}
-					{isSubmitting ? t('point_flow.cashMovements.creating') : t('point_flow.cashMovements.createBtn')}
+					{isSubmitting
+						? t('point_flow.cashMovements.creating')
+						: t('point_flow.cashMovements.createBtn')}
 				</Button>
 			</Dialog.Footer>
 		</form>

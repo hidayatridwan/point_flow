@@ -25,6 +25,13 @@
 	import { z } from 'zod';
 	import { t } from '$lib/i18n/locale.svelte.js';
 
+	// Label source untuk Select.Root: tanpa ini, trigger menampilkan nilai mentah
+	// ("true"/"false") sampai dropdown dibuka pertama kali (bits-ui lazy items).
+	const statusItems = $derived([
+		{ value: 'true', label: t('status.active') },
+		{ value: 'false', label: t('status.inactive') }
+	]);
+
 	const editSupplierSchema = z.object({
 		name: z
 			.string()
@@ -230,6 +237,7 @@
 							<Select.Root
 								allowDeselect={false}
 								type="single"
+								items={statusItems}
 								value={$formData.is_active}
 								disabled={isSubmitting}
 								onValueChange={(value) => {

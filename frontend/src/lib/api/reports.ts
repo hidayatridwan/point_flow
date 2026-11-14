@@ -316,6 +316,7 @@ export type IncomeStatement = {
 	net_revenue: number;
 	cogs: number;
 	gross_profit: number;
+	other_income: number;
 	payroll_expense: number;
 	other_expense: number;
 	net_profit: number;

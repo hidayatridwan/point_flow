@@ -21,6 +21,7 @@
 	import * as Select from '$lib/components/ui/select/index.js';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
+	import { ToggleGroup, ToggleGroupItem } from '$lib/components/ui/toggle-group/index.js';
 	import { formatDate, formatIdr, formatNumber } from '$lib/formatters.js';
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
@@ -44,6 +45,8 @@
 		quantity_received: string;
 		unit_cost: string;
 		margin_percent: string;
+		/** Hanya terisi pada mode "harga langsung"; dikonversi ke margin saat submit. */
+		selling_price: string;
 	};
 
 	type GoodsReceiptForm = {
@@ -113,6 +116,21 @@
 				})
 		);
 
+	// Hanya dipakai pada mode "harga langsung"; kosong = tidak ubah selling price.
+	const optionalSellingPriceSchema = (label: string) =>
+		z.preprocess(
+			normalizeStringInput,
+			z
+				.string()
+				.trim()
+				.refine((value) => value === '' || Number.isFinite(Number(value)), {
+					message: `${label} must be a valid number.`
+				})
+				.refine((value) => value === '' || Number(value) >= 0, {
+					message: `${label} must be zero or greater.`
+				})
+		);
+
 	const goodsReceiptItemSchema = z.object({
 		client_id: z.string(),
 		purchase_order_item_id: requiredIdSchema('Purchase order item'),
@@ -124,7 +142,8 @@
 		remaining_quantity: z.number(),
 		quantity_received: positiveNumberSchema('Received quantity'),
 		unit_cost: nonNegativeNumberSchema('Unit cost'),
-		margin_percent: optionalMarginSchema('Profit margin')
+		margin_percent: optionalMarginSchema('Profit margin'),
+		selling_price: optionalSellingPriceSchema('Selling price')
 	});
 
 	const createGoodsReceiptSchema = z
@@ -144,6 +163,21 @@
 					});
 				}
 			});
+
+			// Mode "harga langsung": margin dihitung dari harga jual ÷ biaya satuan,
+			// jadi biaya satuan nol membuat margin tak terdefinisi.
+			if (priceMode === 'fixed') {
+				data.items.forEach((item, index) => {
+					const sellingPriceInput = normalizeStringInput(item.selling_price).trim();
+					if (sellingPriceInput !== '' && Number(item.unit_cost) <= 0) {
+						context.addIssue({
+							code: 'custom',
+							path: ['items', index, 'selling_price'],
+							message: 'Unit cost must be greater than zero to derive margin from selling price.'
+						});
+					}
+				});
+			}
 		});
 
 	let {
@@ -162,6 +196,8 @@
 	let isReceivedDateOpen = $state(false);
 	let formData = $state<GoodsReceiptForm>(getDefaultFormData(initialReceivedDate));
 	let fieldErrors = $state<Record<string, string>>({});
+	/** 'margin' = input persen; 'fixed' = input harga jual langsung (dikonversi saat submit). */
+	let priceMode = $state<'margin' | 'fixed'>('margin');
 	let isLoadingOptions = $state(false);
 	let isLoadingPurchaseOrder = $state(false);
 	let isSubmitting = $state(false);
@@ -273,11 +309,24 @@
 				items: result.data.items.map((item) => {
 					// Sama seperti preview: binding number Svelte 5 bisa berupa number/null.
 					const marginInput = normalizeStringInput(item.margin_percent).trim();
+					let marginValue: number | null = marginInput === '' ? null : Number(marginInput);
+
+					// Mode "harga langsung": konversi harga jual fix → margin %
+					// agar tetap cocok dengan kontrak API (backend hanya menerima margin).
+					if (priceMode === 'fixed') {
+						const sellingPriceInput = normalizeStringInput(item.selling_price).trim();
+						const unitCost = Number(item.unit_cost);
+						marginValue =
+							sellingPriceInput !== '' && Number.isFinite(unitCost) && unitCost > 0
+								? ((Number(sellingPriceInput) - unitCost) / unitCost) * 100
+								: null;
+					}
+
 					return {
 						purchase_order_item_id: Number(item.purchase_order_item_id),
 						quantity_received: Number(item.quantity_received),
 						unit_cost: Number(item.unit_cost),
-						margin_percent: marginInput === '' ? null : Number(marginInput)
+						margin_percent: marginValue
 					};
 				})
 			});
@@ -312,7 +361,8 @@
 			remaining_quantity: remainingQuantity,
 			quantity_received: String(remainingQuantity),
 			unit_cost: String(item.unit_cost),
-			margin_percent: ''
+			margin_percent: '',
+			selling_price: ''
 		};
 	}
 
@@ -337,6 +387,39 @@
 		const unitCost = toNumber(item.unit_cost);
 		if (!Number.isFinite(margin) || !Number.isFinite(unitCost)) return null;
 		return Math.round(unitCost * (1 + margin / 100) * 100) / 100;
+	}
+
+	/** Margin efektif dari harga jual fix; hanya relevan pada mode 'fixed'. */
+	function getEffectiveMargin(item: GoodsReceiptFormItem) {
+		if (priceMode !== 'fixed') return null;
+		const sellingPriceInput = normalizeStringInput(item.selling_price).trim();
+		if (sellingPriceInput === '') return null;
+		const sellingPrice = toNumber(sellingPriceInput);
+		const unitCost = toNumber(item.unit_cost);
+		if (!Number.isFinite(sellingPrice) || !Number.isFinite(unitCost) || unitCost <= 0) {
+			return null;
+		}
+		return ((sellingPrice - unitCost) / unitCost) * 100;
+	}
+
+	/** Ganti mode input harga jual sambil membawa angka yang sudah diisi ke mode baru. */
+	function setPriceMode(mode: 'margin' | 'fixed') {
+		if (mode === priceMode) return;
+		if (mode === 'fixed') {
+			// Prefill harga jual dari margin yang sudah diisi (kalau ada).
+			formData.items = formData.items.map((item) => {
+				const sellingPrice = getNewSellingPrice(item);
+				return sellingPrice !== null ? { ...item, selling_price: String(sellingPrice) } : item;
+			});
+		} else {
+			// Prefill margin dari harga jual; input margin dibatasi 2 desimal oleh schema.
+			formData.items = formData.items.map((item) => {
+				const margin = getEffectiveMargin(item);
+				if (margin === null) return item;
+				return { ...item, margin_percent: (Math.round(margin * 100) / 100).toFixed(2) };
+			});
+		}
+		priceMode = mode;
 	}
 
 	function toNumber(value: string) {
@@ -553,6 +636,28 @@
 							</div>
 						{:else if formData.items.length > 0}
 							<div class="grid gap-3">
+								<div class="flex flex-wrap items-center justify-between gap-2">
+									<p class="text-xs text-muted-foreground">
+										{t('procurement.goodsReceipts.priceModeLabel')}
+									</p>
+									<ToggleGroup
+										type="single"
+										value={priceMode}
+										variant="outline"
+										size="sm"
+										disabled={isSubmitting}
+										onValueChange={(value) => {
+											if (value === 'margin' || value === 'fixed') setPriceMode(value);
+										}}
+									>
+										<ToggleGroupItem value="margin">
+											{t('procurement.goodsReceipts.priceModeMargin')}
+										</ToggleGroupItem>
+										<ToggleGroupItem value="fixed">
+											{t('procurement.goodsReceipts.priceModeFixed')}
+										</ToggleGroupItem>
+									</ToggleGroup>
+								</div>
 								{#each formData.items as item, index (item.client_id)}
 									<div class="grid gap-4 rounded-md border bg-muted/10 p-4">
 										<div class="flex items-start justify-between gap-3">
@@ -643,31 +748,60 @@
 												{/if}
 											</div>
 											<div class="space-y-2">
-												<Label
-													for={`goods-receipt-item-margin-${item.client_id}`}
-													class="whitespace-nowrap"
-												>
-													{t('procurement.goodsReceipts.marginLabel')}
-												</Label>
-												<Input
-													id={`goods-receipt-item-margin-${item.client_id}`}
-													type="number"
-													min="0"
-													step="0.01"
-													placeholder={t('procurement.goodsReceipts.marginPlaceholder')}
-													disabled={isSubmitting}
-													bind:value={item.margin_percent}
-												/>
-												{#if getNewSellingPrice(item) !== null}
-													<p class="text-xs text-muted-foreground">
-														{t('procurement.goodsReceipts.newSellingPrice')}:
-														{formatIdr(getNewSellingPrice(item) ?? 0)}
-													</p>
-												{/if}
-												{#if getFieldError(`items.${index}.margin_percent`)}
-													<p class="text-sm text-destructive">
-														{getFieldError(`items.${index}.margin_percent`)}
-													</p>
+												{#if priceMode === 'margin'}
+													<Label
+														for={`goods-receipt-item-margin-${item.client_id}`}
+														class="whitespace-nowrap"
+													>
+														{t('procurement.goodsReceipts.marginLabel')}
+													</Label>
+													<Input
+														id={`goods-receipt-item-margin-${item.client_id}`}
+														type="number"
+														min="0"
+														step="0.01"
+														placeholder={t('procurement.goodsReceipts.marginPlaceholder')}
+														disabled={isSubmitting}
+														bind:value={item.margin_percent}
+													/>
+													{#if getNewSellingPrice(item) !== null}
+														<p class="text-xs text-muted-foreground">
+															{t('procurement.goodsReceipts.newSellingPrice')}:
+															{formatIdr(getNewSellingPrice(item) ?? 0)}
+														</p>
+													{/if}
+													{#if getFieldError(`items.${index}.margin_percent`)}
+														<p class="text-sm text-destructive">
+															{getFieldError(`items.${index}.margin_percent`)}
+														</p>
+													{/if}
+												{:else}
+													<Label
+														for={`goods-receipt-item-selling-price-${item.client_id}`}
+														class="whitespace-nowrap"
+													>
+														{t('procurement.goodsReceipts.sellingPriceLabel')}
+													</Label>
+													<Input
+														id={`goods-receipt-item-selling-price-${item.client_id}`}
+														type="number"
+														min="0"
+														step="1"
+														placeholder={t('procurement.goodsReceipts.sellingPricePlaceholder')}
+														disabled={isSubmitting}
+														bind:value={item.selling_price}
+													/>
+													{#if getEffectiveMargin(item) !== null}
+														<p class="text-xs text-muted-foreground">
+															{t('procurement.goodsReceipts.effectiveMargin')}:
+															{Number(getEffectiveMargin(item)!.toFixed(1)).toLocaleString()}%
+														</p>
+													{/if}
+													{#if getFieldError(`items.${index}.selling_price`)}
+														<p class="text-sm text-destructive">
+															{getFieldError(`items.${index}.selling_price`)}
+														</p>
+													{/if}
 												{/if}
 											</div>
 										</div>

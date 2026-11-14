@@ -42,6 +42,8 @@ export type CashRegisterSession = {
 	closed_by_name: string | null;
 	closing_cash_counted: number | null;
 	expected_cash: number | null;
+	/** Estimasi live uang seharusnya; hanya terisi selama sesi masih `open`. */
+	expected_cash_preview: number | null;
 	cash_difference: number | null;
 	closing_notes: string | null;
 	status: CashRegisterSessionStatus;

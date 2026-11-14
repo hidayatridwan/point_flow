@@ -61,12 +61,28 @@
 		totalPages: 0
 	};
 	const statusFilterOptions = [
-		{ value: 'completed', label: t('point_flow.cashMovements.statusCompleted'), icon: CircleCheckIcon },
-		{ value: 'cancelled', label: t('point_flow.cashMovements.statusCancelled'), icon: CircleOffIcon }
+		{
+			value: 'completed',
+			label: t('point_flow.cashMovements.statusCompleted'),
+			icon: CircleCheckIcon
+		},
+		{
+			value: 'cancelled',
+			label: t('point_flow.cashMovements.statusCancelled'),
+			icon: CircleOffIcon
+		}
 	];
 	const typeFilterOptions = [
-		{ value: 'cash_in', label: t('point_flow.cashMovements.typeCashIn'), icon: BanknoteArrowDownIcon },
-		{ value: 'cash_drop', label: t('point_flow.cashMovements.typeCashDrop'), icon: BanknoteArrowUpIcon },
+		{
+			value: 'cash_in',
+			label: t('point_flow.cashMovements.typeCashIn'),
+			icon: BanknoteArrowDownIcon
+		},
+		{
+			value: 'cash_drop',
+			label: t('point_flow.cashMovements.typeCashDrop'),
+			icon: BanknoteArrowUpIcon
+		},
 		{ value: 'cash_out', label: t('point_flow.cashMovements.typeCashOut'), icon: WalletCardsIcon },
 		{ value: 'petty_cash', label: t('point_flow.cashMovements.typePettyCash'), icon: HandCoinsIcon }
 	];
@@ -96,6 +112,15 @@
 
 	const isCurrentSessionFilterActive = $derived(
 		Boolean(activeSession && query.cash_register_session_id === activeSession.id)
+	);
+
+	// Label source untuk Select.Root — trigger bisa menampilkan label sejak awal
+	// meski value ter-set programatik sebelum dropdown pernah dibuka.
+	const openSessionItems = $derived(
+		openSessions.map((session) => ({
+			value: String(session.id),
+			label: `${session.cash_register_code} - ${session.session_no}`
+		}))
 	);
 
 	onMount(() => {
@@ -459,6 +484,7 @@
 						<Select.Root
 							allowDeselect={false}
 							type="single"
+							items={openSessionItems}
 							value={activeSession ? String(activeSession.id) : ''}
 							onValueChange={chooseOpenSession}
 						>

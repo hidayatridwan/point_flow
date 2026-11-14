@@ -94,6 +94,16 @@
 	let unitsErrorMessage = $state<string | null>(null);
 	let latestUnitsRequestId = 0;
 
+	// Label source untuk Select.Root: tanpa ini, trigger menampilkan ID mentah /
+	// "true"/"false" sampai dropdown dibuka pertama kali (bits-ui lazy items).
+	const unitItems = $derived(
+		units.map((unit) => ({ value: String(unit.id), label: `${unit.name} (${unit.code})` }))
+	);
+	const statusItems = $derived([
+		{ value: 'true', label: t('status.active') },
+		{ value: 'false', label: t('status.inactive') }
+	]);
+
 	const defaultFormData: EditProductSkuForm = {
 		sku: '',
 		barcode: '',
@@ -237,6 +247,7 @@
 								<Select.Root
 									allowDeselect={false}
 									type="single"
+									items={unitItems}
 									value={$formData.unit_id}
 									disabled={isSubmitting || isLoadingUnits}
 									onValueChange={(value) => {
@@ -353,6 +364,7 @@
 								<Select.Root
 									allowDeselect={false}
 									type="single"
+									items={statusItems}
 									value={$formData.is_active}
 									disabled={isSubmitting}
 									onValueChange={(value) => {

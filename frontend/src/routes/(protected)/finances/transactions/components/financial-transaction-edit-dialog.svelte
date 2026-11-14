@@ -69,6 +69,16 @@
 		)
 	);
 
+	// Label source untuk Select.Root: tanpa ini, trigger menampilkan ID mentah /
+	// "true"/"false" sampai dropdown dibuka pertama kali (bits-ui lazy items).
+	const categoryItems = $derived(
+		filteredCategories.map((category) => ({ value: String(category.id), label: category.name }))
+	);
+	const cashItems = $derived([
+		{ value: 'true', label: t('finances.transactions.cashYes') },
+		{ value: 'false', label: t('finances.transactions.cashNo') }
+	]);
+
 	$effect(() => {
 		if (!open) return;
 		errorMessage = null;
@@ -278,6 +288,7 @@
 					<Select.Root
 						allowDeselect={false}
 						type="single"
+						items={categoryItems}
 						value={formData.financial_category_id}
 						disabled={isSubmitting || isLoadingOptions}
 						onValueChange={(value) => {
@@ -309,6 +320,7 @@
 					<Select.Root
 						allowDeselect={false}
 						type="single"
+						items={cashItems}
 						value={formData.is_cash}
 						disabled={isSubmitting}
 						onValueChange={(value) => {

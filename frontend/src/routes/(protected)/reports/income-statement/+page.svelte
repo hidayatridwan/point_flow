@@ -14,6 +14,8 @@
 	} from '$lib/api/reports.js';
 	import { ApiError } from '$lib/api/types.js';
 	import ErrorAlert from '$lib/components/error-alert.svelte';
+	import ReportAmount from '$lib/components/report-amount.svelte';
+	import ReportDirectionBadge from '$lib/components/report-direction-badge.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
@@ -36,44 +38,56 @@
 	let isDateRangeOpen = $state(false);
 	let latestRequestId = 0;
 
+	// `effect` menentukan arah baris terhadap laba: add (+) menambah, deduct (−)
+	// mengurangi, none untuk baris subtotal (hasil hitung, tanpa tanda).
+	type RowEffect = 'add' | 'deduct' | 'none';
 	const rows = $derived(
 		statement
 			? [
 					{
 						label: t('reports.incomeStatement.grossRevenue'),
 						value: statement.gross_revenue,
-						strong: false
+						effect: 'add' as RowEffect
 					},
 					{
 						label: t('reports.incomeStatement.returnAmount'),
 						value: statement.return_amount,
-						strong: false
+						effect: 'deduct' as RowEffect
 					},
 					{
 						label: t('reports.incomeStatement.netRevenue'),
 						value: statement.net_revenue,
-						strong: true
+						effect: 'none' as RowEffect
 					},
-					{ label: t('reports.incomeStatement.cogs'), value: statement.cogs, strong: false },
+					{
+						label: t('reports.incomeStatement.cogs'),
+						value: statement.cogs,
+						effect: 'deduct' as RowEffect
+					},
 					{
 						label: t('reports.incomeStatement.grossProfit'),
 						value: statement.gross_profit,
-						strong: true
+						effect: 'none' as RowEffect
+					},
+					{
+						label: t('reports.incomeStatement.otherIncome'),
+						value: statement.other_income,
+						effect: 'add' as RowEffect
 					},
 					{
 						label: t('reports.incomeStatement.payrollExpense'),
 						value: statement.payroll_expense,
-						strong: false
+						effect: 'deduct' as RowEffect
 					},
 					{
 						label: t('reports.incomeStatement.otherExpense'),
 						value: statement.other_expense,
-						strong: false
+						effect: 'deduct' as RowEffect
 					},
 					{
 						label: t('reports.incomeStatement.netProfit'),
 						value: statement.net_profit,
-						strong: true
+						effect: 'none' as RowEffect
 					}
 				]
 			: []
@@ -260,12 +274,16 @@
 						</Table.Header>
 						<Table.Body>
 							{#each rows as row (row.label)}
-								<Table.Row>
-									<Table.Cell class={row.strong ? 'font-semibold' : undefined}>
-										{row.label}
+								{@const isSubtotal = row.effect === 'none'}
+								<Table.Row class={isSubtotal ? 'bg-muted/40' : undefined}>
+									<Table.Cell class={isSubtotal ? 'font-semibold' : undefined}>
+										<span class="inline-flex items-center gap-2">
+											<ReportDirectionBadge effect={row.effect} />
+											{row.label}
+										</span>
 									</Table.Cell>
-									<Table.Cell class={cn('text-right tabular-nums', row.strong && 'font-semibold')}>
-										{formatIdr(row.value)}
+									<Table.Cell class={cn('text-right', isSubtotal && 'font-semibold')}>
+										<ReportAmount value={row.value} effect={row.effect} />
 									</Table.Cell>
 								</Table.Row>
 							{/each}

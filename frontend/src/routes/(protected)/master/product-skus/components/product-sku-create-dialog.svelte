@@ -82,6 +82,19 @@
 	let isLoadingOptions = $state(false);
 	let isSubmitting = $state(false);
 	let errorMessage = $state<string | null>(null);
+
+	// Label source untuk Select.Root: tanpa ini, trigger menampilkan nilai mentah
+	// ("true") sampai dropdown dibuka pertama kali (bits-ui lazy items).
+	const productItems = $derived(
+		products.map((product) => ({ value: String(product.id), label: product.name }))
+	);
+	const unitItems = $derived(
+		units.map((unit) => ({ value: String(unit.id), label: `${unit.name} (${unit.code})` }))
+	);
+	const statusItems = $derived([
+		{ value: 'true', label: t('status.active') },
+		{ value: 'false', label: t('status.inactive') }
+	]);
 	let optionsErrorMessage = $state<string | null>(null);
 	let latestOptionsRequestId = 0;
 
@@ -209,6 +222,7 @@
 								<Select.Root
 									allowDeselect={false}
 									type="single"
+									items={productItems}
 									value={$formData.product_id}
 									disabled={isSubmitting || isLoadingOptions}
 									onValueChange={(value) => {
@@ -240,6 +254,7 @@
 								<Select.Root
 									allowDeselect={false}
 									type="single"
+									items={unitItems}
 									value={$formData.unit_id}
 									disabled={isSubmitting || isLoadingOptions}
 									onValueChange={(value) => {
@@ -359,6 +374,7 @@
 								<Select.Root
 									allowDeselect={false}
 									type="single"
+									items={statusItems}
 									value={$formData.is_active}
 									disabled={isSubmitting}
 									onValueChange={(value) => {

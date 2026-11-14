@@ -647,12 +647,22 @@ pub async fn income_statement(
                  WHERE status = 'completed'
                      AND ($1::date IS NULL OR period_start >= $1)
                      AND ($2::date IS NULL OR period_end <= $2)) AS payroll_expense,
-                (SELECT COALESCE(SUM(amount), 0)
-                 FROM financial_transactions
-                 WHERE type = 'expense'
-                     AND status = 'completed'
-                     AND ($1::date IS NULL OR occurred_at::date >= $1)
-                     AND ($2::date IS NULL OR occurred_at::date <= $2)) AS other_expense
+                (SELECT COALESCE(SUM(ft.amount), 0)
+                 FROM financial_transactions ft
+                 JOIN financial_categories fc ON fc.id = ft.financial_category_id
+                 WHERE ft.type = 'expense'
+                     AND ft.status = 'completed'
+                     AND fc.affects_profit = TRUE
+                     AND ($1::date IS NULL OR ft.occurred_at::date >= $1)
+                     AND ($2::date IS NULL OR ft.occurred_at::date <= $2)) AS other_expense,
+                (SELECT COALESCE(SUM(ft.amount), 0)
+                 FROM financial_transactions ft
+                 JOIN financial_categories fc ON fc.id = ft.financial_category_id
+                 WHERE ft.type = 'income'
+                     AND ft.status = 'completed'
+                     AND fc.affects_profit = TRUE
+                     AND ($1::date IS NULL OR ft.occurred_at::date >= $1)
+                     AND ($2::date IS NULL OR ft.occurred_at::date <= $2)) AS other_income
         )
         SELECT
             gross_revenue::float8 AS gross_revenue,
@@ -660,9 +670,10 @@ pub async fn income_statement(
             (gross_revenue - return_amount)::float8 AS net_revenue,
             (cogs_gross - cogs_returned)::float8 AS cogs,
             (gross_revenue - return_amount - (cogs_gross - cogs_returned))::float8 AS gross_profit,
+            other_income::float8 AS other_income,
             payroll_expense::float8 AS payroll_expense,
             other_expense::float8 AS other_expense,
-            (gross_revenue - return_amount - (cogs_gross - cogs_returned) - payroll_expense - other_expense)::float8 AS net_profit
+            (gross_revenue - return_amount - (cogs_gross - cogs_returned) + other_income - payroll_expense - other_expense)::float8 AS net_profit
         FROM base
         "#,
     )
@@ -792,18 +803,27 @@ pub async fn financial_position(
                  FROM payroll_slips
                  WHERE status = 'completed'
                      AND period_end <= COALESCE($1, CURRENT_DATE)) AS payroll_expense,
-                (SELECT COALESCE(SUM(amount), 0)
-                 FROM financial_transactions
-                 WHERE type = 'expense'
-                     AND status = 'completed'
-                     AND occurred_at::date <= COALESCE($1, CURRENT_DATE)) AS other_expense
+                (SELECT COALESCE(SUM(ft.amount), 0)
+                 FROM financial_transactions ft
+                 JOIN financial_categories fc ON fc.id = ft.financial_category_id
+                 WHERE ft.type = 'expense'
+                     AND ft.status = 'completed'
+                     AND fc.affects_profit = TRUE
+                     AND ft.occurred_at::date <= COALESCE($1, CURRENT_DATE)) AS other_expense,
+                (SELECT COALESCE(SUM(ft.amount), 0)
+                 FROM financial_transactions ft
+                 JOIN financial_categories fc ON fc.id = ft.financial_category_id
+                 WHERE ft.type = 'income'
+                     AND ft.status = 'completed'
+                     AND fc.affects_profit = TRUE
+                     AND ft.occurred_at::date <= COALESCE($1, CURRENT_DATE)) AS other_income
         )
         SELECT
             cutoff AS as_of,
             ((cash_in_sales + cash_in_manual) - (cash_out_drawer + cash_out_manual))::float8 AS cash,
             inventory_value::float8 AS inventory_value,
             (((cash_in_sales + cash_in_manual) - (cash_out_drawer + cash_out_manual)) + inventory_value)::float8 AS total_assets,
-            (gross_revenue - return_amount - (cogs_gross - cogs_returned) - payroll_expense - other_expense)::float8 AS cumulative_net_profit
+            (gross_revenue - return_amount - (cogs_gross - cogs_returned) + other_income - payroll_expense - other_expense)::float8 AS cumulative_net_profit
         FROM base
         "#,
     )

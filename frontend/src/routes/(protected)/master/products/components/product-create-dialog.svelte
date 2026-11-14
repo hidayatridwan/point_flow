@@ -45,6 +45,17 @@
 	let categoryErrorMessage = $state<string | null>(null);
 	let latestCategoryRequestId = 0;
 
+	// Label source untuk Select.Root: tanpa ini, trigger menampilkan nilai mentah
+	// ("true"/"none") sampai dropdown dibuka pertama kali (bits-ui lazy items).
+	const categoryItems = $derived([
+		{ value: NO_CATEGORY_VALUE, label: t('master.products.noCategory') },
+		...categories.map((category) => ({ value: String(category.id), label: category.name }))
+	]);
+	const statusItems = $derived([
+		{ value: 'true', label: t('status.active') },
+		{ value: 'false', label: t('status.inactive') }
+	]);
+
 	const defaultFormData: CreateProductForm = {
 		name: '',
 		category_id: NO_CATEGORY_VALUE,
@@ -160,6 +171,7 @@
 							<Select.Root
 								allowDeselect={false}
 								type="single"
+								items={categoryItems}
 								value={$formData.category_id}
 								disabled={isSubmitting || isLoadingCategories}
 								onValueChange={(value) => {
@@ -194,6 +206,7 @@
 							<Select.Root
 								allowDeselect={false}
 								type="single"
+								items={statusItems}
 								value={$formData.is_active}
 								disabled={isSubmitting}
 								onValueChange={(value) => {

@@ -15,6 +15,8 @@ export type FinancialCategory = {
 	name: string;
 	category_type: FinancialTransactionType;
 	description: string | null;
+	/** `false` = hanya menggeser kas, tidak dihitung di Laba Rugi (mis. modal). */
+	affects_profit: boolean;
 	is_active: boolean;
 	created_by: number | null;
 	created_at: string;
@@ -38,12 +40,14 @@ export type CreateFinancialCategoryPayload = {
 	name: string;
 	category_type: FinancialTransactionType;
 	description?: string | null;
+	affects_profit?: boolean;
 	is_active?: boolean;
 };
 
 export type UpdateFinancialCategoryPayload = {
 	name?: string;
 	description?: string | null;
+	affects_profit?: boolean;
 	is_active?: boolean;
 };
 

@@ -49,6 +49,22 @@
 
 	const activeRegisters = $derived(registers.filter((register) => register.status === 'active'));
 
+	// Labelsource untuk Select.Root (bits-ui): tanpa ini, label opsi baru dikenali
+	// setelah dropdown dibuka pertama kali — sebelum itu trigger menampilkan nilai
+	// mentah (mis. "1") untuk value yang ter-set programatik.
+	const registerItems = $derived(
+		activeRegisters.map((register) => ({
+			value: String(register.id),
+			label: `${register.code} - ${register.name}`
+		}))
+	);
+	const openSessionItems = $derived(
+		openSessions.map((session) => ({
+			value: String(session.id),
+			label: `${session.cash_register_code} - ${session.session_no}`
+		}))
+	);
+
 	onMount(() => {
 		void loadRegisterSessionState();
 	});
@@ -77,7 +93,9 @@
 				selectedCashRegisterId = String(activeSession.cash_register_id);
 			} else {
 				clearStoredActiveCashRegisterSessionId();
-				selectedCashRegisterId = registers[0]?.id ? String(registers[0].id) : '';
+				// Biarkan kosong agar trigger menampilkan placeholder — user memilih
+				// register secara sadar. Label tetap benar berkat `items` di Root.
+				selectedCashRegisterId = '';
 			}
 		} catch (error) {
 			if (requestId !== latestRequestId) return;
@@ -258,6 +276,7 @@
 				<Select.Root
 					allowDeselect={false}
 					type="single"
+					items={openSessionItems}
 					value={activeSession ? String(activeSession.id) : ''}
 					onValueChange={chooseOpenSession}
 				>
@@ -343,13 +362,23 @@
 					</div>
 
 					<div
-						class="grid gap-2 rounded-md bg-muted/30 p-3 text-sm"
+						class="grid gap-2.5 rounded-md bg-muted/30 p-3 text-sm"
 						aria-label={t('point_flow.registerSession.closeSummary')}
 					>
 						<div class="flex justify-between gap-3">
-							<span class="text-muted-foreground">{t('point_flow.registerSession.openingCash')}</span>
+							<span class="text-muted-foreground"
+								>{t('point_flow.registerSession.openingCash')}</span
+							>
 							<span class="font-medium">{formatIdr(activeSession.opening_cash)}</span>
 						</div>
+						{#if activeSession.expected_cash_preview !== null}
+							<div class="flex justify-between gap-3 border-t border-border/60 pt-2.5">
+								<span class="text-muted-foreground"
+									>{t('point_flow.registerSession.expectedCash')}</span
+								>
+								<span class="font-semibold">{formatIdr(activeSession.expected_cash_preview)}</span>
+							</div>
+						{/if}
 						<p class="text-muted-foreground">{t('point_flow.registerSession.expectedCashDesc')}</p>
 					</div>
 
@@ -364,7 +393,10 @@
 					</div>
 
 					{#if closeErrorMessage}
-						<ErrorAlert title={t('point_flow.registerSession.errorClose')} message={closeErrorMessage} />
+						<ErrorAlert
+							title={t('point_flow.registerSession.errorClose')}
+							message={closeErrorMessage}
+						/>
 					{/if}
 
 					<Button type="submit" disabled={isClosing}>
@@ -373,7 +405,9 @@
 						{:else}
 							<LockIcon />
 						{/if}
-						{isClosing ? t('point_flow.registerSession.closing') : t('point_flow.registerSession.closeBtn')}
+						{isClosing
+							? t('point_flow.registerSession.closing')
+							: t('point_flow.registerSession.closeBtn')}
 					</Button>
 				</form>
 			</section>
@@ -387,7 +421,9 @@
 							<CircleDollarSignIcon class="size-5" />
 						</div>
 						<div class="min-w-0">
-							<h2 class="text-base font-semibold">{t('point_flow.registerSession.noActiveRegister')}</h2>
+							<h2 class="text-base font-semibold">
+								{t('point_flow.registerSession.noActiveRegister')}
+							</h2>
 							<p class="text-sm text-muted-foreground">
 								{t('point_flow.registerSession.noActiveRegisterDesc')}
 							</p>
@@ -427,6 +463,7 @@
 						<Select.Root
 							allowDeselect={false}
 							type="single"
+							items={registerItems}
 							value={selectedCashRegisterId}
 							disabled={isOpening || activeRegisters.length === 0}
 							onValueChange={(value) => (selectedCashRegisterId = value)}
@@ -477,7 +514,10 @@
 						/>
 					{/if}
 					{#if openErrorMessage}
-						<ErrorAlert title={t('point_flow.registerSession.errorOpen')} message={openErrorMessage} />
+						<ErrorAlert
+							title={t('point_flow.registerSession.errorOpen')}
+							message={openErrorMessage}
+						/>
 					{/if}
 
 					<Button type="submit" disabled={isOpening || activeRegisters.length === 0}>
@@ -486,7 +526,9 @@
 						{:else}
 							<UnlockIcon />
 						{/if}
-						{isOpening ? t('point_flow.registerSession.opening') : t('point_flow.registerSession.openBtn')}
+						{isOpening
+							? t('point_flow.registerSession.opening')
+							: t('point_flow.registerSession.openBtn')}
 					</Button>
 				</form>
 			</section>

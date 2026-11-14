@@ -21,6 +21,7 @@ const FINANCIAL_CATEGORY_SELECT: &str = r#"
         name,
         type::text AS category_type,
         description,
+        affects_profit,
         is_active,
         created_by,
         created_at,
@@ -143,14 +144,15 @@ pub async fn create_financial_category(
 
     let id: i64 = sqlx::query_scalar(
         r#"
-        INSERT INTO financial_categories (name, type, description, is_active, created_by)
-        VALUES ($1, $2::financial_transaction_type, $3, COALESCE($4, TRUE), $5)
+        INSERT INTO financial_categories (name, type, description, affects_profit, is_active, created_by)
+        VALUES ($1, $2::financial_transaction_type, $3, COALESCE($4, TRUE), COALESCE($5, TRUE), $6)
         RETURNING id
         "#,
     )
     .bind(&name)
     .bind(&category_type)
     .bind(normalize_optional_string(request.description))
+    .bind(request.affects_profit)
     .bind(request.is_active)
     .bind(user.id)
     .fetch_one(pool)
@@ -204,7 +206,8 @@ pub async fn update_financial_category(
         SET
             name = COALESCE($2, name),
             description = COALESCE($3, description),
-            is_active = COALESCE($4, is_active)
+            affects_profit = COALESCE($4, affects_profit),
+            is_active = COALESCE($5, is_active)
         WHERE id = $1
         RETURNING id
         "#,
@@ -212,6 +215,7 @@ pub async fn update_financial_category(
     .bind(id)
     .bind(request.name.map(|name| name.trim().to_string()))
     .bind(normalize_optional_string(request.description))
+    .bind(request.affects_profit)
     .bind(request.is_active)
     .fetch_optional(pool)
     .await

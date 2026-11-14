@@ -12,6 +12,13 @@
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
 	import { t } from '$lib/i18n/locale.svelte.js';
+
+	// Label source untuk Select.Root: tanpa ini, trigger menampilkan nilai mentah
+	// ("true") sampai dropdown dibuka pertama kali (bits-ui lazy items).
+	const statusItems = $derived([
+		{ value: 'true', label: t('status.active') },
+		{ value: 'false', label: t('status.inactive') }
+	]);
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4, zod4Client } from 'sveltekit-superforms/adapters';
 	import { z } from 'zod';
@@ -226,6 +233,7 @@
 							<Select.Root
 								allowDeselect={false}
 								type="single"
+								items={statusItems}
 								value={$formData.is_active}
 								disabled={isSubmitting}
 								onValueChange={(value) => {

@@ -545,6 +545,9 @@ pub struct CashRegisterSessionResponse {
     pub closed_by_name: Option<String>,
     pub closing_cash_counted: Option<f64>,
     pub expected_cash: Option<f64>,
+    /// Estimasi live uang seharusnya untuk sesi yang masih `open` (expected_cash
+    /// baru diisi saat sesi ditutup). `None` untuk sesi yang sudah closed.
+    pub expected_cash_preview: Option<f64>,
     pub cash_difference: Option<f64>,
     pub closing_notes: Option<String>,
     pub status: String,
@@ -1300,6 +1303,9 @@ pub struct FinancialCategoryResponse {
     pub name: String,
     pub category_type: String,
     pub description: Option<String>,
+    /// `false` untuk kategori yang hanya menggeser kas (mis. setoran modal,
+    /// prive) sehingga tidak dihitung sebagai pendapatan/beban di Laba Rugi.
+    pub affects_profit: bool,
     pub is_active: bool,
     pub created_by: Option<i64>,
     pub created_at: DateTime<Utc>,
@@ -1311,6 +1317,7 @@ pub struct CreateFinancialCategoryRequest {
     pub name: String,
     pub category_type: String,
     pub description: Option<String>,
+    pub affects_profit: Option<bool>,
     pub is_active: Option<bool>,
 }
 
@@ -1318,6 +1325,7 @@ pub struct CreateFinancialCategoryRequest {
 pub struct UpdateFinancialCategoryRequest {
     pub name: Option<String>,
     pub description: Option<String>,
+    pub affects_profit: Option<bool>,
     pub is_active: Option<bool>,
 }
 
@@ -1450,6 +1458,9 @@ pub struct IncomeStatementResponse {
     pub net_revenue: f64,
     pub cogs: f64,
     pub gross_profit: f64,
+    /// Pendapatan manual (transaksi keuangan bertipe income) yang kategorinya
+    /// `affects_profit = TRUE`. Setoran modal/prive tidak termasuk.
+    pub other_income: f64,
     pub payroll_expense: f64,
     pub other_expense: f64,
     pub net_profit: f64,

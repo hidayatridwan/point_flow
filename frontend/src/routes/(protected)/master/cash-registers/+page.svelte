@@ -43,6 +43,13 @@
 		status: CashRegisterStatus;
 	};
 
+	// Label source untuk Select.Root: tanpa ini, trigger menampilkan nilai mentah
+	// ("active") alih-alih label terlokalisasi ("Aktif") sampai dropdown dibuka.
+	const statusItems = $derived([
+		{ value: 'active', label: t('status.active') },
+		{ value: 'inactive', label: t('status.inactive') }
+	]);
+
 	const pageSizeOptions = [10, 25, 50, 100];
 	const defaultPagination: CashRegisterPagination = {
 		page: 1,
@@ -447,6 +454,7 @@
 					<Select.Root
 						allowDeselect={false}
 						type="single"
+						items={statusItems}
 						value={formData.status}
 						disabled={isSubmitting}
 						onValueChange={(value) => {
