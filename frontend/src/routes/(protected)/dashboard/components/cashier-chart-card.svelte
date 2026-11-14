@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { BarChart } from 'layerchart';
+	import { BarChart, Bars, LinearGradient } from 'layerchart';
 	import * as Chart from '$lib/components/ui/chart/index.js';
 	import { getCashierPerformance, type CashierPerformanceItem } from '$lib/api/dashboard.js';
 	import { ApiError } from '$lib/api/types.js';
@@ -8,7 +8,7 @@
 	import { t } from '$lib/i18n/locale.svelte.js';
 	import ChartCard from './chart-card.svelte';
 	import RangeSelect from './range-select.svelte';
-	import { formatCompact } from './chart-helpers.js';
+	import { BAR_GRADIENT_STOPS, formatCompact } from './chart-helpers.js';
 
 	let days = $state(30);
 	let items = $state<CashierPerformanceItem[]>([]);
@@ -24,7 +24,7 @@
 	);
 
 	const chartConfig = $derived({
-		revenue: { label: t('dashboard.charts.revenue'), color: 'var(--chart-5)' }
+		revenue: { label: t('dashboard.charts.revenue'), color: 'var(--chart-1)' }
 	} satisfies Chart.ChartConfig);
 
 	const hasData = $derived(chartData.length > 0 && items.some((item) => item.revenue > 0));
@@ -63,12 +63,19 @@
 			data={chartData}
 			x="cashier"
 			y="revenue"
-			series={[{ key: 'revenue', label: t('dashboard.charts.revenue'), color: 'var(--chart-5)' }]}
+			series={[{ key: 'revenue', label: t('dashboard.charts.revenue'), color: 'var(--chart-1)' }]}
 			props={{
-				bars: { radius: 4, rounded: 'top' },
 				yAxis: { format: (value: number) => formatCompact(value) }
 			}}
 		>
+			<!-- Each bar gets its own indigo → purple gradient (objectBoundingBox units). -->
+			{#snippet marks()}
+				<LinearGradient stops={BAR_GRADIENT_STOPS} vertical>
+					{#snippet children({ gradient })}
+						<Bars seriesKey="revenue" fill={gradient} radius={6} rounded="edge" strokeWidth={0} />
+					{/snippet}
+				</LinearGradient>
+			{/snippet}
 			{#snippet tooltip()}
 				<Chart.Tooltip indicator="dot">
 					{#snippet formatter({ value, item })}

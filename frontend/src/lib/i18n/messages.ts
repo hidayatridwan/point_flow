@@ -381,6 +381,7 @@ export const messages = {
 				topProductsSold: 'terjual',
 				categoryTitle: 'Penjualan per Kategori',
 				categoryDesc: 'Komposisi pendapatan menurut kategori produk.',
+				otherCategory: 'Lainnya',
 				scatterTitle: 'Harga vs Volume',
 				scatterDesc:
 					'Harga jual terhadap jumlah terjual per SKU. Ukuran titik mengikuti pendapatan.',
@@ -2639,6 +2640,7 @@ export const messages = {
 				topProductsSold: 'sold',
 				categoryTitle: 'Sales by Category',
 				categoryDesc: 'Revenue composition by product category.',
+				otherCategory: 'Other',
 				scatterTitle: 'Price vs Volume',
 				scatterDesc: 'Selling price against quantity sold per SKU. Point size follows revenue.',
 				scatterPrice: 'Selling Price',

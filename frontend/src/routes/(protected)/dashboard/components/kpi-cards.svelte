@@ -15,11 +15,21 @@
 	let { summary, loading = false }: { summary: DashboardSummary | null; loading?: boolean } =
 		$props();
 
+	// `alert` is reserved for metrics that signal a problem right now; everything else
+	// wears the brand tint so color keeps its meaning.
+	type Tone = 'brand' | 'alert';
+
 	type Metric = {
 		label: string;
 		value: string;
 		description: string;
 		icon: Component;
+		tone: Tone;
+	};
+
+	const toneClasses: Record<Tone, string> = {
+		brand: 'bg-chart-1/10 text-chart-1 dark:bg-chart-1/20',
+		alert: 'bg-destructive/10 text-destructive dark:bg-destructive/20'
 	};
 
 	const metrics = $derived<Metric[]>(
@@ -29,37 +39,43 @@
 						label: t('dashboard.revenueToday'),
 						value: formatIdr(summary.revenueToday),
 						description: `${t('dashboard.revenueDesc')} ${t('dashboard.cashRevenue')}: ${formatIdr(summary.cashRevenueToday)} • ${t('dashboard.noncashRevenue')}: ${formatIdr(summary.noncashRevenueToday)}`,
-						icon: BanknoteIcon
+						icon: BanknoteIcon,
+						tone: 'brand'
 					},
 					{
 						label: t('dashboard.transactions'),
 						value: formatNumber(summary.transactionCountToday),
 						description: t('dashboard.transactionsDesc'),
-						icon: ReceiptTextIcon
+						icon: ReceiptTextIcon,
+						tone: 'brand'
 					},
 					{
 						label: t('dashboard.lowStock'),
 						value: formatNumber(summary.lowStockProductCount),
 						description: t('dashboard.lowStockDesc'),
-						icon: PackageSearchIcon
+						icon: PackageSearchIcon,
+						tone: summary.lowStockProductCount > 0 ? 'alert' : 'brand'
 					},
 					{
 						label: t('dashboard.pendingPO'),
 						value: formatNumber(summary.pendingPurchaseOrderCount),
 						description: t('dashboard.pendingPODesc'),
-						icon: TruckIcon
+						icon: TruckIcon,
+						tone: 'brand'
 					},
 					{
 						label: t('dashboard.draftAdj'),
 						value: formatNumber(summary.draftStockAdjustmentCount),
 						description: t('dashboard.draftAdjDesc'),
-						icon: ClipboardListIcon
+						icon: ClipboardListIcon,
+						tone: 'brand'
 					},
 					{
 						label: t('dashboard.activeEmployees'),
 						value: formatNumber(summary.activeEmployeeCount),
 						description: t('dashboard.activeEmployeesDesc'),
-						icon: UsersIcon
+						icon: UsersIcon,
+						tone: 'brand'
 					}
 				]
 			: []
@@ -74,14 +90,16 @@
 	{:else}
 		{#each metrics as metric (metric.label)}
 			{@const Icon = metric.icon}
-			<Card.Root size="sm">
+			<Card.Root size="sm" class="border border-border/70 shadow-none ring-0">
 				<Card.Header class="flex flex-row items-center justify-between gap-3">
 					<div class="space-y-1">
 						<Card.Description>{metric.label}</Card.Description>
 						<Card.Title class="text-2xl">{metric.value}</Card.Title>
 					</div>
 					<div
-						class="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
+						class="flex size-10 shrink-0 items-center justify-center rounded-full {toneClasses[
+							metric.tone
+						]}"
 					>
 						<Icon class="size-5" />
 					</div>

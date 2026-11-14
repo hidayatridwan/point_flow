@@ -65,7 +65,8 @@
 			y="revenue"
 			series={[{ key: 'revenue', label: t('dashboard.charts.revenue'), color: 'var(--chart-1)' }]}
 			props={{
-				area: { fillOpacity: 0.25, line: { width: 2 } },
+				// Soft lavender wash under a solid 2px indigo line.
+				area: { fillOpacity: 0.14, line: { width: 2 } },
 				xAxis: { format: (value: Date) => formatShortDate(value) },
 				yAxis: { format: (value: number) => formatCompact(value) }
 			}}

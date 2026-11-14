@@ -25,12 +25,13 @@
 	} = $props();
 </script>
 
+<!-- Flat card: hairline border, no resting shadow, roomier padding. -->
 <Card.Root
-	class="gap-4 border border-border/40 shadow-sm ring-0 transition-shadow duration-200 focus-within:shadow-md hover:shadow-md"
+	class="gap-4 border border-border/70 shadow-none ring-0 transition-shadow duration-200 [--card-spacing:--spacing(5)] focus-within:shadow-sm hover:shadow-sm"
 >
 	<Card.Header class="flex flex-row items-start justify-between gap-3">
 		<div class="space-y-1">
-			<Card.Title class="text-base">{title}</Card.Title>
+			<Card.Title class="text-base font-semibold">{title}</Card.Title>
 			{#if description}
 				<Card.Description>{description}</Card.Description>
 			{/if}

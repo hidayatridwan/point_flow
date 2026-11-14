@@ -5,7 +5,7 @@
 	import { formatNumber } from '$lib/formatters.js';
 	import { t } from '$lib/i18n/locale.svelte.js';
 	import ChartCard from './chart-card.svelte';
-	import { CHART_COLORS } from './chart-helpers.js';
+	import { CHART_OTHER_COLOR, STAGE_RAMP } from './chart-helpers.js';
 
 	type Stage = { label: string; count: number; color: string };
 	type Group = { label: string; stages: Stage[] };
@@ -35,53 +35,68 @@
 		}
 	}
 
+	// Stages are ordinal (draft → completed), so they take one-hue ramp steps from light to
+	// dark rather than unrelated categorical hues; cancelled drops out of the flow as gray.
 	function buildGroups(data: ProcurementFunnel): Group[] {
-		const muted = 'var(--muted-foreground)';
+		const [draft, ordered, partial, done] = STAGE_RAMP;
+		const cancelled = CHART_OTHER_COLOR;
 		return [
 			{
 				label: t('dashboard.charts.funnelPo'),
 				stages: [
-					{ label: t('dashboard.charts.statusDraft'), count: data.poDraft, color: CHART_COLORS[0] },
+					{ label: t('dashboard.charts.statusDraft'), count: data.poDraft, color: draft },
 					{
 						label: t('dashboard.charts.statusOrdered'),
 						count: data.poOrdered,
-						color: CHART_COLORS[1]
+						color: ordered
 					},
 					{
 						label: t('dashboard.charts.statusPartial'),
 						count: data.poPartiallyReceived,
-						color: CHART_COLORS[2]
+						color: partial
 					},
 					{
 						label: t('dashboard.charts.statusReceived'),
 						count: data.poReceived,
-						color: CHART_COLORS[3]
+						color: done
 					},
-					{ label: t('dashboard.charts.statusCancelled'), count: data.poCancelled, color: muted }
+					{
+						label: t('dashboard.charts.statusCancelled'),
+						count: data.poCancelled,
+						color: cancelled
+					}
 				]
 			},
 			{
 				label: t('dashboard.charts.funnelGr'),
 				stages: [
-					{ label: t('dashboard.charts.statusDraft'), count: data.grDraft, color: CHART_COLORS[0] },
+					{ label: t('dashboard.charts.statusDraft'), count: data.grDraft, color: draft },
 					{
 						label: t('dashboard.charts.statusPosted'),
 						count: data.grPosted,
-						color: CHART_COLORS[3]
+						color: done
 					},
-					{ label: t('dashboard.charts.statusCancelled'), count: data.grCancelled, color: muted }
+					{
+						label: t('dashboard.charts.statusCancelled'),
+						count: data.grCancelled,
+						color: cancelled
+					}
 				]
 			},
 			{
 				label: t('dashboard.charts.funnelSa'),
 				stages: [
-					{ label: t('dashboard.charts.statusDraft'), count: data.saDraft, color: CHART_COLORS[0] },
+					{ label: t('dashboard.charts.statusDraft'), count: data.saDraft, color: draft },
 					{
 						label: t('dashboard.charts.statusPosted'),
 						count: data.saPosted,
-						color: CHART_COLORS[3]
+						color: done
 					},
-					{ label: t('dashboard.charts.statusCancelled'), count: data.saCancelled, color: muted }
+					{
+						label: t('dashboard.charts.statusCancelled'),
+						count: data.saCancelled,
+						color: cancelled
+					}
 				]
 			}
 		];
@@ -112,9 +127,9 @@
 						title={`${stage.label}: ${formatNumber(stage.count)}`}
 					>
 						<span class="w-24 shrink-0 truncate text-xs text-muted-foreground">{stage.label}</span>
-						<div class="relative h-6 flex-1 overflow-hidden rounded-md bg-muted/40">
+						<div class="relative h-6 flex-1 overflow-hidden rounded-md bg-muted/60">
 							<div
-								class="absolute inset-y-0 left-0 rounded-md transition-all duration-300 group-hover/stage:brightness-110 group-hover/stage:saturate-150"
+								class="absolute inset-y-0 left-0 rounded-md transition-all duration-300 group-hover/stage:brightness-110"
 								style="width: {widthPercent(
 									stage.count,
 									group.stages

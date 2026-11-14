@@ -34,7 +34,7 @@
 	);
 
 	const chartConfig = $derived({
-		quantitySold: { label: t('dashboard.charts.scatterQuantity'), color: 'var(--chart-4)' }
+		quantitySold: { label: t('dashboard.charts.scatterQuantity'), color: 'var(--chart-1)' }
 	} satisfies Chart.ChartConfig);
 
 	const hasData = $derived(chartData.length > 0);
@@ -76,11 +76,12 @@
 			r="revenue"
 			rRange={[5, 24]}
 			props={{
+				// Single series → slot-1 indigo; a surface-colored ring keeps overlapping bubbles apart.
 				points: {
-					fill: 'var(--chart-4)',
-					fillOpacity: 0.55,
-					stroke: 'var(--chart-4)',
-					strokeWidth: 1
+					fill: 'var(--chart-1)',
+					fillOpacity: 0.5,
+					stroke: 'var(--card)',
+					strokeWidth: 1.5
 				},
 				xAxis: { format: (value: number) => formatCompact(value) },
 				yAxis: { format: (value: number) => formatNumber(value) }

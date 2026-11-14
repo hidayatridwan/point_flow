@@ -24,11 +24,26 @@
 	--border: oklch(0.922 0 0);
 	--input: oklch(0.922 0 0);
 	--ring: oklch(0.708 0 0);
-	--chart-1: oklch(0.87 0 0);
-	--chart-2: oklch(0.556 0 0);
-	--chart-3: oklch(0.439 0 0);
-	--chart-4: oklch(0.371 0 0);
-	--chart-5: oklch(0.269 0 0);
+	/*
+	 * Dashboard chart palette (indigo theme). Categorical order is indigo → emerald →
+	 * amber → pink → sky; the order is what keeps adjacent slices colorblind-safe
+	 * (validated with the dataviz palette validator), so don't reorder it.
+	 */
+	--chart-1: oklch(0.524 0.186 279.2);
+	--chart-2: oklch(0.604 0.135 160.9);
+	--chart-3: oklch(0.76 0.16 70);
+	--chart-4: oklch(0.63 0.2 355);
+	--chart-5: oklch(0.68 0.12 225);
+	/* "Other" slice and cancelled stages: a recessive neutral. */
+	--chart-other: oklch(0.78 0.01 286);
+	/* Bar fill: indigo at the top fading to purple at the baseline. */
+	--chart-gradient-from: oklch(0.524 0.186 279.2);
+	--chart-gradient-to: oklch(0.66 0.192 302);
+	/* One-hue ordinal ramp for pipeline stages, light → dark. */
+	--chart-ramp-1: oklch(0.78 0.09 282);
+	--chart-ramp-2: oklch(0.69 0.135 280);
+	--chart-ramp-3: oklch(0.61 0.17 279.5);
+	--chart-ramp-4: oklch(0.524 0.186 279.2);
 	--radius: 0.625rem;
 	--sidebar: oklch(0.985 0 0);
 	--sidebar-foreground: oklch(0.145 0 0);
@@ -59,11 +74,20 @@
 	--border: oklch(1 0 0 / 10%);
 	--input: oklch(1 0 0 / 15%);
 	--ring: oklch(0.556 0 0);
-	--chart-1: oklch(0.87 0 0);
-	--chart-2: oklch(0.556 0 0);
-	--chart-3: oklch(0.439 0 0);
-	--chart-4: oklch(0.371 0 0);
-	--chart-5: oklch(0.269 0 0);
+	/* Same hues stepped for the dark surface (validated separately, not a flip). */
+	--chart-1: oklch(0.56 0.18 279);
+	--chart-2: oklch(0.66 0.13 161);
+	--chart-3: oklch(0.67 0.14 70);
+	--chart-4: oklch(0.6 0.19 355);
+	--chart-5: oklch(0.66 0.11 225);
+	--chart-other: oklch(0.45 0.012 286);
+	--chart-gradient-from: oklch(0.56 0.18 279);
+	--chart-gradient-to: oklch(0.68 0.16 302);
+	/* Ordinal anchor flips on dark: the earliest stage sits closest to the surface. */
+	--chart-ramp-1: oklch(0.48 0.15 279);
+	--chart-ramp-2: oklch(0.56 0.16 279);
+	--chart-ramp-3: oklch(0.64 0.15 280);
+	--chart-ramp-4: oklch(0.72 0.12 282);
 	--sidebar: oklch(0.205 0 0);
 	--sidebar-foreground: oklch(0.985 0 0);
 	--sidebar-primary: oklch(0.488 0.243 264.376);

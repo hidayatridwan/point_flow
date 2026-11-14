@@ -6,6 +6,7 @@
 	import { t } from '$lib/i18n/locale.svelte.js';
 	import ChartCard from './chart-card.svelte';
 	import RangeSelect from './range-select.svelte';
+	import { BAR_GRADIENT_CSS } from './chart-helpers.js';
 
 	let days = $state(30);
 	let items = $state<TopProductItem[]>([]);
@@ -74,7 +75,7 @@
 					<div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
 						<div
 							class="h-full rounded-full transition-[width] duration-500 ease-out"
-							style="width: {fillPercent(item.revenue)}%; background-color: var(--chart-2)"
+							style="width: {fillPercent(item.revenue)}%; background-image: {BAR_GRADIENT_CSS}"
 						></div>
 					</div>
 					<span class="shrink-0 text-xs text-muted-foreground tabular-nums">
